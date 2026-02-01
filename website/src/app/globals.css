@@ -1,0 +1,70 @@
+/* Rest & Rx Brand Colors */
+
+:root {
+  /* Official Brand Palette */
+  --marigold: #C1882F;
+  --downriver: #0F355E;
+  --tradewind: #67AEAF;
+  --astral: #3483A5;
+  
+  /* Neutrals */
+  --brand-white: #FFFFFF;
+  --brand-cream: #FFFDEF;
+  
+  /* Derived / Soft Watercolors (from brand palette) */
+  --marigold-light: rgba(193, 136, 47, 0.15);
+  --downriver-light: rgba(15, 53, 94, 0.08);
+  --tradewind-light: rgba(103, 174, 175, 0.25);
+  --astral-light: rgba(52, 131, 165, 0.2);
+  --watercolor-blue: #E8F4F6;
+  --watercolor-blue-light: #F0F8F9;
+  --watercolor-cream: #FDF8F3;
+  --watercolor-warm: #FDFBF7;
+  
+  /* Text */
+  --text-primary: var(--downriver);
+  --text-secondary: var(--astral);
+  --text-muted: #5a6c7d;
+  
+  /* Layout */
+  --background: var(--brand-cream);
+  --foreground: var(--text-primary);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-product-sans), "DM Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography – Brand Fonts */
+.font-heading {
+  font-family: var(--font-brittany), "Dancing Script", cursive;
+}
+
+.font-subheading {
+  font-family: var(--font-bree-serif), "Bree Serif", serif;
+}
+
+.font-body {
+  font-family: var(--font-product-sans), "DM Sans", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
