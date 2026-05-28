@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Dancing_Script, Bree_Serif, DM_Sans } from "next/font/google";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 const dancingScript = Dancing_Script({
@@ -45,6 +47,9 @@ export default function RootLayout({
       className={`${dancingScript.variable} ${breeSerif.variable} ${dmSans.variable}`}
     >
       <body className={dmSans.className} style={{ minHeight: "100vh" }}>
+        <Suspense fallback={null}>
+          <SiteHeader />
+        </Suspense>
         {children}
       </body>
     </html>

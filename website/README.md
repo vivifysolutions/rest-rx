@@ -20,7 +20,7 @@ Next.js landing page with Firebase configuration, following Vivify project conve
    npm run dev
    ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the landing page.
+Open [http://localhost:9000](http://localhost:9000) to view the landing page.
 
 ## Firebase Usage
 
@@ -36,6 +36,37 @@ Import when needed:
 ```ts
 import { auth, db, storage } from "@/lib/firebase";
 ```
+
+## Web portal (team & partners)
+
+Shared sign-in at **`/portal/login`** (not branded as “admin”). After Firebase auth, users are routed by **`userType`** on their profile in the API:
+
+| `userType` | Destination |
+|------------|-------------|
+| `admin` | `/admin` — content management |
+| `brand_partner` | `/brand` — brand dashboard |
+| `expert` | `/admin/community` — community review |
+| `member` | `/portal/unauthorized` — use the mobile app |
+
+Roles are stored on `User.userType` in Postgres (not env allowlists). API guards enforce the same rules on write endpoints.
+
+**Bootstrap the first admin** (after sign-up / `GET /users/me` created the row):
+
+```sql
+UPDATE users SET "userType" = 'admin' WHERE email = 'founder@example.com';
+```
+
+Or use **Management → Users** once any admin account exists.
+
+1. Copy `.env.example` → `.env.local` (Firebase + `NEXT_PUBLIC_API_URL`).
+2. Run `rest-and-rx/api` on port **3000** (`npm run start:dev`) and this site on port **9000** (`npm run dev`).
+3. Open [http://localhost:9000/portal/login](http://localhost:9000/portal/login)
+
+| Route | Who |
+|-------|-----|
+| `/portal/login` | All portal roles |
+| `/admin/*` | `admin` (experts: `/admin/community` only) |
+| `/brand` | `brand_partner` |
 
 ## Scripts
 

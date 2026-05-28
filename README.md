@@ -12,4 +12,4 @@ Monorepo for Rest & Rx products.
 cd website && npm install && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the website.
+Open [http://localhost:9000](http://localhost:9000) for the website (API runs on port 3000).

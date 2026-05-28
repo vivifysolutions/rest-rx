@@ -153,6 +153,19 @@ export default function HomePage() {
               >
                 Become a Partner
               </Link>
+              <Link
+                href="/portal/login"
+                style={{
+                  display: "inline-block",
+                  padding: "0.875rem 2rem",
+                  background: "var(--downriver)",
+                  color: "white",
+                  borderRadius: "50px",
+                  fontWeight: 600,
+                }}
+              >
+                Sign in
+              </Link>
             </div>
           </div>
         </div>
@@ -544,6 +557,22 @@ export default function HomePage() {
             </a>
           ))}
         </div>
+        <p style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.75rem" }}>
+          <Link
+            href="/portal/login"
+            style={{
+              color: "white",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+            }}
+          >
+            Sign in
+          </Link>
+          <span style={{ opacity: 0.5, margin: "0 0.75rem" }}>|</span>
+          <Link href="/partner" style={{ color: "white", textDecoration: "underline", textUnderlineOffset: "3px" }}>
+            Partner with us
+          </Link>
+        </p>
         <p style={{ fontSize: "0.9rem", opacity: 0.9 }}>
           © {new Date().getFullYear()} Rest & Rx. Made with{" "}
           <FaHeart style={{ color: "var(--marigold)", display: "inline" }} /> for
