@@ -150,18 +150,6 @@ export type CreateRetreatInput = {
   endDate?: string;
 };
 
-/** Response shape of `GET /categories` — distinct category values per content type. */
-export type ReferenceData = {
-  /** Distinct `Discount.category` values currently in the DB. */
-  discounts: string[];
-  /** Distinct `Event.category` values currently in the DB. */
-  events: string[];
-  /** Distinct `Retreat.category` values currently in the DB. */
-  retreats: string[];
-  /** Distinct `Resource.topic` values currently in the DB. */
-  resources: string[];
-};
-
 export type Thread = {
   id: string;
   title: string;

@@ -59,7 +59,9 @@ export default function AdminResourcesPage() {
         data.reason instanceof Error ? data.reason.message : "Failed to load resources",
       );
     }
-    if (topicsList.status === "fulfilled") setTopics(topicsList.value);
+    if (topicsList.status === "fulfilled") {
+      setTopics(topicsList.value.map((topic) => topic.name));
+    }
     else console.error("[Portal] getTopics failed:", topicsList.reason);
     if (typesList.status === "fulfilled") setTypes(typesList.value);
     else console.error("[Portal] getResourceTypes failed:", typesList.reason);

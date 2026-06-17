@@ -5,9 +5,9 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { useReferenceData } from "@/hooks/useReferenceData";
 import {
   createEvent,
+  getCategories,
   getEventFormats,
   getEventLocations,
   getEvents,
@@ -32,8 +32,8 @@ const EMPTY_FORM = {
 
 export default function AdminEventsPage() {
   const { refreshToken } = usePortalAuth();
-  const { data: refData } = useReferenceData();
   const [items, setItems] = useState<Event[]>([]);
+  const [topics, setTopics] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [formats, setFormats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,8 +48,9 @@ export default function AdminEventsPage() {
     setLoading(true);
     setError(null);
     const token = await refreshToken();
-    const [data, locs, fmts] = await Promise.allSettled([
+    const [data, categoriesList, locs, fmts] = await Promise.allSettled([
       getEvents(token ?? undefined),
+      getCategories("EVENT"),
       getEventLocations(),
       getEventFormats(),
     ]);
@@ -60,6 +61,9 @@ export default function AdminEventsPage() {
         data.reason instanceof Error ? data.reason.message : "Failed to load events",
       );
     }
+    if (categoriesList.status === "fulfilled") {
+      setTopics(categoriesList.value.map((category) => category.name));
+    } else console.error("[Portal] getCategories failed:", categoriesList.reason);
     if (locs.status === "fulfilled") setLocations(locs.value);
     else console.error("[Portal] getEventLocations failed:", locs.reason);
     if (fmts.status === "fulfilled") setFormats(fmts.value);
@@ -136,7 +140,7 @@ export default function AdminEventsPage() {
                 name="category"
                 value={form.category}
                 onChange={(v) => update("category", v)}
-                options={refData.events}
+                options={topics}
                 placeholder="workshop, webinar, panel…"
               />
             </label>

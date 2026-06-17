@@ -5,12 +5,12 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { useReferenceData } from "@/hooks/useReferenceData";
 import {
   createRetreat,
   getRetreatLocations,
   getRetreatSeasons,
   getRetreats,
+  getTopics,
 } from "@/lib/api";
 import type { CreateRetreatInput, Retreat } from "@/lib/types";
 
@@ -31,8 +31,8 @@ const EMPTY_FORM = {
 
 export default function AdminRetreatsPage() {
   const { refreshToken } = usePortalAuth();
-  const { data: refData } = useReferenceData();
   const [items, setItems] = useState<Retreat[]>([]);
+  const [topics, setTopics] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [seasons, setSeasons] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,8 +47,9 @@ export default function AdminRetreatsPage() {
     setLoading(true);
     setError(null);
     const token = await refreshToken();
-    const [data, locs, sns] = await Promise.allSettled([
+    const [data, topicsList, locs, sns] = await Promise.allSettled([
       getRetreats(token ?? undefined),
+      getTopics(),
       getRetreatLocations(),
       getRetreatSeasons(),
     ]);
@@ -59,6 +60,9 @@ export default function AdminRetreatsPage() {
         data.reason instanceof Error ? data.reason.message : "Failed to load retreats",
       );
     }
+    if (topicsList.status === "fulfilled") {
+      setTopics(topicsList.value.map((topic) => topic.name));
+    } else console.error("[Portal] getTopics failed:", topicsList.reason);
     if (locs.status === "fulfilled") setLocations(locs.value);
     else console.error("[Portal] getRetreatLocations failed:", locs.reason);
     if (sns.status === "fulfilled") setSeasons(sns.value);
@@ -134,7 +138,7 @@ export default function AdminRetreatsPage() {
                 name="category"
                 value={form.category}
                 onChange={(v) => update("category", v)}
-                options={refData.retreats}
+                options={topics}
                 placeholder="yoga, spa, meditation…"
               />
             </label>

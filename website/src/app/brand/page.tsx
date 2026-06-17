@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 
 export default function BrandDashboardPage() {
@@ -11,8 +12,9 @@ export default function BrandDashboardPage() {
       />
       <div className="admin-callout admin-card">
         <p>
-          You are signed in as a <strong>brand partner</strong>. Performance metrics and offer
-          management will appear on this dashboard as they are built out.
+          You are signed in as a <strong>brand partner</strong>. Submit discounts from the{" "}
+          <Link href="/brand/discounts">Discounts</Link> page — use reference categories and tiers
+          so your offers appear correctly in the mobile app.
         </p>
       </div>
     </>

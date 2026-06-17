@@ -10,7 +10,6 @@ import {
 } from "@/components/discounts/DiscountForm";
 import {
   createDiscount,
-  deleteDiscount,
   getCategories,
   getDiscountLocations,
   getDiscounts,
@@ -19,7 +18,7 @@ import {
 import { formatDiscountTierLabel } from "@/lib/reference-data";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
 
-export default function AdminDiscountsPage() {
+export default function BrandDiscountsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Discount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -42,16 +41,15 @@ export default function AdminDiscountsPage() {
       getDiscountLocations(),
     ]);
     if (data.status === "fulfilled") setItems(data.value);
+    if (categoriesList.status === "fulfilled") setCategories(categoriesList.value);
     else {
-      console.error("[Portal] getDiscounts failed:", data.reason);
       setError(
-        data.reason instanceof Error ? data.reason.message : "Failed to load discounts",
+        categoriesList.reason instanceof Error
+          ? categoriesList.reason.message
+          : "Failed to load categories",
       );
     }
-    if (categoriesList.status === "fulfilled") setCategories(categoriesList.value);
-    else console.error("[Portal] getCategories failed:", categoriesList.reason);
     if (locs.status === "fulfilled") setLocations(locs.value);
-    else console.error("[Portal] getDiscountLocations failed:", locs.reason);
     setLoading(false);
   }, [refreshToken]);
 
@@ -67,53 +65,48 @@ export default function AdminDiscountsPage() {
     try {
       const token = await refreshToken();
       await createDiscount(body, token ?? undefined);
-      setSuccess("Discount created.");
+      setSuccess("Your discount was submitted and will appear in the app.");
       setForm(EMPTY_DISCOUNT_FORM);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create discount");
+      setError(err instanceof Error ? err.message : "Failed to submit discount");
       throw err;
-    }
-  }
-
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this discount?")) return;
-    setError(null);
-    try {
-      const token = await refreshToken();
-      await deleteDiscount(id, token ?? undefined);
-      setSuccess("Discount deleted.");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
     }
   }
 
   return (
     <>
       <ContentPageHeader
-        title="Discounts"
-        description="Partner perks shown in the mobile app. Categories and tiers must match reference data so discover filters work."
+        title="Partner discounts"
+        description="Submit offers for the Rest & Rx mobile app. Pick a category from the reference list and a tier so members can filter your perk correctly."
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Add discount</h2>
-        <DiscountForm
-          form={form}
-          onChange={update}
-          categoryOptions={categoryOptions}
-          locationSuggestions={locations}
-          showFeatured
-          onSubmit={handleCreate}
-        />
+        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Submit a discount</h2>
+        {categories.length === 0 && !loading ? (
+          <p className="admin-error">
+            Discount categories could not be loaded. Check the API connection and try again.
+          </p>
+        ) : (
+          <DiscountForm
+            form={form}
+            onChange={update}
+            categoryOptions={categoryOptions}
+            locationSuggestions={locations}
+            submitLabel="Submit discount"
+            onSubmit={handleCreate}
+          />
+        )}
         {success && <p className="admin-success">{success}</p>}
         {error && <p className="admin-error">{error}</p>}
       </div>
 
       <div className="admin-card admin-table-wrap">
-        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>All discounts</h2>
+        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Live discounts in the app</h2>
         {loading ? (
           <p>Loading…</p>
+        ) : items.length === 0 ? (
+          <p>No discounts yet.</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -121,10 +114,7 @@ export default function AdminDiscountsPage() {
                 <th>Title</th>
                 <th>%</th>
                 <th>Category</th>
-                <th>Location</th>
                 <th>Tier</th>
-                <th>Featured</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -133,18 +123,7 @@ export default function AdminDiscountsPage() {
                   <td>{d.title}</td>
                   <td>{d.percentage}%</td>
                   <td>{d.category}</td>
-                  <td>{d.location ?? "—"}</td>
                   <td>{formatDiscountTierLabel(d.tier)}</td>
-                  <td>{d.isFeatured ? "Yes" : "—"}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn-danger"
-                      onClick={() => handleDelete(d.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>

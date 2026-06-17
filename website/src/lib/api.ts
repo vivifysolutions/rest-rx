@@ -8,7 +8,6 @@ import type {
   Discount,
   Event,
   ForumPost,
-  ReferenceData,
   Resource,
   Retreat,
   Thread,
@@ -118,16 +117,31 @@ export async function updateApplicationStatus(
 }
 
 // -- Reference data (used to populate form dropdowns) ------------------------
-// Every value below comes from a real DB query — either the `Topic` table
-// or `distinct` on existing content rows.
+// Field-specific lists use `/categories/...` sub-routes. Topic lists use `/topics`.
 
-export async function getReferenceData(): Promise<ReferenceData> {
-  return request<ReferenceData>("/categories");
+export type CategoryType = "EVENT" | "DISCOUNT" | "ONBOARDING" | "AFFIRMATION";
+
+export type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  type: CategoryType;
+  sortOrder: number;
+};
+
+export async function getCategories(type?: CategoryType): Promise<Category[]> {
+  return request<Category[]>(`/categories${buildQuery({ type })}`);
 }
 
 /** Canonical topic list from the `Topic` table. */
-export async function getTopics(): Promise<string[]> {
-  return request<string[]>("/categories/topics");
+export type Topic = {
+  id: string;
+  name: string;
+  description: string | null;
+};
+
+export async function getTopics(): Promise<Topic[]> {
+  return request<Topic[]>("/topics");
 }
 
 export async function getDiscountLocations(): Promise<string[]> {

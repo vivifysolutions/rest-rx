@@ -10,6 +10,7 @@ const FULL_NAV = [
   { href: "/admin/events", label: "Events" },
   { href: "/admin/retreats", label: "Retreats" },
   { href: "/admin/community", label: "Community" },
+  { href: "/admin/categories", label: "Categories" },
   { href: "/admin/users", label: "Users" },
 ];
 
