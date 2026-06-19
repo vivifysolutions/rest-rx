@@ -7,10 +7,12 @@ import { BrandShell } from "@/components/brand/BrandShell";
 import { canAccessBrandRoutes } from "@/lib/user-types";
 
 export function BrandAreaGate({ children }: { children: ReactNode }) {
-  const { user, loading, userType, hasPortalAccess, homeRoute } = usePortalAuth();
+  const { user, loading, profile, profileError, userType, hasPortalAccess, homeRoute } =
+    usePortalAuth();
   const router = useRouter();
   const pathname = usePathname();
   const allowed = canAccessBrandRoutes(userType);
+  const profileMissing = !loading && !!user && !profile;
 
   useEffect(() => {
     if (loading) return;
@@ -18,6 +20,11 @@ export function BrandAreaGate({ children }: { children: ReactNode }) {
       router.replace(`/portal/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
+    if (profileMissing && profileError) {
+      router.replace("/portal/login?error=profile");
+      return;
+    }
+    if (!profile) return;
     if (!hasPortalAccess) {
       router.replace("/portal/unauthorized");
       return;
@@ -25,12 +32,44 @@ export function BrandAreaGate({ children }: { children: ReactNode }) {
     if (!allowed) {
       router.replace(homeRoute);
     }
-  }, [loading, user, hasPortalAccess, allowed, homeRoute, router, pathname]);
+  }, [
+    loading,
+    user,
+    profile,
+    profileMissing,
+    profileError,
+    hasPortalAccess,
+    allowed,
+    homeRoute,
+    router,
+    pathname,
+  ]);
 
-  if (loading || !user || !allowed) {
+  if (loading || !user) {
     return (
       <div className="admin-login-page">
         <p>Loading…</p>
+      </div>
+    );
+  }
+
+  if (profileMissing) {
+    return (
+      <div className="admin-login-page">
+        <div className="admin-login-card">
+          <h1 className="font-subheading">Couldn&apos;t load your account</h1>
+          <p className="admin-error" style={{ marginTop: "0.75rem" }}>
+            {profileError ?? "Still connecting to Rest & Rx…"}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <div className="admin-login-page">
+        <p>Redirecting…</p>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-export function buildQuery(params?: Record<string, string | number | undefined>): string {
+export function buildQuery(params?: Record<string, string | number | boolean | undefined>): string {
   if (!params) return "";
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -9,3 +9,5 @@ export function buildQuery(params?: Record<string, string | number | undefined>)
   const qs = search.toString();
   return qs ? `?${qs}` : "";
 }
+
+export const ADMIN_QUERY = { includeUnpublished: true } as const;

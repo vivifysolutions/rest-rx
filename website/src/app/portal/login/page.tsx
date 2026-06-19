@@ -1,76 +1,37 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
 
-function ApiStatusBadge() {
-  const { apiUrl, apiStatus, pingApi } = usePortalAuth();
+function ConnectionStatus() {
+  const { apiStatus, pingApi } = usePortalAuth();
 
-  const config = (() => {
-    switch (apiStatus) {
-      case "ok":
-        return { color: "#1e7a4c", bg: "#e6f4ec", label: "API connected" };
-      case "checking":
-        return { color: "#5a6c7d", bg: "#eef2f6", label: "Checking API…" };
-      case "unreachable":
-        return { color: "#b03a2e", bg: "#fdecea", label: "API unreachable" };
-      case "not-configured":
-        return { color: "#b03a2e", bg: "#fdecea", label: "API not configured" };
-      default:
-        return { color: "#5a6c7d", bg: "#eef2f6", label: "API status unknown" };
-    }
-  })();
+  if (apiStatus === "ok") return null;
+
+  const isChecking = apiStatus === "checking";
+  const isUnreachable = apiStatus === "unreachable" || apiStatus === "not-configured";
 
   return (
     <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "0.5rem",
-        background: config.bg,
-        color: config.color,
-        padding: "0.5rem 0.75rem",
-        borderRadius: 8,
-        fontSize: "0.8rem",
-        marginBottom: "1rem",
-      }}
+      className={`portal-login-alert ${
+        isChecking ? "portal-login-alert-muted" : "portal-login-alert-error"
+      }`}
+      role="status"
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-        <span
-          aria-hidden
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: "50%",
-            background: config.color,
-            display: "inline-block",
-          }}
-        />
-        <span style={{ fontWeight: 600 }}>{config.label}</span>
-        {apiUrl && (
-          <code style={{ fontSize: "0.75rem", opacity: 0.85 }}>{apiUrl}</code>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={pingApi}
-        style={{
-          background: "transparent",
-          border: `1px solid ${config.color}`,
-          color: config.color,
-          fontSize: "0.7rem",
-          fontWeight: 600,
-          padding: "0.15rem 0.5rem",
-          borderRadius: 4,
-          cursor: "pointer",
-        }}
-      >
-        Retry
-      </button>
+      <p>
+        {isChecking
+          ? "Connecting to Rest & Rx…"
+          : "We couldn't reach the server. Make sure the API is running, then try again."}
+      </p>
+      {!isChecking && (
+        <button type="button" className="portal-login-alert-btn" onClick={pingApi}>
+          Try again
+        </button>
+      )}
     </div>
   );
 }
@@ -95,8 +56,8 @@ export default function PortalLoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const denied = searchParams.get("error") === "unauthorized";
+  const profileLoadFailed = searchParams.get("error") === "profile";
 
-  // Redirect once Firebase user + API profile are both present.
   useEffect(() => {
     if (loading) return;
     if (!user || !profile) return;
@@ -107,7 +68,6 @@ export default function PortalLoginPage() {
     }
   }, [loading, user, profile, hasPortalAccess, homeRoute, router]);
 
-  // Stop the spinner once profile has either loaded or failed.
   useEffect(() => {
     if (!submitting) return;
     if (profile || profileError) {
@@ -121,102 +81,121 @@ export default function PortalLoginPage() {
     setSubmitting(true);
     try {
       await signIn(email, password);
-      // Profile load + redirect happens in effects above.
     } catch (err) {
       setError(getFirebaseAuthErrorMessage(err));
       setSubmitting(false);
     }
   }
 
-  // Show the most relevant error: form error first, otherwise profile error.
   const displayError = error ?? (user ? profileError : null);
-
-  // Note: don't disable on `loading` (provider's auth-state-init flag) — that
-  // would silently block the very first click. Disable only while submitting
-  // or if the API URL isn't configured.
-  const formDisabled = submitting || !apiConfigured;
+  const formDisabled =
+    submitting || !apiConfigured || apiStatus === "unreachable" || apiStatus === "not-configured";
 
   return (
-    <div className="admin-login-page">
-      <div className="admin-login-card">
-        <h1>Sign in</h1>
-        <p style={{ color: "var(--text-muted)", marginBottom: "1rem", fontSize: "0.9rem" }}>
-          Rest & Rx partner and team access
+    <div className="portal-login">
+      <div className="portal-login-backdrop" aria-hidden />
+
+      <section className="portal-login-brand" aria-label="Rest & Rx">
+        <Link href="/" className="portal-login-logo-link">
+          <Image
+            src="/logo.png"
+            alt="Rest & Rx"
+            width={180}
+            height={90}
+            className="portal-login-logo"
+            priority
+          />
+        </Link>
+        <p className="portal-login-eyebrow">Management portal</p>
+        <h1 className="portal-login-headline font-subheading">
+          Wellness tools for the team behind the care
+        </h1>
+        <p className="portal-login-lead">
+          Sign in to manage content, review member applications, and moderate the
+          Rest & Rx community.
         </p>
+        <ul className="portal-login-features">
+          <li>Approve healthcare professional applications</li>
+          <li>Publish partner offers, events, and resources</li>
+          <li>Review flagged community content</li>
+        </ul>
+      </section>
 
-        <ApiStatusBadge />
+      <section className="portal-login-panel">
+        <div className="portal-login-card">
+          <div className="portal-login-card-header">
+            <h2 className="font-subheading">Welcome back</h2>
+            <p>Sign in with your team credentials</p>
+          </div>
 
-        {!apiConfigured && (
-          <p className="admin-callout" style={{ marginBottom: "1rem" }}>
-            <strong>API not configured.</strong> In <code>rest-rx/website/.env.local</code>, set{" "}
-            <code>NEXT_PUBLIC_API_URL</code> (e.g. <code>http://localhost:3000</code>), then
-            restart the dev server.
-          </p>
-        )}
+          <ConnectionStatus />
 
-        {apiStatus === "unreachable" && apiConfigured && (
-          <p className="admin-callout" style={{ marginBottom: "1rem" }}>
-            <strong>Cannot reach the API.</strong> Make sure <code>rest-and-rx/api</code> is
-            running on the URL above, and that its <code>CORS_ORIGIN</code> allows{" "}
-            <code>http://localhost:9000</code>.
-          </p>
-        )}
+          {profileLoadFailed && profileError && (
+            <div className="portal-login-alert portal-login-alert-error" role="alert">
+              <p>{profileError}</p>
+            </div>
+          )}
 
-        {denied && (
-          <p className="admin-error" style={{ marginBottom: "1rem" }}>
-            Your account does not have access to this portal.
-          </p>
-        )}
+          {denied && (
+            <div className="portal-login-alert portal-login-alert-error" role="alert">
+              <p>Your account doesn&apos;t have access to this portal. Contact an administrator.</p>
+            </div>
+          )}
 
-        <form className="admin-form" onSubmit={handleSubmit}>
-          <label>
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoComplete="email"
+          <form className="portal-login-form" onSubmit={handleSubmit}>
+            <label className="portal-login-field">
+              <span>Email address</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="you@example.com"
+                disabled={formDisabled}
+              />
+            </label>
+            <label className="portal-login-field">
+              <span>Password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                disabled={formDisabled}
+              />
+            </label>
+
+            {displayError && (
+              <p className="portal-login-form-error" role="alert">
+                {displayError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="portal-login-submit"
               disabled={formDisabled}
-            />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-              disabled={formDisabled}
-            />
-          </label>
-          {displayError && <p className="admin-error">{displayError}</p>}
-          <button
-            type="submit"
-            className="admin-btn admin-btn-primary"
-            disabled={formDisabled}
-            style={{ marginTop: "0.5rem" }}
-          >
-            {submitting
-              ? user
-                ? "Loading profile…"
-                : "Signing in…"
-              : "Continue"}
-          </button>
-        </form>
+            >
+              {submitting
+                ? user
+                  ? "Loading your workspace…"
+                  : "Signing in…"
+                : "Sign in"}
+            </button>
+          </form>
 
-        <p style={{ marginTop: "1.5rem", fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-          Step 1 verifies your password with Firebase, step 2 fetches your role from the Rest & Rx
-          API. Open the browser console for full <code>[Portal]</code> logs.
-        </p>
+          <p className="portal-login-footer">
+            <Link href="/">← Back to Rest & Rx</Link>
+          </p>
+        </div>
 
-        <p style={{ marginTop: "1rem", fontSize: "0.85rem" }}>
-          <Link href="/" style={{ color: "var(--astral)" }}>
-            ← Back to Rest & Rx
-          </Link>
+        <p className="portal-login-legal">
+          For admins, brand partners, and expert contributors only.
         </p>
-      </div>
+      </section>
     </div>
   );
 }

@@ -11,8 +11,15 @@ export type ApiUser = {
   lastName: string | null;
   professionalRole: string | null;
   specialty: string | null;
+  npiNumber?: string | null;
+  phone?: string | null;
   userType: UserType;
   applicationStatus: ApplicationStatus;
+  identityPhotoUrl?: string | null;
+  workCredentialPhotoUrl?: string | null;
+  onboardingAnswers?: Record<string, unknown> | null;
+  onboardingCompletedAt?: string | null;
+  applicationSubmittedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -34,6 +41,7 @@ export type Discount = {
   claimLink: string | null;
   image: string | null;
   isFeatured: boolean;
+  isPublished: boolean;
   expiryDate: string | null;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +59,7 @@ export type CreateDiscountInput = {
   claimLink?: string;
   image?: string;
   isFeatured?: boolean;
+  isPublished?: boolean;
   expiryDate?: string;
 };
 
@@ -68,9 +77,11 @@ export type Event = {
   price: number | null;
   registrationUrl: string | null;
   isFeatured: boolean;
+  isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type CreateEventInput = {
@@ -85,6 +96,7 @@ export type CreateEventInput = {
   price?: number;
   registrationUrl?: string;
   isFeatured?: boolean;
+  isPublished?: boolean;
   startDate?: string;
   endDate?: string;
 };
@@ -98,9 +110,11 @@ export type Resource = {
   duration: string | null;
   topic: string | null;
   subTopic: string | null;
-  tier: string | null;
   image: string | null;
+  images: string[];
+  mediaUrl: string | null;
   isFeatured: boolean;
+  isPublished: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -112,9 +126,11 @@ export type CreateResourceInput = {
   duration?: string;
   topic?: string;
   subTopic?: string;
-  tier?: string;
   image?: string;
+  images?: string[];
+  mediaUrl?: string;
   isFeatured?: boolean;
+  isPublished?: boolean;
 };
 
 /** Mirrors Prisma `Retreat`. */
@@ -130,9 +146,12 @@ export type Retreat = {
   rating: number | null;
   image: string | null;
   isFeatured: boolean;
+  isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
+  bookingUrl?: string | null;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type CreateRetreatInput = {
@@ -146,8 +165,10 @@ export type CreateRetreatInput = {
   rating?: number;
   image?: string;
   isFeatured?: boolean;
+  isPublished?: boolean;
   startDate?: string;
   endDate?: string;
+  bookingUrl?: string;
 };
 
 export type Thread = {
@@ -181,4 +202,50 @@ export type ForumPost = {
   };
   likeCount: number;
   replyCount: number;
+};
+
+export type ContentReport = {
+  id: string;
+  contentType: "thread" | "post" | "comment";
+  contentId: string;
+  reason: string | null;
+  status: "pending" | "reviewed" | "dismissed";
+  createdAt: string;
+  contentPreview?: string | null;
+  reporter: {
+    id: string;
+    email: string | null;
+    displayName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+  };
+};
+
+export type Group = {
+  id: string;
+  name: string;
+  description: string | null;
+  status: "active" | "inactive" | "archived";
+  topic?: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+  memberCount: number;
+  createdAt: string;
+};
+
+export type Affirmation = {
+  id: string;
+  topicSlug: string;
+  topicTitle: string;
+  body: string;
+  faithBased: boolean;
+  sortOrder: number;
+};
+
+export type AffirmationTopic = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
 };

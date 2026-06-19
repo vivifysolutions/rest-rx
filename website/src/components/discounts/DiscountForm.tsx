@@ -1,10 +1,12 @@
 "use client";
 
 import { FormEvent } from "react";
-import { ComboInput } from "@/components/admin/ComboInput";
+import { LocationField } from "@/components/admin/LocationField";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { ReferenceSelect } from "@/components/admin/ReferenceSelect";
 import { DISCOUNT_TIER_OPTIONS } from "@/lib/reference-data";
+import type { LocationValue } from "@/lib/address";
+import { EMPTY_LOCATION } from "@/lib/address";
 import type { CreateDiscountInput } from "@/lib/types";
 
 export type DiscountFormValues = {
@@ -12,9 +14,7 @@ export type DiscountFormValues = {
   description: string;
   percentage: string;
   category: string;
-  location: string;
-  latitude: string;
-  longitude: string;
+  location: LocationValue;
   tier: string;
   claimLink: string;
   image: string;
@@ -27,9 +27,7 @@ export const EMPTY_DISCOUNT_FORM: DiscountFormValues = {
   description: "",
   percentage: "",
   category: "",
-  location: "",
-  latitude: "",
-  longitude: "",
+  location: EMPTY_LOCATION,
   tier: "",
   claimLink: "",
   image: "",
@@ -41,7 +39,6 @@ type Props = {
   form: DiscountFormValues;
   onChange: <K extends keyof DiscountFormValues>(key: K, value: DiscountFormValues[K]) => void;
   categoryOptions: { value: string; label: string }[];
-  locationSuggestions: string[];
   showFeatured?: boolean;
   submitLabel?: string;
   onSubmit: (body: CreateDiscountInput) => Promise<void>;
@@ -51,7 +48,6 @@ export function DiscountForm({
   form,
   onChange,
   categoryOptions,
-  locationSuggestions,
   showFeatured = false,
   submitLabel = "Create discount",
   onSubmit,
@@ -63,9 +59,7 @@ export function DiscountForm({
       description: form.description.trim() || undefined,
       percentage: Number(form.percentage),
       category: form.category.trim(),
-      location: form.location.trim() || undefined,
-      latitude: form.latitude ? Number(form.latitude) : undefined,
-      longitude: form.longitude ? Number(form.longitude) : undefined,
+      location: form.location.location.trim() || undefined,
       tier: form.tier.trim() || undefined,
       claimLink: form.claimLink.trim() || undefined,
       image: form.image.trim() || undefined,
@@ -129,44 +123,14 @@ export function DiscountForm({
         />
       </label>
 
-      <label>
-        Location
-        <ComboInput
-          name="location"
-          value={form.location}
-          onChange={(v) => onChange("location", v)}
-          options={locationSuggestions}
-          placeholder="City, State (e.g. Chicago, IL)"
-        />
-      </label>
-
-      <div className="admin-form-row">
-        <label>
-          Latitude
-          <input
-            type="number"
-            step="any"
-            min={-90}
-            max={90}
-            value={form.latitude}
-            onChange={(e) => onChange("latitude", e.target.value)}
-          />
-        </label>
-        <label>
-          Longitude
-          <input
-            type="number"
-            step="any"
-            min={-180}
-            max={180}
-            value={form.longitude}
-            onChange={(e) => onChange("longitude", e.target.value)}
-          />
-        </label>
-      </div>
+      <LocationField
+        value={form.location}
+        onChange={(loc) => onChange("location", loc)}
+        placeholder="City, state, or street address"
+      />
 
       <label>
-        Claim link
+        Partner redemption link
         <input
           type="url"
           value={form.claimLink}
@@ -193,7 +157,7 @@ export function DiscountForm({
             checked={form.isFeatured}
             onChange={(e) => onChange("isFeatured", e.target.checked)}
           />
-          Featured
+          Featured on Discover home
         </label>
       )}
 

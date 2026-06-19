@@ -1,6 +1,9 @@
-import { buildQuery } from "./buildQuery";
+import { buildQuery, ADMIN_QUERY } from "./buildQuery";
 import type {
   ApiUser,
+  Affirmation,
+  AffirmationTopic,
+  ContentReport,
   CreateDiscountInput,
   CreateEventInput,
   CreateResourceInput,
@@ -8,6 +11,7 @@ import type {
   Discount,
   Event,
   ForumPost,
+  Group,
   Resource,
   Retreat,
   Thread,
@@ -92,6 +96,10 @@ export async function listUsers(
   return request<ApiUser[]>(`/users${buildQuery(params)}`, { token });
 }
 
+export async function getUser(token: string, userId: string): Promise<ApiUser> {
+  return request<ApiUser>(`/users/${userId}`, { token });
+}
+
 export async function updateUserType(
   token: string,
   userId: string,
@@ -144,6 +152,16 @@ export async function getTopics(): Promise<Topic[]> {
   return request<Topic[]>("/topics");
 }
 
+import type { AddressSuggestion } from "./address";
+
+export async function searchAddresses(q: string): Promise<AddressSuggestion[]> {
+  const trimmed = q.trim();
+  if (trimmed.length < 3) return [];
+  return request<AddressSuggestion[]>(
+    `/addresses/search${buildQuery({ q: trimmed })}`,
+  );
+}
+
 export async function getDiscountLocations(): Promise<string[]> {
   return request<string[]>("/categories/discounts/locations");
 }
@@ -172,10 +190,6 @@ export async function getResourceTypes(): Promise<string[]> {
   return request<string[]>("/categories/resources/types");
 }
 
-export async function getResourceTiers(): Promise<string[]> {
-  return request<string[]>("/categories/resources/tiers");
-}
-
 export async function getResourceSubTopics(topic: string): Promise<string[]> {
   if (!topic) return [];
   return request<string[]>(
@@ -183,10 +197,22 @@ export async function getResourceSubTopics(topic: string): Promise<string[]> {
   );
 }
 
+export type ResourceTopic = {
+  name: string;
+  description: string;
+};
+
+export async function getResourceTopics(): Promise<ResourceTopic[]> {
+  return request<ResourceTopic[]>("/categories/resources/topics");
+}
+
 // -- Discounts ---------------------------------------------------------------
 
 export async function getDiscounts(token?: string): Promise<Discount[]> {
-  return request<Discount[]>("/discounts", { token });
+  return request<Discount[]>(
+    `/discounts${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
 }
 
 export async function createDiscount(
@@ -196,14 +222,32 @@ export async function createDiscount(
   return request<Discount>("/discounts", { method: "POST", token, body });
 }
 
+export async function updateDiscount(
+  id: string,
+  body: Partial<CreateDiscountInput>,
+  token?: string,
+): Promise<Discount> {
+  return request<Discount>(`/discounts/${id}`, { method: "PATCH", token, body });
+}
+
 export async function deleteDiscount(id: string, token?: string): Promise<void> {
   await request<void>(`/discounts/${id}`, { method: "DELETE", token });
+}
+
+export async function getDiscountById(id: string, token?: string): Promise<Discount> {
+  return request<Discount>(
+    `/discounts/${id}${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
 }
 
 // -- Events ------------------------------------------------------------------
 
 export async function getEvents(token?: string): Promise<Event[]> {
-  return request<Event[]>("/events", { token });
+  return request<Event[]>(
+    `/events${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
 }
 
 export async function createEvent(
@@ -213,10 +257,32 @@ export async function createEvent(
   return request<Event>("/events", { method: "POST", token, body });
 }
 
+export async function updateEvent(
+  id: string,
+  body: Partial<CreateEventInput>,
+  token?: string,
+): Promise<Event> {
+  return request<Event>(`/events/${id}`, { method: "PATCH", token, body });
+}
+
+export async function deleteEvent(id: string, token?: string): Promise<void> {
+  await request<void>(`/events/${id}`, { method: "DELETE", token });
+}
+
+export async function getEventById(id: string, token?: string): Promise<Event> {
+  return request<Event>(
+    `/events/${id}${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
+}
+
 // -- Resources ---------------------------------------------------------------
 
 export async function getResources(token?: string): Promise<Resource[]> {
-  return request<Resource[]>("/resources", { token });
+  return request<Resource[]>(
+    `/resources${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
 }
 
 export async function createResource(
@@ -226,10 +292,32 @@ export async function createResource(
   return request<Resource>("/resources", { method: "POST", token, body });
 }
 
+export async function updateResource(
+  id: string,
+  body: Partial<CreateResourceInput>,
+  token?: string,
+): Promise<Resource> {
+  return request<Resource>(`/resources/${id}`, { method: "PATCH", token, body });
+}
+
+export async function deleteResource(id: string, token?: string): Promise<void> {
+  await request<void>(`/resources/${id}`, { method: "DELETE", token });
+}
+
+export async function getResourceById(id: string, token?: string): Promise<Resource> {
+  return request<Resource>(
+    `/resources/${id}${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
+}
+
 // -- Retreats ----------------------------------------------------------------
 
 export async function getRetreats(token?: string): Promise<Retreat[]> {
-  return request<Retreat[]>("/retreats", { token });
+  return request<Retreat[]>(
+    `/retreats${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
 }
 
 export async function createRetreat(
@@ -237,6 +325,25 @@ export async function createRetreat(
   token?: string,
 ): Promise<Retreat> {
   return request<Retreat>("/retreats", { method: "POST", token, body });
+}
+
+export async function updateRetreat(
+  id: string,
+  body: Partial<CreateRetreatInput>,
+  token?: string,
+): Promise<Retreat> {
+  return request<Retreat>(`/retreats/${id}`, { method: "PATCH", token, body });
+}
+
+export async function deleteRetreat(id: string, token?: string): Promise<void> {
+  await request<void>(`/retreats/${id}`, { method: "DELETE", token });
+}
+
+export async function getRetreatById(id: string, token?: string): Promise<Retreat> {
+  return request<Retreat>(
+    `/retreats/${id}${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    { token },
+  );
 }
 
 // -- Forum -------------------------------------------------------------------
@@ -259,4 +366,105 @@ export async function getForumPosts(
     token,
   });
   return res.data;
+}
+
+// -- Moderation --------------------------------------------------------------
+
+export async function moderateThread(
+  token: string,
+  id: string,
+  body: { isPinned?: boolean; isLocked?: boolean },
+): Promise<Thread> {
+  return request<Thread>(`/threads/${id}/moderate`, { method: "PATCH", token, body });
+}
+
+export async function deleteThread(token: string, id: string): Promise<void> {
+  await request<void>(`/threads/${id}`, { method: "DELETE", token });
+}
+
+export async function deletePost(token: string, id: string): Promise<void> {
+  await request<void>(`/posts/${id}`, { method: "DELETE", token });
+}
+
+export async function deleteComment(token: string, id: string): Promise<void> {
+  await request<void>(`/comments/${id}`, { method: "DELETE", token });
+}
+
+export async function getReports(
+  token: string,
+  status?: string,
+): Promise<ContentReport[]> {
+  return request<ContentReport[]>(`/reports${buildQuery({ status })}`, { token });
+}
+
+export async function updateReportStatus(
+  token: string,
+  id: string,
+  status: "pending" | "reviewed" | "dismissed",
+): Promise<ContentReport> {
+  return request<ContentReport>(`/reports/${id}/status`, {
+    method: "PATCH",
+    token,
+    body: { status },
+  });
+}
+
+// -- Groups ------------------------------------------------------------------
+
+export async function getGroups(params?: {
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<Group[]> {
+  const res = await request<{ groups: Group[] }>(`/groups${buildQuery(params)}`);
+  return res.groups;
+}
+
+export async function updateGroupStatus(
+  token: string,
+  id: string,
+  status: "active" | "inactive" | "archived",
+): Promise<Group> {
+  return request<Group>(`/groups/${id}/status`, {
+    method: "PATCH",
+    token,
+    body: { status },
+  });
+}
+
+// -- Affirmations ------------------------------------------------------------
+
+export async function getAffirmationTopics(): Promise<AffirmationTopic[]> {
+  return request<AffirmationTopic[]>("/affirmations/topics");
+}
+
+export async function getAffirmations(params?: {
+  topicSlug?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ items: Affirmation[]; total: number }> {
+  const res = await request<{ items: Affirmation[]; total: number }>(
+    `/affirmations${buildQuery(params)}`,
+  );
+  return res;
+}
+
+export async function createAffirmation(
+  token: string,
+  body: { topicSlug: string; body: string; faithBased?: boolean; sortOrder?: number },
+): Promise<Affirmation> {
+  return request<Affirmation>("/affirmations", { method: "POST", token, body });
+}
+
+export async function updateAffirmation(
+  token: string,
+  id: string,
+  body: Partial<{ topicSlug: string; body: string; faithBased: boolean; sortOrder: number }>,
+): Promise<Affirmation> {
+  return request<Affirmation>(`/affirmations/${id}`, { method: "PATCH", token, body });
+}
+
+export async function deleteAffirmation(token: string, id: string): Promise<void> {
+  await request<void>(`/affirmations/${id}`, { method: "DELETE", token });
 }

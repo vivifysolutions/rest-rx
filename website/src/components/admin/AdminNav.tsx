@@ -5,13 +5,16 @@ import { usePathname } from "next/navigation";
 
 const FULL_NAV = [
   { href: "/admin", label: "Dashboard", exact: true },
-  { href: "/admin/discounts", label: "Discounts" },
-  { href: "/admin/resources", label: "Resources" },
+  { href: "/admin/users", label: "Applications" },
+  { href: "/admin/discounts", label: "Partnerships" },
   { href: "/admin/events", label: "Events" },
+  { href: "/admin/resources", label: "Resources" },
   { href: "/admin/retreats", label: "Retreats" },
+  { href: "/admin/affirmations", label: "Affirmations" },
   { href: "/admin/community", label: "Community" },
+  { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/groups", label: "Groups" },
   { href: "/admin/categories", label: "Categories" },
-  { href: "/admin/users", label: "Users" },
 ];
 
 const EXPERT_NAV = [{ href: "/admin/community", label: "Community", exact: true }];

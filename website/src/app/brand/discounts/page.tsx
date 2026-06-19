@@ -11,7 +11,6 @@ import {
 import {
   createDiscount,
   getCategories,
-  getDiscountLocations,
   getDiscounts,
   type Category,
 } from "@/lib/api";
@@ -22,7 +21,6 @@ export default function BrandDiscountsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Discount[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -35,10 +33,9 @@ export default function BrandDiscountsPage() {
     setLoading(true);
     setError(null);
     const token = await refreshToken();
-    const [data, categoriesList, locs] = await Promise.allSettled([
+    const [data, categoriesList] = await Promise.allSettled([
       getDiscounts(token ?? undefined),
       getCategories("DISCOUNT"),
-      getDiscountLocations(),
     ]);
     if (data.status === "fulfilled") setItems(data.value);
     if (categoriesList.status === "fulfilled") setCategories(categoriesList.value);
@@ -49,7 +46,6 @@ export default function BrandDiscountsPage() {
           : "Failed to load categories",
       );
     }
-    if (locs.status === "fulfilled") setLocations(locs.value);
     setLoading(false);
   }, [refreshToken]);
 
@@ -92,7 +88,6 @@ export default function BrandDiscountsPage() {
             form={form}
             onChange={update}
             categoryOptions={categoryOptions}
-            locationSuggestions={locations}
             submitLabel="Submit discount"
             onSubmit={handleCreate}
           />

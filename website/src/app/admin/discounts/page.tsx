@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import {
   DiscountForm,
   EMPTY_DISCOUNT_FORM,
@@ -12,9 +14,8 @@ import {
   createDiscount,
   deleteDiscount,
   getCategories,
-  getDiscountLocations,
   getDiscounts,
-  type Category,
+  updateDiscount,
 } from "@/lib/api";
 import { formatDiscountTierLabel } from "@/lib/reference-data";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
@@ -22,8 +23,7 @@ import type { CreateDiscountInput, Discount } from "@/lib/types";
 export default function AdminDiscountsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Discount[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [locations, setLocations] = useState<string[]>([]);
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -36,30 +36,25 @@ export default function AdminDiscountsPage() {
     setLoading(true);
     setError(null);
     const token = await refreshToken();
-    const [data, categoriesList, locs] = await Promise.allSettled([
+    const [data, categoriesList] = await Promise.allSettled([
       getDiscounts(token ?? undefined),
       getCategories("DISCOUNT"),
-      getDiscountLocations(),
     ]);
     if (data.status === "fulfilled") setItems(data.value);
     else {
-      console.error("[Portal] getDiscounts failed:", data.reason);
       setError(
         data.reason instanceof Error ? data.reason.message : "Failed to load discounts",
       );
     }
-    if (categoriesList.status === "fulfilled") setCategories(categoriesList.value);
-    else console.error("[Portal] getCategories failed:", categoriesList.reason);
-    if (locs.status === "fulfilled") setLocations(locs.value);
-    else console.error("[Portal] getDiscountLocations failed:", locs.reason);
+    if (categoriesList.status === "fulfilled") {
+      setCategories(categoriesList.value.map((c) => ({ value: c.name, label: c.name })));
+    }
     setLoading(false);
   }, [refreshToken]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  const categoryOptions = categories.map((c) => ({ value: c.name, label: c.name }));
 
   async function handleCreate(body: CreateDiscountInput) {
     setError(null);
@@ -76,24 +71,24 @@ export default function AdminDiscountsPage() {
     }
   }
 
+  async function handleTogglePublish(item: Discount) {
+    const token = await refreshToken();
+    await updateDiscount(item.id, { isPublished: !item.isPublished }, token ?? undefined);
+    await load();
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Delete this discount?")) return;
-    setError(null);
-    try {
-      const token = await refreshToken();
-      await deleteDiscount(id, token ?? undefined);
-      setSuccess("Discount deleted.");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete");
-    }
+    const token = await refreshToken();
+    await deleteDiscount(id, token ?? undefined);
+    await load();
   }
 
   return (
     <>
       <ContentPageHeader
         title="Discounts"
-        description="Partner perks shown in the mobile app. Categories and tiers must match reference data so discover filters work."
+        description="Partner perks and brand partnerships shown in the mobile app."
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
@@ -101,9 +96,9 @@ export default function AdminDiscountsPage() {
         <DiscountForm
           form={form}
           onChange={update}
-          categoryOptions={categoryOptions}
-          locationSuggestions={locations}
+          categoryOptions={categories}
           showFeatured
+          submitLabel="Create discount"
           onSubmit={handleCreate}
         />
         {success && <p className="admin-success">{success}</p>}
@@ -121,29 +116,32 @@ export default function AdminDiscountsPage() {
                 <th>Title</th>
                 <th>%</th>
                 <th>Category</th>
-                <th>Location</th>
                 <th>Tier</th>
+                <th>Status</th>
                 <th>Featured</th>
-                <th></th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map((d) => (
                 <tr key={d.id}>
-                  <td>{d.title}</td>
+                  <td>
+                    <AdminTitleLink href={`/admin/discounts/${d.id}`}>{d.title}</AdminTitleLink>
+                  </td>
                   <td>{d.percentage}%</td>
                   <td>{d.category}</td>
-                  <td>{d.location ?? "—"}</td>
                   <td>{formatDiscountTierLabel(d.tier)}</td>
+                  <td>
+                    <PublishedBadge isPublished={d.isPublished ?? true} />
+                  </td>
                   <td>{d.isFeatured ? "Yes" : "—"}</td>
                   <td>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn-danger"
-                      onClick={() => handleDelete(d.id)}
-                    >
-                      Delete
-                    </button>
+                    <ContentRowActions
+                      isPublished={d.isPublished ?? true}
+                      onTogglePublish={() => handleTogglePublish(d)}
+                      editHref={`/admin/discounts/${d.id}/edit`}
+                      onDelete={() => handleDelete(d.id)}
+                    />
                   </td>
                 </tr>
               ))}

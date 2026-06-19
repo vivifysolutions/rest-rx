@@ -2,28 +2,33 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
-import {
-  listUsers,
-  updateApplicationStatus,
-  updateUserType,
-} from "@/lib/api";
-import type { ApiUser, ApplicationStatus, UserType } from "@/lib/types";
+import { listUsers } from "@/lib/api";
+import type { ApiUser } from "@/lib/types";
 import { USER_TYPE_LABELS } from "@/lib/user-types";
+import { formatApplicationStatus } from "@/lib/admin-labels";
 
-const USER_TYPES: UserType[] = ["member", "admin", "brand_partner", "expert"];
-const APPLICATION_STATUSES: ApplicationStatus[] = [
-  "pending",
-  "approved",
-  "rejected",
-];
+function displayName(u: ApiUser): string {
+  return (
+    [u.firstName, u.lastName].filter(Boolean).join(" ") || u.displayName || "—"
+  );
+}
+
+function verificationSummary(u: ApiUser): string {
+  const hasIdentity = Boolean(u.identityPhotoUrl);
+  const hasCredential = Boolean(u.workCredentialPhotoUrl);
+  if (hasIdentity && hasCredential) return "Photos submitted";
+  if (hasIdentity || hasCredential) return "Partial";
+  return "None";
+}
 
 export default function AdminUsersPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("pending");
   const [filterType, setFilterType] = useState<string>("");
 
   const load = useCallback(async () => {
@@ -38,7 +43,7 @@ export default function AdminUsersPage() {
       });
       setItems(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load users");
+      setError(e instanceof Error ? e.message : "Failed to load applications");
     } finally {
       setLoading(false);
     }
@@ -48,44 +53,28 @@ export default function AdminUsersPage() {
     load();
   }, [load]);
 
-  async function handleUserTypeChange(userId: string, userType: UserType) {
-    const token = await refreshToken();
-    if (!token) return;
-    await updateUserType(token, userId, userType);
-    await load();
-  }
-
-  async function handleStatusChange(userId: string, applicationStatus: ApplicationStatus) {
-    const token = await refreshToken();
-    if (!token) return;
-    await updateApplicationStatus(token, userId, applicationStatus);
-    await load();
-  }
-
   return (
     <>
       <ContentPageHeader
-        title="Users"
-        description="Manage platform roles and healthcare application review status."
+        title="Applications"
+        description="Review healthcare professional applications, view submitted profiles and verification photos, then approve or reject access."
       />
 
-      <div className="admin-card" style={{ marginBottom: "1rem", display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-        <label style={{ fontSize: "0.85rem" }}>
-          Application status{" "}
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+        <label>
+          Application status
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="">All</option>
-            {APPLICATION_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
+            <option value="">All applications</option>
+            <option value="pending">Pending review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
           </select>
         </label>
-        <label style={{ fontSize: "0.85rem" }}>
-          User type{" "}
+        <label>
+          Role
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="">All</option>
-            {USER_TYPES.map((t) => (
+            <option value="">All roles</option>
+            {(["member", "admin", "brand_partner", "expert"] as const).map((t) => (
               <option key={t} value={t}>
                 {USER_TYPE_LABELS[t]}
               </option>
@@ -103,51 +92,51 @@ export default function AdminUsersPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Email</th>
                 <th>Name</th>
-                <th>User type</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Professional info</th>
+                <th>Verification</th>
                 <th>Application</th>
+                <th>Submitted</th>
               </tr>
             </thead>
             <tbody>
               {items.map((u) => (
                 <tr key={u.id}>
+                  <td>
+                    <AdminTitleLink href={`/admin/users/${u.id}`}>
+                      {displayName(u)}
+                    </AdminTitleLink>
+                  </td>
                   <td>{u.email ?? "—"}</td>
+                  <td>{USER_TYPE_LABELS[u.userType]}</td>
                   <td>
-                    {[u.firstName, u.lastName].filter(Boolean).join(" ") ||
-                      u.displayName ||
-                      "—"}
+                    {[u.professionalRole, u.specialty].filter(Boolean).join(" · ") || "—"}
                   </td>
+                  <td>{verificationSummary(u)}</td>
                   <td>
-                    <select
-                      value={u.userType}
-                      onChange={(e) =>
-                        handleUserTypeChange(u.id, e.target.value as UserType)
+                    <span
+                      className={`admin-badge ${
+                        u.applicationStatus === "approved"
+                          ? "admin-badge-success"
+                          : u.applicationStatus === "pending"
+                            ? "admin-badge-muted"
+                            : ""
+                      }`}
+                      style={
+                        u.applicationStatus === "rejected"
+                          ? { background: "#fde8e8", color: "#b42318" }
+                          : undefined
                       }
                     >
-                      {USER_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {USER_TYPE_LABELS[t]}
-                        </option>
-                      ))}
-                    </select>
+                      {formatApplicationStatus(u.applicationStatus)}
+                    </span>
                   </td>
                   <td>
-                    <select
-                      value={u.applicationStatus}
-                      onChange={(e) =>
-                        handleStatusChange(
-                          u.id,
-                          e.target.value as ApplicationStatus,
-                        )
-                      }
-                    >
-                      {APPLICATION_STATUSES.map((s) => (
-                        <option key={s} value={s}>
-                          {s}
-                        </option>
-                      ))}
-                    </select>
+                    {u.applicationSubmittedAt
+                      ? new Date(u.applicationSubmittedAt).toLocaleDateString()
+                      : "—"}
                   </td>
                 </tr>
               ))}

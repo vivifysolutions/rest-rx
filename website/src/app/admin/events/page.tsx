@@ -1,27 +1,28 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
-import { ComboInput } from "@/components/admin/ComboInput";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { EventForm, type EventFormValues } from "@/components/admin/EventForm";
 import {
   createEvent,
+  deleteEvent,
   getCategories,
   getEventFormats,
-  getEventLocations,
   getEvents,
+  updateEvent,
 } from "@/lib/api";
-import type { CreateEventInput, Event } from "@/lib/types";
+import { EMPTY_LOCATION } from "@/lib/address";
+import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
+import type { Event } from "@/lib/types";
 
-const EMPTY_FORM = {
+const EMPTY_FORM: EventFormValues = {
   title: "",
   description: "",
   category: "",
   format: "",
-  location: "",
-  latitude: "",
-  longitude: "",
+  location: EMPTY_LOCATION,
   price: "",
   registrationUrl: "",
   image: "",
@@ -34,40 +35,34 @@ export default function AdminEventsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Event[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
-  const [locations, setLocations] = useState<string[]>([]);
   const [formats, setFormats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState<EventFormValues>(EMPTY_FORM);
 
-  const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
+  const update = <K extends keyof EventFormValues>(k: K, v: EventFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     const token = await refreshToken();
-    const [data, categoriesList, locs, fmts] = await Promise.allSettled([
+    const [data, categoriesList, fmts] = await Promise.allSettled([
       getEvents(token ?? undefined),
       getCategories("EVENT"),
-      getEventLocations(),
       getEventFormats(),
     ]);
     if (data.status === "fulfilled") setItems(data.value);
     else {
-      console.error("[Portal] getEvents failed:", data.reason);
       setError(
         data.reason instanceof Error ? data.reason.message : "Failed to load events",
       );
     }
     if (categoriesList.status === "fulfilled") {
       setTopics(categoriesList.value.map((category) => category.name));
-    } else console.error("[Portal] getCategories failed:", categoriesList.reason);
-    if (locs.status === "fulfilled") setLocations(locs.value);
-    else console.error("[Portal] getEventLocations failed:", locs.reason);
+    }
     if (fmts.status === "fulfilled") setFormats(fmts.value);
-    else console.error("[Portal] getEventFormats failed:", fmts.reason);
     setLoading(false);
   }, [refreshToken]);
 
@@ -75,184 +70,51 @@ export default function AdminEventsPage() {
     load();
   }, [load]);
 
-  async function handleCreate(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleCreate(body: Parameters<typeof createEvent>[0]) {
     setError(null);
     setSuccess(null);
     try {
       const token = await refreshToken();
-      const body: CreateEventInput = {
-        title: form.title.trim(),
-        description: form.description.trim() || undefined,
-        category: form.category.trim() || undefined,
-        format: form.format.trim() || undefined,
-        location: form.location.trim() || undefined,
-        latitude: form.latitude ? Number(form.latitude) : undefined,
-        longitude: form.longitude ? Number(form.longitude) : undefined,
-        price: form.price ? Number(form.price) : undefined,
-        registrationUrl: form.registrationUrl.trim() || undefined,
-        image: form.image.trim() || undefined,
-        isFeatured: form.isFeatured,
-        startDate: form.startDate
-          ? new Date(form.startDate).toISOString()
-          : undefined,
-        endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
-      };
       await createEvent(body, token ?? undefined);
       setSuccess("Event created.");
       setForm(EMPTY_FORM);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create event");
+      throw err;
     }
+  }
+
+  async function handleTogglePublish(item: Event) {
+    const token = await refreshToken();
+    await updateEvent(item.id, { isPublished: !item.isPublished }, token ?? undefined);
+    await load();
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this event?")) return;
+    const token = await refreshToken();
+    await deleteEvent(id, token ?? undefined);
+    await load();
   }
 
   return (
     <>
       <ContentPageHeader
         title="Events"
-        description="Workshops, webinars, and gatherings shown in the app. Form mirrors the Event model."
+        description="Workshops, webinars, and gatherings. Create and publish events for the app."
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
         <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Add event</h2>
-        <form className="admin-form" onSubmit={handleCreate}>
-          <label>
-            Title *
-            <input
-              value={form.title}
-              onChange={(e) => update("title", e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Description
-            <textarea
-              value={form.description}
-              onChange={(e) => update("description", e.target.value)}
-            />
-          </label>
-
-          <div className="admin-form-row">
-            <label>
-              Category
-              <ComboInput
-                name="category"
-                value={form.category}
-                onChange={(v) => update("category", v)}
-                options={topics}
-                placeholder="workshop, webinar, panel…"
-              />
-            </label>
-            <label>
-              Format
-              <ComboInput
-                name="format"
-                value={form.format}
-                onChange={(v) => update("format", v)}
-                options={formats}
-                placeholder="in-person, virtual…"
-              />
-            </label>
-          </div>
-
-          <label>
-            Location
-            <ComboInput
-              name="location"
-              value={form.location}
-              onChange={(v) => update("location", v)}
-              options={locations}
-              placeholder="City, venue, or 'Online'"
-            />
-          </label>
-
-          <div className="admin-form-row">
-            <label>
-              Latitude
-              <input
-                type="number"
-                step="any"
-                min={-90}
-                max={90}
-                value={form.latitude}
-                onChange={(e) => update("latitude", e.target.value)}
-              />
-            </label>
-            <label>
-              Longitude
-              <input
-                type="number"
-                step="any"
-                min={-180}
-                max={180}
-                value={form.longitude}
-                onChange={(e) => update("longitude", e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="admin-form-row">
-            <label>
-              Price (USD)
-              <input
-                type="number"
-                step="0.01"
-                min={0}
-                value={form.price}
-                onChange={(e) => update("price", e.target.value)}
-                placeholder="0 for free"
-              />
-            </label>
-            <label>
-              Registration URL
-              <input
-                type="url"
-                value={form.registrationUrl}
-                onChange={(e) => update("registrationUrl", e.target.value)}
-                placeholder="https://..."
-              />
-            </label>
-          </div>
-
-          <div className="admin-form-row">
-            <label>
-              Start
-              <input
-                type="datetime-local"
-                value={form.startDate}
-                onChange={(e) => update("startDate", e.target.value)}
-              />
-            </label>
-            <label>
-              End
-              <input
-                type="datetime-local"
-                value={form.endDate}
-                onChange={(e) => update("endDate", e.target.value)}
-              />
-            </label>
-          </div>
-
-          <ImageUpload
-            folder="events"
-            value={form.image}
-            onChange={(url) => update("image", url)}
-          />
-
-          <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              type="checkbox"
-              checked={form.isFeatured}
-              onChange={(e) => update("isFeatured", e.target.checked)}
-            />
-            Featured
-          </label>
-
-          <button type="submit" className="admin-btn admin-btn-primary">
-            Create event
-          </button>
-        </form>
+        <EventForm
+          form={form}
+          onChange={update}
+          topics={topics}
+          formats={formats}
+          submitLabel="Create event"
+          onSubmit={handleCreate}
+        />
         {success && <p className="admin-success">{success}</p>}
         {error && <p className="admin-error">{error}</p>}
       </div>
@@ -271,13 +133,17 @@ export default function AdminEventsPage() {
                 <th>Location</th>
                 <th>Start</th>
                 <th>Price</th>
+                <th>Status</th>
                 <th>Featured</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map((ev) => (
                 <tr key={ev.id}>
-                  <td>{ev.title}</td>
+                  <td>
+                    <AdminTitleLink href={`/admin/events/${ev.id}`}>{ev.title}</AdminTitleLink>
+                  </td>
                   <td>{ev.category ?? "—"}</td>
                   <td>{ev.format ?? "—"}</td>
                   <td>{ev.location ?? "—"}</td>
@@ -285,7 +151,18 @@ export default function AdminEventsPage() {
                     {ev.startDate ? new Date(ev.startDate).toLocaleDateString() : "—"}
                   </td>
                   <td>{ev.price == null ? "—" : `$${ev.price}`}</td>
+                  <td>
+                    <PublishedBadge isPublished={ev.isPublished ?? true} />
+                  </td>
                   <td>{ev.isFeatured ? "Yes" : "—"}</td>
+                  <td>
+                    <ContentRowActions
+                      isPublished={ev.isPublished ?? true}
+                      onTogglePublish={() => handleTogglePublish(ev)}
+                      editHref={`/admin/events/${ev.id}/edit`}
+                      onDelete={() => handleDelete(ev.id)}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

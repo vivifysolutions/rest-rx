@@ -1,31 +1,25 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
-import { ComboInput } from "@/components/admin/ComboInput";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import {
+  EMPTY_RESOURCE_FORM,
+  ResourceForm,
+  type ResourceFormValues,
+} from "@/components/admin/ResourceForm";
 import {
   createResource,
+  deleteResource,
   getResources,
   getResourceSubTopics,
-  getResourceTiers,
+  getResourceTopics,
   getResourceTypes,
-  getTopics,
+  updateResource,
 } from "@/lib/api";
-import type { CreateResourceInput, Resource } from "@/lib/types";
-
-const EMPTY_FORM = {
-  title: "",
-  description: "",
-  type: "",
-  duration: "",
-  topic: "",
-  subTopic: "",
-  tier: "",
-  image: "",
-  isFeatured: false,
-};
+import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
+import type { Resource } from "@/lib/types";
 
 export default function AdminResourcesPage() {
   const { refreshToken } = usePortalAuth();
@@ -33,28 +27,25 @@ export default function AdminResourcesPage() {
   const [topics, setTopics] = useState<string[]>([]);
   const [subTopics, setSubTopics] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
-  const [tiers, setTiers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState<ResourceFormValues>(EMPTY_RESOURCE_FORM);
 
-  const update = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
+  const update = <K extends keyof ResourceFormValues>(k: K, v: ResourceFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     const token = await refreshToken();
-    const [data, topicsList, typesList, tiersList] = await Promise.allSettled([
+    const [data, topicsList, typesList] = await Promise.allSettled([
       getResources(token ?? undefined),
-      getTopics(),
+      getResourceTopics(),
       getResourceTypes(),
-      getResourceTiers(),
     ]);
     if (data.status === "fulfilled") setItems(data.value);
     else {
-      console.error("[Portal] getResources failed:", data.reason);
       setError(
         data.reason instanceof Error ? data.reason.message : "Failed to load resources",
       );
@@ -62,11 +53,7 @@ export default function AdminResourcesPage() {
     if (topicsList.status === "fulfilled") {
       setTopics(topicsList.value.map((topic) => topic.name));
     }
-    else console.error("[Portal] getTopics failed:", topicsList.reason);
     if (typesList.status === "fulfilled") setTypes(typesList.value);
-    else console.error("[Portal] getResourceTypes failed:", typesList.reason);
-    if (tiersList.status === "fulfilled") setTiers(tiersList.value);
-    else console.error("[Portal] getResourceTiers failed:", tiersList.reason);
     setLoading(false);
   }, [refreshToken]);
 
@@ -74,7 +61,6 @@ export default function AdminResourcesPage() {
     load();
   }, [load]);
 
-  // Sub-topic options depend on the chosen topic.
   useEffect(() => {
     let cancelled = false;
     const topic = form.topic.trim();
@@ -94,134 +80,52 @@ export default function AdminResourcesPage() {
     };
   }, [form.topic]);
 
-  async function handleCreate(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleCreate(body: Parameters<typeof createResource>[0]) {
     setError(null);
     setSuccess(null);
     try {
       const token = await refreshToken();
-      const body: CreateResourceInput = {
-        title: form.title.trim(),
-        description: form.description.trim() || undefined,
-        type: form.type.trim(),
-        duration: form.duration.trim() || undefined,
-        topic: form.topic.trim() || undefined,
-        subTopic: form.subTopic.trim() || undefined,
-        tier: form.tier.trim() || undefined,
-        image: form.image.trim() || undefined,
-        isFeatured: form.isFeatured,
-      };
       await createResource(body, token ?? undefined);
       setSuccess("Resource created.");
-      setForm(EMPTY_FORM);
+      setForm(EMPTY_RESOURCE_FORM);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create resource");
+      throw err;
     }
+  }
+
+  async function handleTogglePublish(item: Resource) {
+    const token = await refreshToken();
+    await updateResource(item.id, { isPublished: !item.isPublished }, token ?? undefined);
+    await load();
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this resource?")) return;
+    const token = await refreshToken();
+    await deleteResource(id, token ?? undefined);
+    await load();
   }
 
   return (
     <>
       <ContentPageHeader
         title="Resources"
-        description="Wellness content (audio, video, articles). Topics come from the Topic table; types/tiers/sub-topics come from existing rows."
+        description="Wellness content for the app — audio, video, and articles members can browse in Discover."
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
         <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Add resource</h2>
-        <form className="admin-form" onSubmit={handleCreate}>
-          <label>
-            Title *
-            <input
-              value={form.title}
-              onChange={(e) => update("title", e.target.value)}
-              required
-            />
-          </label>
-          <label>
-            Description
-            <textarea
-              value={form.description}
-              onChange={(e) => update("description", e.target.value)}
-            />
-          </label>
-
-          <div className="admin-form-row">
-            <label>
-              Type *
-              <ComboInput
-                name="type"
-                value={form.type}
-                onChange={(v) => update("type", v)}
-                options={types}
-                placeholder="audio, video, article…"
-                required
-              />
-            </label>
-            <label>
-              Duration
-              <input
-                value={form.duration}
-                onChange={(e) => update("duration", e.target.value)}
-                placeholder="15 min"
-              />
-            </label>
-          </div>
-
-          <div className="admin-form-row">
-            <label>
-              Topic
-              <ComboInput
-                name="topic"
-                value={form.topic}
-                onChange={(v) => update("topic", v)}
-                options={topics}
-                placeholder="Pick from Topic table"
-              />
-            </label>
-            <label>
-              Sub-topic
-              <ComboInput
-                name="subTopic"
-                value={form.subTopic}
-                onChange={(v) => update("subTopic", v)}
-                options={subTopics}
-                placeholder={form.topic ? "Pick or type" : "Choose a topic first"}
-                disabled={!form.topic}
-              />
-            </label>
-          </div>
-
-          <label>
-            Tier
-            <ComboInput
-              name="tier"
-              value={form.tier}
-              onChange={(v) => update("tier", v)}
-              options={tiers}
-              placeholder="e.g. free, premium"
-            />
-          </label>
-
-          <ImageUpload
-            folder="resources"
-            value={form.image}
-            onChange={(url) => update("image", url)}
-          />
-
-          <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              type="checkbox"
-              checked={form.isFeatured}
-              onChange={(e) => update("isFeatured", e.target.checked)}
-            />
-            Featured
-          </label>
-
-          <button type="submit" className="admin-btn admin-btn-primary">
-            Create resource
-          </button>
-        </form>
+        <ResourceForm
+          form={form}
+          onChange={update}
+          topics={topics}
+          subTopics={subTopics}
+          types={types}
+          submitLabel="Create resource"
+          onSubmit={handleCreate}
+        />
         {success && <p className="admin-success">{success}</p>}
         {error && <p className="admin-error">{error}</p>}
       </div>
@@ -237,20 +141,37 @@ export default function AdminResourcesPage() {
                 <th>Title</th>
                 <th>Type</th>
                 <th>Topic</th>
-                <th>Sub-topic</th>
+                <th>Subcategory</th>
                 <th>Duration</th>
+                <th>Media</th>
+                <th>Status</th>
                 <th>Featured</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map((r) => (
                 <tr key={r.id}>
-                  <td>{r.title}</td>
+                  <td>
+                    <AdminTitleLink href={`/admin/resources/${r.id}`}>{r.title}</AdminTitleLink>
+                  </td>
                   <td>{r.type}</td>
                   <td>{r.topic ?? "—"}</td>
                   <td>{r.subTopic ?? "—"}</td>
                   <td>{r.duration ?? "—"}</td>
+                  <td>{r.mediaUrl ? "Yes" : "—"}</td>
+                  <td>
+                    <PublishedBadge isPublished={r.isPublished ?? true} />
+                  </td>
                   <td>{r.isFeatured ? "Yes" : "—"}</td>
+                  <td>
+                    <ContentRowActions
+                      isPublished={r.isPublished ?? true}
+                      onTogglePublish={() => handleTogglePublish(r)}
+                      editHref={`/admin/resources/${r.id}/edit`}
+                      onDelete={() => handleDelete(r.id)}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

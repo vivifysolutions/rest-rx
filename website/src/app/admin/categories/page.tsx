@@ -3,15 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { getCategories, type Category, type CategoryType } from "@/lib/api";
+import { CATEGORY_TYPE_LABELS } from "@/lib/admin-labels";
 
 const CATEGORY_TYPES: CategoryType[] = ["EVENT", "DISCOUNT", "ONBOARDING", "AFFIRMATION"];
-
-const TYPE_LABELS: Record<CategoryType, string> = {
-  EVENT: "Event categories",
-  DISCOUNT: "Discount categories",
-  ONBOARDING: "Onboarding options",
-  AFFIRMATION: "Affirmation preferences",
-};
 
 export default function AdminCategoriesPage() {
   const [items, setItems] = useState<Category[] | null>(null);
@@ -34,28 +28,26 @@ export default function AdminCategoriesPage() {
     <>
       <ContentPageHeader
         title="Categories"
-        description="Reference categories for events, discounts, onboarding, and affirmation preferences. Seeded via the API; used in mobile and portal forms."
+        description="Reference labels used in the app for filtering events, partner offers, onboarding, and affirmations."
       />
 
       {error && <p className="admin-error admin-card">{error}</p>}
 
-      <div className="admin-card" style={{ marginBottom: 16 }}>
-        <label htmlFor="category-type-filter" style={{ marginRight: 12 }}>
-          Filter by type
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+        <label>
+          Show
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as CategoryType | "ALL")}
+          >
+            <option value="ALL">All categories</option>
+            {CATEGORY_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {CATEGORY_TYPE_LABELS[type]}
+              </option>
+            ))}
+          </select>
         </label>
-        <select
-          id="category-type-filter"
-          className="admin-input"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as CategoryType | "ALL")}
-        >
-          <option value="ALL">All types</option>
-          {CATEGORY_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {TYPE_LABELS[type]}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="admin-card admin-table-wrap">
@@ -63,30 +55,24 @@ export default function AdminCategoriesPage() {
           <thead>
             <tr>
               <th>Name</th>
-              <th>Slug</th>
-              <th>Type</th>
-              <th>Sort order</th>
+              <th>Used for</th>
             </tr>
           </thead>
           <tbody>
             {filtered === null && !error && (
               <tr>
-                <td colSpan={4}>Loading…</td>
+                <td colSpan={2}>Loading…</td>
               </tr>
             )}
             {filtered?.length === 0 && (
               <tr>
-                <td colSpan={4}>No categories found.</td>
+                <td colSpan={2}>No categories found.</td>
               </tr>
             )}
             {filtered?.map((category) => (
               <tr key={category.id}>
                 <td>{category.name}</td>
-                <td>
-                  <code>{category.slug}</code>
-                </td>
-                <td>{category.type}</td>
-                <td>{category.sortOrder}</td>
+                <td>{CATEGORY_TYPE_LABELS[category.type]}</td>
               </tr>
             ))}
           </tbody>

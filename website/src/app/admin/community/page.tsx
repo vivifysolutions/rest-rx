@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
-import { getForumPosts, getThreads } from "@/lib/api";
+import {
+  deletePost,
+  deleteThread,
+  getForumPosts,
+  getThreads,
+  moderateThread,
+} from "@/lib/api";
 import type { ForumPost, Thread } from "@/lib/types";
 
 function authorLabel(author: {
@@ -47,11 +53,47 @@ export default function AdminCommunityPage() {
     load();
   }, [load]);
 
+  async function handleModerateThread(
+    id: string,
+    action: "pin" | "unpin" | "lock" | "unlock",
+  ) {
+    const token = await refreshToken();
+    if (!token) return;
+    const thread = threads.find((t) => t.id === id);
+    if (!thread) return;
+    const body =
+      action === "pin"
+        ? { isPinned: true }
+        : action === "unpin"
+          ? { isPinned: false }
+          : action === "lock"
+            ? { isLocked: true }
+            : { isLocked: false };
+    await moderateThread(token, id, body);
+    await load();
+  }
+
+  async function handleDeleteThread(id: string) {
+    if (!confirm("Delete this thread and all replies?")) return;
+    const token = await refreshToken();
+    if (!token) return;
+    await deleteThread(token, id);
+    await load();
+  }
+
+  async function handleDeletePost(id: string) {
+    if (!confirm("Delete this post?")) return;
+    const token = await refreshToken();
+    if (!token) return;
+    await deletePost(token, id);
+    await load();
+  }
+
   return (
     <>
       <ContentPageHeader
         title="Community"
-        description="Read-only view of forum threads and feed posts. Moderation actions (lock, remove) will need API support next."
+        description="Moderate forum threads and feed posts. Pin, lock, or remove content."
       />
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -88,6 +130,7 @@ export default function AdminCommunityPage() {
                 <th>Posts</th>
                 <th>Status</th>
                 <th>Created</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -98,11 +141,40 @@ export default function AdminCommunityPage() {
                   <td>{authorLabel(t.author)}</td>
                   <td>{t.postCount}</td>
                   <td>
-                    {t.isLocked && <span className="admin-badge">Locked</span>}
+                    {t.isLocked && <span className="admin-badge">Locked</span>}{" "}
                     {t.isPinned && <span className="admin-badge">Pinned</span>}
                     {!t.isLocked && !t.isPinned && "—"}
                   </td>
                   <td>{new Date(t.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <div className="admin-row-actions">
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-sm"
+                        onClick={() =>
+                          handleModerateThread(t.id, t.isPinned ? "unpin" : "pin")
+                        }
+                      >
+                        {t.isPinned ? "Unpin" : "Pin"}
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-sm"
+                        onClick={() =>
+                          handleModerateThread(t.id, t.isLocked ? "unlock" : "lock")
+                        }
+                      >
+                        {t.isLocked ? "Unlock" : "Lock"}
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-sm admin-btn-danger"
+                        onClick={() => handleDeleteThread(t.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -117,6 +189,7 @@ export default function AdminCommunityPage() {
                 <th>Likes</th>
                 <th>Replies</th>
                 <th>Created</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -131,6 +204,15 @@ export default function AdminCommunityPage() {
                   <td>{p.likeCount}</td>
                   <td>{p.replyCount}</td>
                   <td>{new Date(p.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn-sm admin-btn-danger"
+                      onClick={() => handleDeletePost(p.id)}
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

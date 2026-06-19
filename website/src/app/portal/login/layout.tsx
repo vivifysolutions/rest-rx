@@ -6,7 +6,7 @@ export default function PortalLoginSuspenseLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={<div className="admin-login-page">Loading…</div>}>
+    <Suspense fallback={<div className="portal-login portal-login-loading">Loading…</div>}>
       {children}
     </Suspense>
   );
