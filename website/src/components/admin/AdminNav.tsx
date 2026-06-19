@@ -11,6 +11,7 @@ const FULL_NAV = [
   { href: "/admin/resources", label: "Resources" },
   { href: "/admin/retreats", label: "Retreats" },
   { href: "/admin/affirmations", label: "Affirmations" },
+  { href: "/admin/micro-rx", label: "Micro RX" },
   { href: "/admin/community", label: "Community" },
   { href: "/admin/reports", label: "Reports" },
   { href: "/admin/groups", label: "Groups" },

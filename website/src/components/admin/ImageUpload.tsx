@@ -3,6 +3,8 @@
 import { ChangeEvent, useState } from "react";
 import Image from "next/image";
 import { uploadImage } from "@/lib/uploadImage";
+import type { ImageUploadGuideKey } from "@/components/admin/imageUploadGuides";
+import { UploadGuidePanel } from "@/components/admin/UploadGuidePanel";
 
 type Props = {
   /** Storage folder, e.g. "discounts", "events", "resources", "retreats". */
@@ -12,12 +14,14 @@ type Props = {
   /** Called when upload finishes or the image is removed. */
   onChange: (url: string) => void;
   label?: string;
+  /** Shows recommended dimensions for this content type in the app. */
+  guide?: ImageUploadGuideKey;
 };
 
 /**
  * File-picker that uploads the chosen image to Firebase Storage.
  */
-export function ImageUpload({ folder, value, onChange, label = "Image" }: Props) {
+export function ImageUpload({ folder, value, onChange, label = "Image", guide }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +42,8 @@ export function ImageUpload({ folder, value, onChange, label = "Image" }: Props)
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+    <div className="admin-upload-field">
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", flex: 1, minWidth: 0 }}>
       <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--downriver)" }}>
         {label}
       </span>
@@ -93,6 +98,9 @@ export function ImageUpload({ folder, value, onChange, label = "Image" }: Props)
       </div>
 
       {error && <p className="admin-error">{error}</p>}
+      </div>
+
+      {guide ? <UploadGuidePanel guide={guide} /> : null}
     </div>
   );
 }

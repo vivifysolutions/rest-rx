@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { ImageUploadGuideReference } from "@/components/admin/ImageUploadGuideReference";
 import {
   getDiscounts,
   getEvents,
@@ -145,6 +146,10 @@ export default function AdminDashboardPage() {
             <div className="admin-stat-label">{label}</div>
           </Link>
         ))}
+      </div>
+
+      <div style={{ marginBottom: "1.5rem" }}>
+        <ImageUploadGuideReference />
       </div>
 
       <div className="admin-card">

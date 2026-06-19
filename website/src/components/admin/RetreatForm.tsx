@@ -109,7 +109,12 @@ export function RetreatForm({
         />
       </label>
 
-      <ImageUpload folder="retreats" value={form.image} onChange={(url) => onChange("image", url)} />
+      <ImageUpload
+        folder="retreats"
+        value={form.image}
+        onChange={(url) => onChange("image", url)}
+        guide="retreat"
+      />
 
       <div className="admin-form-row">
         <label>

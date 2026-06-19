@@ -15,6 +15,7 @@ import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import {
   isArticleType,
   isAudioType,
+  isMicroRxType,
   isQuickRxType,
   isVideoType,
 } from "@/components/admin/resourceTypes";
@@ -65,13 +66,14 @@ export default function AdminResourceDetailPage() {
   if (error || !item) return <p className="admin-error">{error ?? "Resource not found"}</p>;
 
   const quickRx = isQuickRxType(item.type);
+  const microRx = isMicroRxType(item.type);
   const images =
     item.images?.length ? item.images : quickRx && item.image ? [item.image] : item.image ? [item.image] : [];
 
   return (
     <AdminDetailLayout
-      backHref="/admin/resources"
-      backLabel="Resources"
+      backHref={microRx ? "/admin/micro-rx" : "/admin/resources"}
+      backLabel={microRx ? "Micro RX" : "Resources"}
       title={item.title}
       actions={
         <>
@@ -95,13 +97,16 @@ export default function AdminResourceDetailPage() {
         <DetailRow label="Featured" value={item.isFeatured ? "Yes" : "No"} />
         <DetailRow label="Duration" value={item.duration ?? "—"} />
         <DetailRow label="Topic" value={item.topic ?? "—"} />
-        <DetailRow label="Subcategory" value={item.subTopic ?? "—"} />
+        <DetailRow
+          label={microRx ? "Sort order" : "Subcategory"}
+          value={item.subTopic ?? "—"}
+        />
         <DetailRow label="Created" value={new Date(item.createdAt).toLocaleString()} />
         <DetailRow label="Updated" value={new Date(item.updatedAt).toLocaleString()} />
       </DetailSection>
 
-      {!isArticleType(item.type) && item.description && (
-        <DetailSection title={isAudioType(item.type) ? "Transcript / description" : "Description"}>
+      {(microRx || (!isArticleType(item.type) && item.description)) && (
+        <DetailSection title={microRx ? "Prompt" : isAudioType(item.type) ? "Transcript / description" : "Description"}>
           <DetailRow label="Content">
             <div className="admin-detail-markdown">{item.description}</div>
           </DetailRow>
@@ -116,6 +121,7 @@ export default function AdminResourceDetailPage() {
         </DetailSection>
       )}
 
+      {!microRx && (
       <DetailSection title={quickRx ? "Quick Rx images" : "Cover image"}>
         <DetailRow label="Preview">
           {quickRx ? (
@@ -127,6 +133,7 @@ export default function AdminResourceDetailPage() {
           )}
         </DetailRow>
       </DetailSection>
+      )}
 
       {(isVideoType(item.type) || isAudioType(item.type)) && (
         <DetailSection title="Media">

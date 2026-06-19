@@ -6,6 +6,10 @@ export function isQuickRxType(type: string): boolean {
   return normalizeResourceType(type) === "quickrx";
 }
 
+export function isMicroRxType(type: string): boolean {
+  return normalizeResourceType(type) === "microrx";
+}
+
 export function isArticleType(type: string): boolean {
   return normalizeResourceType(type) === "article";
 }

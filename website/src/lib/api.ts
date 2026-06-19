@@ -278,9 +278,12 @@ export async function getEventById(id: string, token?: string): Promise<Event> {
 
 // -- Resources ---------------------------------------------------------------
 
-export async function getResources(token?: string): Promise<Resource[]> {
+export async function getResources(
+  token?: string,
+  params?: { type?: string; search?: string },
+): Promise<Resource[]> {
   return request<Resource[]>(
-    `/resources${buildQuery(token ? ADMIN_QUERY : undefined)}`,
+    `/resources${buildQuery({ ...(token ? ADMIN_QUERY : undefined), ...params })}`,
     { token },
   );
 }

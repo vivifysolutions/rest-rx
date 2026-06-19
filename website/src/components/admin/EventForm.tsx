@@ -142,7 +142,12 @@ export function EventForm({
         </label>
       </div>
 
-      <ImageUpload folder="events" value={form.image} onChange={(url) => onChange("image", url)} />
+      <ImageUpload
+        folder="events"
+        value={form.image}
+        onChange={(url) => onChange("image", url)}
+        guide="event"
+      />
 
       <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
         <input

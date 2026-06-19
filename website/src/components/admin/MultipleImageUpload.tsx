@@ -3,6 +3,8 @@
 import { ChangeEvent, useState } from "react";
 import Image from "next/image";
 import { uploadImage } from "@/lib/uploadImage";
+import type { ImageUploadGuideKey } from "@/components/admin/imageUploadGuides";
+import { UploadGuidePanel } from "@/components/admin/UploadGuidePanel";
 
 type Props = {
   folder: string;
@@ -10,6 +12,7 @@ type Props = {
   onChange: (urls: string[]) => void;
   label?: string;
   maxImages?: number;
+  guide?: ImageUploadGuideKey;
 };
 
 export function MultipleImageUpload({
@@ -18,6 +21,7 @@ export function MultipleImageUpload({
   onChange,
   label = "Images",
   maxImages = 20,
+  guide,
 }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +61,13 @@ export function MultipleImageUpload({
   const atLimit = values.length >= maxImages;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+    <div className="admin-upload-field">
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", flex: 1, minWidth: 0 }}>
       <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--downriver)" }}>
         {label}
       </span>
       <p style={{ fontSize: "0.8rem", color: "#64748b", margin: 0 }}>
-        Upload multiple images for this Quick Rx ({values.length}/{maxImages}).
+        Upload multiple images ({values.length}/{maxImages}). Add slides in the order members should swipe.
       </p>
 
       {values.length > 0 && (
@@ -159,6 +164,9 @@ export function MultipleImageUpload({
       </div>
 
       {error && <p className="admin-error">{error}</p>}
+      </div>
+
+      {guide ? <UploadGuidePanel guide={guide} /> : null}
     </div>
   );
 }

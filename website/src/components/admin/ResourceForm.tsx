@@ -9,6 +9,7 @@ import { MediaUpload } from "@/components/admin/MediaUpload";
 import {
   isArticleType,
   isAudioType,
+  isMicroRxType,
   isQuickRxType,
   isVideoType,
 } from "@/components/admin/resourceTypes";
@@ -92,7 +93,7 @@ export function ResourceForm({
         />
       </label>
 
-      {!isArticleType(form.type) && (
+      {!isArticleType(form.type) && !isMicroRxType(form.type) && (
         <label>
           {isAudioType(form.type) ? "Transcript / description" : "Description"}
           <textarea
@@ -107,6 +108,19 @@ export function ResourceForm({
         </label>
       )}
 
+      {isMicroRxType(form.type) && (
+        <label>
+          Prompt *
+          <textarea
+            value={form.description}
+            onChange={(e) => onChange("description", e.target.value)}
+            required
+            rows={4}
+            placeholder="Full Micro RX prompt shown in the app"
+          />
+        </label>
+      )}
+
       <div className="admin-form-row">
         <label>
           Type *
@@ -115,7 +129,7 @@ export function ResourceForm({
             value={form.type}
             onChange={(v) => onChange("type", v)}
             options={types}
-            placeholder="Audio, Video, Article, Quick Rx…"
+            placeholder="Audio, Video, Article, Quick Rx, Micro Rx…"
             required
           />
         </label>
@@ -147,8 +161,14 @@ export function ResourceForm({
             value={form.subTopic}
             onChange={(v) => onChange("subTopic", v)}
             options={subTopics}
-            placeholder={form.topic ? "Pick or type" : "Choose a topic first"}
-            disabled={!form.topic}
+            placeholder={
+              isMicroRxType(form.type)
+                ? "Sort order (e.g. 0001)"
+                : form.topic
+                  ? "Pick or type"
+                  : "Choose a topic first"
+            }
+            disabled={!form.topic && !isMicroRxType(form.type)}
           />
         </label>
       </div>
@@ -159,13 +179,15 @@ export function ResourceForm({
           values={form.images}
           onChange={(urls) => onChange("images", urls)}
           label="Quick Rx images"
+          guide="quick-rx-slide"
         />
-      ) : (
+      ) : isMicroRxType(form.type) ? null : (
         <ImageUpload
           folder="resources"
           value={form.image}
           onChange={(url) => onChange("image", url)}
           label="Cover image"
+          guide="resource-cover"
         />
       )}
 

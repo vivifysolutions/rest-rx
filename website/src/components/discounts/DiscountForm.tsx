@@ -139,7 +139,12 @@ export function DiscountForm({
         />
       </label>
 
-      <ImageUpload folder="discounts" value={form.image} onChange={(url) => onChange("image", url)} />
+      <ImageUpload
+        folder="discounts"
+        value={form.image}
+        onChange={(url) => onChange("image", url)}
+        guide="discount"
+      />
 
       <label>
         Expiry date
