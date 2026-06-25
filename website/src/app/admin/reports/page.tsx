@@ -8,6 +8,7 @@ import {
   deletePost,
   deleteThread,
   getReports,
+  updateGroupStatus,
   updateReportStatus,
 } from "@/lib/api";
 import type { ContentReport } from "@/lib/types";
@@ -57,15 +58,22 @@ export default function AdminReportsPage() {
   }
 
   async function handleRemoveContent(report: ContentReport) {
-    if (!confirm(`Remove this ${report.contentType}? This cannot be undone.`)) return;
+    // Groups aren't deleted — they're archived (reversible), so use softer wording.
+    const prompt =
+      report.contentType === "group"
+        ? "Archive this group? Members will no longer see it."
+        : `Remove this ${report.contentType}? This cannot be undone.`;
+    if (!confirm(prompt)) return;
     const token = await refreshToken();
     if (!token) return;
     if (report.contentType === "thread") {
       await deleteThread(token, report.contentId);
     } else if (report.contentType === "post") {
       await deletePost(token, report.contentId);
-    } else {
+    } else if (report.contentType === "comment") {
       await deleteComment(token, report.contentId);
+    } else {
+      await updateGroupStatus(token, report.contentId, "archived");
     }
     await updateReportStatus(token, report.id, "reviewed");
     await load();
@@ -135,7 +143,7 @@ export default function AdminReportsPage() {
                             className="admin-btn admin-btn-sm admin-btn-danger"
                             onClick={() => handleRemoveContent(r)}
                           >
-                            Remove content
+                            {r.contentType === "group" ? "Archive group" : "Remove content"}
                           </button>
                           <button
                             type="button"

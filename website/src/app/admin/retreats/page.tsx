@@ -13,7 +13,6 @@ import {
   getTopics,
   updateRetreat,
 } from "@/lib/api";
-import { EMPTY_LOCATION } from "@/lib/address";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import type { Retreat } from "@/lib/types";
 
@@ -22,7 +21,7 @@ const EMPTY_FORM: RetreatFormValues = {
   description: "",
   category: "",
   season: "",
-  location: EMPTY_LOCATION,
+  location: "",
   rating: "",
   image: "",
   startDate: "",

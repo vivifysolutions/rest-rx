@@ -2,17 +2,18 @@
 
 import { FormEvent } from "react";
 import { ComboInput } from "@/components/admin/ComboInput";
-import { LocationField } from "@/components/admin/LocationField";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import type { LocationValue } from "@/lib/address";
 import type { CreateRetreatInput } from "@/lib/types";
+
+export const RETREAT_LOCATIONS = ["Domestic", "International"] as const;
+export type RetreatLocation = (typeof RETREAT_LOCATIONS)[number];
 
 export type RetreatFormValues = {
   title: string;
   description: string;
   category: string;
   season: string;
-  location: LocationValue;
+  location: string;
   rating: string;
   image: string;
   startDate: string;
@@ -35,7 +36,7 @@ export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatI
     description: form.description.trim() || undefined,
     category: form.category.trim() || undefined,
     season: form.season.trim() || undefined,
-    location: form.location.location.trim() || undefined,
+    location: form.location.trim() || undefined,
     rating: form.rating ? Number(form.rating) : undefined,
     image: form.image.trim() || undefined,
     isFeatured: form.isFeatured,
@@ -91,11 +92,20 @@ export function RetreatForm({
         </label>
       </div>
 
-      <LocationField
-        value={form.location}
-        onChange={(loc) => onChange("location", loc)}
-        placeholder="City, region, or venue"
-      />
+      <label>
+        Location
+        <select
+          value={form.location}
+          onChange={(e) => onChange("location", e.target.value)}
+        >
+          <option value="">Select location…</option>
+          {RETREAT_LOCATIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <label>
         Rating (0–5)

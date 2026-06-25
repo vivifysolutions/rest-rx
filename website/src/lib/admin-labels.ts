@@ -14,6 +14,7 @@ export const CONTENT_TYPE_LABELS = {
   thread: "Forum thread",
   post: "Feed post",
   comment: "Comment",
+  group: "Community group",
 } as const;
 
 export const GROUP_STATUS_LABELS = {

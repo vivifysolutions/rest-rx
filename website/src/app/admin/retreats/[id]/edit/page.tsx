@@ -7,7 +7,6 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminDetailLayout } from "@/components/admin/AdminDetailView";
 import { RetreatForm, type RetreatFormValues } from "@/components/admin/RetreatForm";
 import { getRetreatById, getRetreatSeasons, getTopics, updateRetreat } from "@/lib/api";
-import { EMPTY_LOCATION, locationFromListing } from "@/lib/address";
 import type { CreateRetreatInput, Retreat } from "@/lib/types";
 
 function retreatToForm(item: Retreat): RetreatFormValues {
@@ -16,7 +15,7 @@ function retreatToForm(item: Retreat): RetreatFormValues {
     description: item.description ?? "",
     category: item.category ?? "",
     season: item.season ?? "",
-    location: locationFromListing(item),
+    location: item.location ?? "",
     rating: item.rating != null ? String(item.rating) : "",
     image: item.image ?? "",
     startDate: item.startDate ? item.startDate.slice(0, 10) : "",
@@ -34,7 +33,7 @@ export default function AdminRetreatEditPage() {
     description: "",
     category: "",
     season: "",
-    location: EMPTY_LOCATION,
+    location: "",
     rating: "",
     image: "",
     startDate: "",

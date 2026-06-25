@@ -206,7 +206,7 @@ export type ForumPost = {
 
 export type ContentReport = {
   id: string;
-  contentType: "thread" | "post" | "comment";
+  contentType: "thread" | "post" | "comment" | "group";
   contentId: string;
   reason: string | null;
   status: "pending" | "reviewed" | "dismissed";
