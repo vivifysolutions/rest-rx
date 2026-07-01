@@ -5,31 +5,16 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { listUsers } from "@/lib/api";
-import type { ApiUser } from "@/lib/types";
-import { USER_TYPE_LABELS } from "@/lib/user-types";
+import { displayUserName, verificationSummary } from "@/lib/admin-user-display";
 import { formatApplicationStatus } from "@/lib/admin-labels";
+import type { ApiUser } from "@/lib/types";
 
-function displayName(u: ApiUser): string {
-  return (
-    [u.firstName, u.lastName].filter(Boolean).join(" ") || u.displayName || "—"
-  );
-}
-
-function verificationSummary(u: ApiUser): string {
-  const hasIdentity = Boolean(u.identityPhotoUrl);
-  const hasCredential = Boolean(u.workCredentialPhotoUrl);
-  if (hasIdentity && hasCredential) return "Photos submitted";
-  if (hasIdentity || hasCredential) return "Partial";
-  return "None";
-}
-
-export default function AdminUsersPage() {
+export default function AdminApplicationsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("pending");
-  const [filterType, setFilterType] = useState<string>("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -39,7 +24,7 @@ export default function AdminUsersPage() {
       if (!token) throw new Error("Not authenticated");
       const data = await listUsers(token, {
         applicationStatus: filterStatus || undefined,
-        userType: filterType || undefined,
+        excludeApplicationStatus: filterStatus ? undefined : "approved",
       });
       setItems(data);
     } catch (e) {
@@ -47,7 +32,7 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [refreshToken, filterStatus, filterType]);
+  }, [refreshToken, filterStatus]);
 
   useEffect(() => {
     load();
@@ -57,28 +42,16 @@ export default function AdminUsersPage() {
     <>
       <ContentPageHeader
         title="Applications"
-        description="Review healthcare professional applications, view submitted profiles and verification photos, then approve or reject access."
+        description="Review healthcare professional signups awaiting approval. Approved users appear under Members."
       />
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
         <label>
-          Application status
+          Status
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="">All applications</option>
             <option value="pending">Pending review</option>
-            <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
-          </select>
-        </label>
-        <label>
-          Role
-          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="">All roles</option>
-            {(["member", "admin", "brand_partner", "expert"] as const).map((t) => (
-              <option key={t} value={t}>
-                {USER_TYPE_LABELS[t]}
-              </option>
-            ))}
+            <option value="">All in review (pending + rejected)</option>
           </select>
         </label>
       </div>
@@ -88,16 +61,17 @@ export default function AdminUsersPage() {
       <div className="admin-card admin-table-wrap">
         {loading ? (
           <p>Loading…</p>
+        ) : items.length === 0 ? (
+          <p style={{ color: "var(--text-muted)" }}>No applications match this filter.</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Role</th>
                 <th>Professional info</th>
                 <th>Verification</th>
-                <th>Application</th>
+                <th>Status</th>
                 <th>Submitted</th>
               </tr>
             </thead>
@@ -106,11 +80,10 @@ export default function AdminUsersPage() {
                 <tr key={u.id}>
                   <td>
                     <AdminTitleLink href={`/admin/users/${u.id}`}>
-                      {displayName(u)}
+                      {displayUserName(u)}
                     </AdminTitleLink>
                   </td>
                   <td>{u.email ?? "—"}</td>
-                  <td>{USER_TYPE_LABELS[u.userType]}</td>
                   <td>
                     {[u.professionalRole, u.specialty].filter(Boolean).join(" · ") || "—"}
                   </td>
@@ -118,11 +91,7 @@ export default function AdminUsersPage() {
                   <td>
                     <span
                       className={`admin-badge ${
-                        u.applicationStatus === "approved"
-                          ? "admin-badge-success"
-                          : u.applicationStatus === "pending"
-                            ? "admin-badge-muted"
-                            : ""
+                        u.applicationStatus === "pending" ? "admin-badge-muted" : ""
                       }`}
                       style={
                         u.applicationStatus === "rejected"

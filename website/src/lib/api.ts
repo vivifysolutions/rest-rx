@@ -91,7 +91,12 @@ export async function getMe(token: string): Promise<ApiUser> {
 
 export async function listUsers(
   token: string,
-  params?: { userType?: string; applicationStatus?: string; search?: string },
+  params?: {
+    userType?: string;
+    applicationStatus?: string;
+    excludeApplicationStatus?: string;
+    search?: string;
+  },
 ): Promise<ApiUser[]> {
   return request<ApiUser[]>(`/users${buildQuery(params)}`, { token });
 }
@@ -121,6 +126,30 @@ export async function updateApplicationStatus(
     method: "PATCH",
     token,
     body: { applicationStatus },
+  });
+}
+
+export type UpdateUserProfilePayload = {
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  professionalRole?: string;
+  specialty?: string;
+  npiNumber?: string;
+  phone?: string;
+  identityPhotoUrl?: string;
+  workCredentialPhotoUrl?: string;
+};
+
+export async function updateUserProfile(
+  token: string,
+  userId: string,
+  body: UpdateUserProfilePayload,
+): Promise<ApiUser> {
+  return request<ApiUser>(`/users/${userId}`, {
+    method: "PATCH",
+    token,
+    body,
   });
 }
 

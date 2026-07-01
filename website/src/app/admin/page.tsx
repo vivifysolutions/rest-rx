@@ -26,6 +26,7 @@ export default function AdminDashboardPage() {
     threads: null,
     posts: null,
     pendingUsers: null,
+    members: null,
     pendingReports: null,
   });
   const [apiOk, setApiOk] = useState<boolean | null>(null);
@@ -63,24 +64,29 @@ export default function AdminDashboardPage() {
         let threadCount = 0;
         let postCount = 0;
         let pendingUsers = 0;
+        let memberCount = 0;
         let pendingReports = 0;
 
         if (authToken) {
-          const [threadsRes, postsRes, usersRes, reportsRes] = await Promise.allSettled([
+          const [threadsRes, postsRes, usersRes, membersRes, reportsRes] =
+            await Promise.allSettled([
             getThreads(authToken, { limit: 100 }),
             getForumPosts(authToken, { limit: 100 }),
             listUsers(authToken, { applicationStatus: "pending" }),
+            listUsers(authToken, { applicationStatus: "approved" }),
             getReports(authToken, "pending"),
           ]);
 
           const threads = unwrap(threadsRes, "Threads");
           const posts = unwrap(postsRes, "Posts");
-          const users = unwrap(usersRes, "Pending users");
+          const users = unwrap(usersRes, "Pending applications");
+          const members = unwrap(membersRes, "Members");
           const reports = unwrap(reportsRes, "Reports");
 
           threadCount = threads?.length ?? 0;
           postCount = posts?.length ?? 0;
           pendingUsers = users?.length ?? 0;
+          memberCount = members?.length ?? 0;
           pendingReports = reports?.length ?? 0;
         }
 
@@ -97,6 +103,7 @@ export default function AdminDashboardPage() {
             threads: threadCount,
             posts: postCount,
             pendingUsers,
+            members: memberCount,
             pendingReports,
           });
         }
@@ -134,7 +141,8 @@ export default function AdminDashboardPage() {
           { label: "Resources", key: "resources", href: "/admin/resources" },
           { label: "Events", key: "events", href: "/admin/events" },
           { label: "Retreats", key: "retreats", href: "/admin/retreats" },
-          { label: "Pending signups", key: "pendingUsers", href: "/admin/users" },
+          { label: "Pending applications", key: "pendingUsers", href: "/admin/users" },
+          { label: "Approved members", key: "members", href: "/admin/members" },
           { label: "Flagged content", key: "pendingReports", href: "/admin/reports" },
           { label: "Threads", key: "threads", href: "/admin/community" },
           { label: "Feed posts", key: "posts", href: "/admin/community" },
@@ -158,7 +166,10 @@ export default function AdminDashboardPage() {
         </h2>
         <ul style={{ lineHeight: 2, color: "var(--astral)" }}>
           <li>
-            <Link href="/admin/users">Review and approve user signups</Link>
+            <Link href="/admin/users">Review pending applications</Link>
+          </li>
+          <li>
+            <Link href="/admin/members">Manage approved members</Link>
           </li>
           <li>
             <Link href="/admin/discounts">Manage brand partnerships and discounts</Link>
