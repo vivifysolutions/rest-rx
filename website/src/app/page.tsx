@@ -544,6 +544,22 @@ export default function HomePage() {
             </a>
           ))}
         </div>
+        <p style={{ fontSize: "0.9rem", opacity: 0.9, marginBottom: "0.75rem" }}>
+          <Link
+            href="/portal/login"
+            style={{
+              color: "white",
+              textDecoration: "underline",
+              textUnderlineOffset: "3px",
+            }}
+          >
+            Sign in
+          </Link>
+          <span style={{ opacity: 0.5, margin: "0 0.75rem" }}>|</span>
+          <Link href="/partner" style={{ color: "white", textDecoration: "underline", textUnderlineOffset: "3px" }}>
+            Partner with us
+          </Link>
+        </p>
         <p style={{ fontSize: "0.9rem", opacity: 0.9 }}>
           © {new Date().getFullYear()} Rest & Rx. Made with{" "}
           <FaHeart style={{ color: "var(--marigold)", display: "inline" }} /> for
