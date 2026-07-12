@@ -153,19 +153,6 @@ export default function HomePage() {
               >
                 Become a Partner
               </Link>
-              <Link
-                href="/portal/login"
-                style={{
-                  display: "inline-block",
-                  padding: "0.875rem 2rem",
-                  background: "var(--downriver)",
-                  color: "white",
-                  borderRadius: "50px",
-                  fontWeight: 600,
-                }}
-              >
-                Sign in
-              </Link>
             </div>
           </div>
         </div>

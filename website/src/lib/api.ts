@@ -1,4 +1,6 @@
 import { buildQuery, ADMIN_QUERY } from "./buildQuery";
+import type { BrandPartnerApplication } from "@/lib/brand-partner-application";
+import { normalizeBrandPartnerApplication } from "@/lib/brand-partner-application";
 import type {
   ApiUser,
   Affirmation,
@@ -89,6 +91,24 @@ export async function getMe(token: string): Promise<ApiUser> {
   return request<ApiUser>("/users/me", { token });
 }
 
+export async function patchMe(
+  token: string,
+  body: UpdateUserProfilePayload,
+): Promise<ApiUser> {
+  return request<ApiUser>("/users/me", {
+    method: "PATCH",
+    token,
+    body,
+  });
+}
+
+export async function markApplicationSubmitted(token: string): Promise<ApiUser> {
+  return request<ApiUser>("/users/me/application-submitted", {
+    method: "POST",
+    token,
+  });
+}
+
 export async function listUsers(
   token: string,
   params?: {
@@ -150,6 +170,62 @@ export async function updateUserProfile(
     method: "PATCH",
     token,
     body,
+  });
+}
+
+// -- Brand partner applications -----------------------------------------------
+
+export async function submitBrandPartnerApplication(
+  token: string,
+  body: unknown,
+): Promise<BrandPartnerApplication> {
+  const result = await request<BrandPartnerApplication>("/brand-partner-applications", {
+    method: "POST",
+    token,
+    body,
+  });
+  return normalizeBrandPartnerApplication(result);
+}
+
+export async function getBrandPartnerApplications(
+  token: string,
+  params?: { status?: string; applicationType?: string },
+): Promise<BrandPartnerApplication[]> {
+  const items = await request<BrandPartnerApplication[]>(
+    `/brand-partner-applications${buildQuery(params)}`,
+    { token },
+  );
+  return items.map(normalizeBrandPartnerApplication);
+}
+
+export async function getBrandPartnerApplication(
+  token: string,
+  id: string,
+): Promise<BrandPartnerApplication> {
+  const item = await request<BrandPartnerApplication>(`/brand-partner-applications/${id}`, {
+    token,
+  });
+  return normalizeBrandPartnerApplication(item);
+}
+
+export async function approveBrandPartnerApplication(
+  token: string,
+  id: string,
+): Promise<BrandPartnerApplication> {
+  const item = await request<BrandPartnerApplication>(`/brand-partner-applications/${id}/approve`, {
+    method: "PATCH",
+    token,
+  });
+  return normalizeBrandPartnerApplication(item);
+}
+
+export async function rejectBrandPartnerApplication(
+  token: string,
+  id: string,
+): Promise<BrandPartnerApplication> {
+  return request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
+    method: "PATCH",
+    token,
   });
 }
 

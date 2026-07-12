@@ -21,7 +21,7 @@ import {
 import type { ApiUser, ApplicationStatus, UserType } from "@/lib/types";
 import { USER_TYPE_LABELS } from "@/lib/user-types";
 
-const USER_TYPES: UserType[] = ["member", "admin", "brand_partner", "expert"];
+const USER_TYPES: UserType[] = ["member", "admin", "brand_partner", "expert", "ambassador", "foundation"];
 const APPLICATION_STATUSES: ApplicationStatus[] = ["pending", "approved", "rejected"];
 
 type Props = {
@@ -32,7 +32,7 @@ type Props = {
 export function AdminUserDetail({ userId, mode }: Props) {
   const { refreshToken } = usePortalAuth();
   const backHref = mode === "application" ? "/admin/users" : "/admin/members";
-  const backLabel = mode === "application" ? "Applications" : "Members";
+  const backLabel = mode === "application" ? "Member applications" : "Members";
 
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -162,7 +162,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
           ) : (
             <>
               This user is still in the application queue.{" "}
-              <Link href={`/admin/users/${user.id}`}>Open in Applications</Link>
+              <Link href={`/admin/users/${user.id}`}>Open in Member applications</Link>
             </>
           )}
         </div>

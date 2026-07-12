@@ -11,6 +11,7 @@ type Props = {
   values: string[];
   onChange: (urls: string[]) => void;
   label?: string;
+  hint?: string;
   maxImages?: number;
   guide?: ImageUploadGuideKey;
 };
@@ -20,6 +21,7 @@ export function MultipleImageUpload({
   values,
   onChange,
   label = "Images",
+  hint = "Upload multiple images. Add them in the order members should see them.",
   maxImages = 20,
   guide,
 }: Props) {
@@ -67,7 +69,7 @@ export function MultipleImageUpload({
         {label}
       </span>
       <p style={{ fontSize: "0.8rem", color: "#64748b", margin: 0 }}>
-        Upload multiple images ({values.length}/{maxImages}). Add slides in the order members should swipe.
+        {hint} ({values.length}/{maxImages})
       </p>
 
       {values.length > 0 && (

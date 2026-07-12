@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import {
@@ -14,7 +15,8 @@ import {
   getDiscounts,
   type Category,
 } from "@/lib/api";
-import { formatDiscountTierLabel } from "@/lib/reference-data";
+import { getDiscountBadgeLabel } from "@/lib/discountOffer";
+import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
 
 export default function BrandDiscountsPage() {
@@ -61,7 +63,7 @@ export default function BrandDiscountsPage() {
     try {
       const token = await refreshToken();
       await createDiscount(body, token ?? undefined);
-      setSuccess("Your discount was submitted and will appear in the app.");
+      setSuccess("Discount submitted for review. Our team will publish it in the app once approved.");
       setForm(EMPTY_DISCOUNT_FORM);
       await load();
     } catch (err) {
@@ -74,11 +76,15 @@ export default function BrandDiscountsPage() {
     <>
       <ContentPageHeader
         title="Partner discounts"
-        description="Submit offers for the Rest & Rx mobile app. Pick a category from the reference list and a tier so members can filter your perk correctly."
+        description="Submit discount offers for Rest & Rx members. Each offer is reviewed before it appears in the mobile app."
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
         <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Submit a discount</h2>
+        <p className="admin-callout" style={{ marginBottom: "0.75rem" }}>
+          Use the fields below after your discovery call. New discounts stay pending until the Rest
+          &amp; Rx team publishes them.
+        </p>
         {categories.length === 0 && !loading ? (
           <p className="admin-error">
             Discount categories could not be loaded. Check the API connection and try again.
@@ -88,7 +94,7 @@ export default function BrandDiscountsPage() {
             form={form}
             onChange={update}
             categoryOptions={categoryOptions}
-            submitLabel="Submit discount"
+            submitLabel="Submit for review"
             onSubmit={handleCreate}
           />
         )}
@@ -97,34 +103,41 @@ export default function BrandDiscountsPage() {
       </div>
 
       <div className="admin-card admin-table-wrap">
-        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Live discounts in the app</h2>
+        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Your discounts</h2>
         {loading ? (
           <p>Loading…</p>
         ) : items.length === 0 ? (
-          <p>No discounts yet.</p>
+          <p>No discounts submitted yet.</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
                 <th>Title</th>
-                <th>%</th>
+                <th>Badge</th>
                 <th>Category</th>
-                <th>Tier</th>
+                {DISCOUNT_TIERS_ENABLED ? <th>Tier</th> : null}
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {items.map((d) => (
                 <tr key={d.id}>
                   <td>{d.title}</td>
-                  <td>{d.percentage}%</td>
+                  <td>{getDiscountBadgeLabel(d) ?? "—"}</td>
                   <td>{d.category}</td>
-                  <td>{formatDiscountTierLabel(d.tier)}</td>
+                  {DISCOUNT_TIERS_ENABLED ? <td>{formatDiscountTierLabel(d.tier)}</td> : null}
+                  <td>{d.isPublished ? "Live in app" : "Pending review"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      <p style={{ marginTop: "1rem", color: "var(--text-muted)", fontSize: "0.9rem" }}>
+        Questions about discount setup? Contact the Rest &amp; Rx team — that&apos;s what the
+        discovery call is for.
+      </p>
     </>
   );
 }

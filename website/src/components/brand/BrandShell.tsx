@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 
 const NAV = [
@@ -12,6 +12,12 @@ const NAV = [
 export function BrandShell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = usePortalAuth();
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await signOut();
+    router.replace("/portal/login");
+  }
 
   return (
     <div className="admin-layout">
@@ -38,7 +44,7 @@ export function BrandShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="admin-sidebar-footer">
           <p className="admin-user-email">{user?.email}</p>
-          <button type="button" className="admin-btn admin-btn-ghost" onClick={() => signOut()}>
+          <button type="button" className="admin-btn admin-btn-ghost" onClick={() => void handleSignOut()}>
             Sign out
           </button>
           <Link href="/" className="admin-link-muted">

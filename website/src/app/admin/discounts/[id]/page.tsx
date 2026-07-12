@@ -12,7 +12,8 @@ import {
 } from "@/components/admin/AdminDetailView";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import { deleteDiscount, getDiscountById, updateDiscount } from "@/lib/api";
-import { formatDiscountTierLabel } from "@/lib/reference-data";
+import { getDiscountBadgeLabel } from "@/lib/discountOffer";
+import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
 import type { Discount } from "@/lib/types";
 
 export default function AdminDiscountDetailPage() {
@@ -60,7 +61,7 @@ export default function AdminDiscountDetailPage() {
   return (
     <AdminDetailLayout
       backHref="/admin/discounts"
-      backLabel="Partnerships"
+      backLabel="Discounts"
       title={item.title}
       actions={
         <>
@@ -77,9 +78,32 @@ export default function AdminDiscountDetailPage() {
       }
     >
       <DetailSection title="Overview">
-        <DetailRow label="Percentage" value={`${item.percentage}%`} />
+        <DetailRow
+          label="Brand partner"
+          value={
+            item.brandPartnerApplication
+              ? item.brandPartnerApplication.companyName ||
+                item.brandPartnerApplication.fullName ||
+                item.brandPartnerApplication.email
+              : "—"
+          }
+        />
+        {item.brandPartnerApplicationId ? (
+          <DetailRow label="Application">
+            <Link href={`/admin/brand-applications/${item.brandPartnerApplicationId}`}>
+              View partner application
+            </Link>
+          </DetailRow>
+        ) : null}
+        <DetailRow label="Badge highlight" value={getDiscountBadgeLabel(item) ?? "—"} />
+        <DetailRow
+          label="Percentage"
+          value={item.percentage != null ? `${item.percentage}%` : "—"}
+        />
         <DetailRow label="Category" value={item.category} />
-        <DetailRow label="Tier" value={formatDiscountTierLabel(item.tier)} />
+        {DISCOUNT_TIERS_ENABLED ? (
+          <DetailRow label="Tier" value={formatDiscountTierLabel(item.tier)} />
+        ) : null}
         <DetailRow label="Location" value={item.location ?? "—"} />
         <DetailRow label="Status">
           <PublishedBadge isPublished={item.isPublished ?? true} />
@@ -109,9 +133,19 @@ export default function AdminDiscountDetailPage() {
         </DetailSection>
       )}
 
-      <DetailSection title="Image">
-        <DetailRow label="Preview">
-          {item.image ? <DetailImage src={item.image} alt={item.title} /> : "—"}
+      <DetailSection title="Photos">
+        <DetailRow label="Gallery">
+          {item.images?.length ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {item.images.map((url, index) => (
+                <DetailImage key={`${url}-${index}`} src={url} alt={`${item.title} ${index + 1}`} />
+              ))}
+            </div>
+          ) : item.image ? (
+            <DetailImage src={item.image} alt={item.title} />
+          ) : (
+            "—"
+          )}
         </DetailRow>
       </DetailSection>
     </AdminDetailLayout>

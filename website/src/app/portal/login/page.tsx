@@ -111,8 +111,7 @@ export default function PortalLoginPage() {
           Wellness tools for the team behind the care
         </h1>
         <p className="portal-login-lead">
-          Sign in to manage content, review member applications, and moderate the
-          Rest & Rx community.
+          Sign in to manage content, review applications, and access your partner workspace.
         </p>
         <ul className="portal-login-features">
           <li>Approve healthcare professional applications</li>
@@ -189,6 +188,8 @@ export default function PortalLoginPage() {
 
           <p className="portal-login-footer">
             <Link href="/">← Back to Rest & Rx</Link>
+            <br />
+            <Link href="/partner">Apply to partner</Link>
           </p>
         </div>
 

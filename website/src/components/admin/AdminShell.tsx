@@ -1,31 +1,52 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminNav } from "./AdminNav";
+import { getPortalNavMode, type PortalNavMode } from "@/lib/user-types";
+
+const NAV_MODE_LABELS: Record<PortalNavMode, string> = {
+  admin: "Management",
+  expert: "Community",
+  foundation: "Resources",
+};
+
+const NAV_MODE_HOME: Record<PortalNavMode, string> = {
+  admin: "/admin",
+  expert: "/admin/community",
+  foundation: "/admin/resources",
+};
 
 export function AdminShell({
   children,
-  expertMode = false,
+  navMode,
 }: {
   children: React.ReactNode;
-  expertMode?: boolean;
+  navMode?: PortalNavMode;
 }) {
-  const { user, signOut } = usePortalAuth();
+  const { user, signOut, userType } = usePortalAuth();
+  const router = useRouter();
+  const mode = navMode ?? getPortalNavMode(userType);
+
+  async function handleSignOut() {
+    await signOut();
+    router.replace("/portal/login");
+  }
 
   return (
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <Link href={expertMode ? "/admin/community" : "/admin"} className="admin-brand-title">
+          <Link href={NAV_MODE_HOME[mode]} className="admin-brand-title">
             Rest & Rx
           </Link>
-          <span className="admin-brand-sub">{expertMode ? "Community" : "Management"}</span>
+          <span className="admin-brand-sub">{NAV_MODE_LABELS[mode]}</span>
         </div>
-        <AdminNav expertMode={expertMode} />
+        <AdminNav navMode={mode} />
         <div className="admin-sidebar-footer">
           <p className="admin-user-email">{user?.email}</p>
-          <button type="button" className="admin-btn admin-btn-ghost" onClick={() => signOut()}>
+          <button type="button" className="admin-btn admin-btn-ghost" onClick={() => void handleSignOut()}>
             Sign out
           </button>
           <Link href="/" className="admin-link-muted">

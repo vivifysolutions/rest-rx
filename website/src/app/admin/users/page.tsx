@@ -8,6 +8,7 @@ import { listUsers } from "@/lib/api";
 import { displayUserName, verificationSummary } from "@/lib/admin-user-display";
 import { formatApplicationStatus } from "@/lib/admin-labels";
 import type { ApiUser } from "@/lib/types";
+import { USER_TYPE_LABELS } from "@/lib/user-types";
 
 export default function AdminApplicationsPage() {
   const { refreshToken } = usePortalAuth();
@@ -22,13 +23,15 @@ export default function AdminApplicationsPage() {
     try {
       const token = await refreshToken();
       if (!token) throw new Error("Not authenticated");
+      // Healthcare member waitlist only — partner applicants live under Partner applications.
       const data = await listUsers(token, {
+        userType: "member",
         applicationStatus: filterStatus || undefined,
         excludeApplicationStatus: filterStatus ? undefined : "approved",
       });
       setItems(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load applications");
+      setError(e instanceof Error ? e.message : "Failed to load member applications");
     } finally {
       setLoading(false);
     }
@@ -41,8 +44,8 @@ export default function AdminApplicationsPage() {
   return (
     <>
       <ContentPageHeader
-        title="Applications"
-        description="Review healthcare professional signups awaiting approval. Approved users appear under Members."
+        title="Member applications"
+        description="Healthcare professional (member) signups awaiting approval. Brand, expert, ambassador, and foundation applicants are under Partner applications."
       />
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
@@ -62,13 +65,14 @@ export default function AdminApplicationsPage() {
         {loading ? (
           <p>Loading…</p>
         ) : items.length === 0 ? (
-          <p style={{ color: "var(--text-muted)" }}>No applications match this filter.</p>
+          <p style={{ color: "var(--text-muted)" }}>No member applications match this filter.</p>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Account type</th>
                 <th>Professional info</th>
                 <th>Verification</th>
                 <th>Status</th>
@@ -84,6 +88,11 @@ export default function AdminApplicationsPage() {
                     </AdminTitleLink>
                   </td>
                   <td>{u.email ?? "—"}</td>
+                  <td>
+                    <span className="admin-badge admin-badge-type-member">
+                      {USER_TYPE_LABELS[u.userType]}
+                    </span>
+                  </td>
                   <td>
                     {[u.professionalRole, u.specialty].filter(Boolean).join(" · ") || "—"}
                   </td>

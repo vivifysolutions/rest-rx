@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ImageUploadGuideReference } from "@/components/admin/ImageUploadGuideReference";
 import {
+  getBrandPartnerApplications,
   getDiscounts,
   getEvents,
   getForumPosts,
@@ -26,6 +27,7 @@ export default function AdminDashboardPage() {
     threads: null,
     posts: null,
     pendingUsers: null,
+    pendingPartners: null,
     members: null,
     pendingReports: null,
   });
@@ -64,28 +66,32 @@ export default function AdminDashboardPage() {
         let threadCount = 0;
         let postCount = 0;
         let pendingUsers = 0;
+        let pendingPartners = 0;
         let memberCount = 0;
         let pendingReports = 0;
 
         if (authToken) {
-          const [threadsRes, postsRes, usersRes, membersRes, reportsRes] =
+          const [threadsRes, postsRes, usersRes, partnersRes, membersRes, reportsRes] =
             await Promise.allSettled([
             getThreads(authToken, { limit: 100 }),
             getForumPosts(authToken, { limit: 100 }),
-            listUsers(authToken, { applicationStatus: "pending" }),
-            listUsers(authToken, { applicationStatus: "approved" }),
+            listUsers(authToken, { applicationStatus: "pending", userType: "member" }),
+            getBrandPartnerApplications(authToken, { status: "pending" }),
+            listUsers(authToken, { applicationStatus: "approved", userType: "member" }),
             getReports(authToken, "pending"),
           ]);
 
           const threads = unwrap(threadsRes, "Threads");
           const posts = unwrap(postsRes, "Posts");
-          const users = unwrap(usersRes, "Pending applications");
+          const users = unwrap(usersRes, "Pending member applications");
+          const partners = unwrap(partnersRes, "Pending partner applications");
           const members = unwrap(membersRes, "Members");
           const reports = unwrap(reportsRes, "Reports");
 
           threadCount = threads?.length ?? 0;
           postCount = posts?.length ?? 0;
           pendingUsers = users?.length ?? 0;
+          pendingPartners = partners?.length ?? 0;
           memberCount = members?.length ?? 0;
           pendingReports = reports?.length ?? 0;
         }
@@ -103,6 +109,7 @@ export default function AdminDashboardPage() {
             threads: threadCount,
             posts: postCount,
             pendingUsers,
+            pendingPartners,
             members: memberCount,
             pendingReports,
           });
@@ -137,11 +144,16 @@ export default function AdminDashboardPage() {
 
       <div className="admin-stats" style={{ marginBottom: "1.5rem" }}>
         {[
-          { label: "Partner discounts", key: "discounts", href: "/admin/discounts" },
+          { label: "Discounts", key: "discounts", href: "/admin/discounts" },
           { label: "Resources", key: "resources", href: "/admin/resources" },
           { label: "Events", key: "events", href: "/admin/events" },
           { label: "Retreats", key: "retreats", href: "/admin/retreats" },
-          { label: "Pending applications", key: "pendingUsers", href: "/admin/users" },
+          { label: "Pending member applications", key: "pendingUsers", href: "/admin/users" },
+          {
+            label: "Pending partner applications",
+            key: "pendingPartners",
+            href: "/admin/brand-applications",
+          },
           { label: "Approved members", key: "members", href: "/admin/members" },
           { label: "Flagged content", key: "pendingReports", href: "/admin/reports" },
           { label: "Threads", key: "threads", href: "/admin/community" },
@@ -166,13 +178,16 @@ export default function AdminDashboardPage() {
         </h2>
         <ul style={{ lineHeight: 2, color: "var(--astral)" }}>
           <li>
-            <Link href="/admin/users">Review pending applications</Link>
+            <Link href="/admin/users">Review pending member applications</Link>
           </li>
           <li>
-            <Link href="/admin/members">Manage approved members</Link>
+            <Link href="/admin/brand-applications">Review partner applications by type</Link>
           </li>
           <li>
-            <Link href="/admin/discounts">Manage brand partnerships and discounts</Link>
+            <Link href="/admin/members">Manage approved members by account type</Link>
+          </li>
+          <li>
+            <Link href="/admin/discounts">Manage discounts</Link>
           </li>
           <li>
             <Link href="/admin/reports">Review flagged community content</Link>

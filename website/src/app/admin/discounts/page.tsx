@@ -10,20 +10,31 @@ import {
   EMPTY_DISCOUNT_FORM,
   type DiscountFormValues,
 } from "@/components/discounts/DiscountForm";
+import type { BrandPartnerOption } from "@/components/discounts/BrandPartnerPicker";
 import {
   createDiscount,
   deleteDiscount,
+  getBrandPartnerApplications,
   getCategories,
   getDiscounts,
   updateDiscount,
 } from "@/lib/api";
-import { formatDiscountTierLabel } from "@/lib/reference-data";
+import { getDiscountBadgeLabel } from "@/lib/discountOffer";
+import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
+
+function partnerName(d: Discount): string {
+  const app = d.brandPartnerApplication;
+  if (!app) return "—";
+  return app.companyName.trim() || app.fullName.trim() || app.email || "—";
+}
 
 export default function AdminDiscountsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Discount[]>([]);
   const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+  const [partners, setPartners] = useState<BrandPartnerOption[]>([]);
+  const [partnersLoading, setPartnersLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -31,6 +42,35 @@ export default function AdminDiscountsPage() {
 
   const update = <K extends keyof DiscountFormValues>(k: K, v: DiscountFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
+
+  const loadPartners = useCallback(async () => {
+    setPartnersLoading(true);
+    try {
+      const token = await refreshToken();
+      if (!token) {
+        setPartners([]);
+        return;
+      }
+      const apps = await getBrandPartnerApplications(token, { status: "approved" });
+      setPartners(
+        apps
+          .filter((a) => a.applicationType === "brand_partner")
+          .map((a) => ({
+            id: a.id,
+            companyName: a.companyName,
+            fullName: a.fullName,
+            email: a.email,
+          }))
+          .sort((a, b) =>
+            (a.companyName || a.fullName).localeCompare(b.companyName || b.fullName),
+          ),
+      );
+    } catch {
+      setPartners([]);
+    } finally {
+      setPartnersLoading(false);
+    }
+  }, [refreshToken]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,7 +94,8 @@ export default function AdminDiscountsPage() {
 
   useEffect(() => {
     load();
-  }, [load]);
+    loadPartners();
+  }, [load, loadPartners]);
 
   async function handleCreate(body: CreateDiscountInput) {
     setError(null);
@@ -62,7 +103,11 @@ export default function AdminDiscountsPage() {
     try {
       const token = await refreshToken();
       await createDiscount(body, token ?? undefined);
-      setSuccess("Discount created.");
+      setSuccess(
+        body.brandPartnerApplicationId
+          ? "Discount created and linked to brand partner."
+          : "Discount created.",
+      );
       setForm(EMPTY_DISCOUNT_FORM);
       await load();
     } catch (err) {
@@ -88,7 +133,7 @@ export default function AdminDiscountsPage() {
     <>
       <ContentPageHeader
         title="Discounts"
-        description="Partner perks and brand partnerships shown in the mobile app."
+        description="Member discounts and partner offers shown in the mobile app. Link offers to approved brand partners when creating on their behalf."
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
@@ -98,6 +143,9 @@ export default function AdminDiscountsPage() {
           onChange={update}
           categoryOptions={categories}
           showFeatured
+          showPartnerPicker
+          brandPartners={partners}
+          brandPartnersLoading={partnersLoading}
           submitLabel="Create discount"
           onSubmit={handleCreate}
         />
@@ -114,9 +162,10 @@ export default function AdminDiscountsPage() {
             <thead>
               <tr>
                 <th>Title</th>
-                <th>%</th>
+                <th>Partner</th>
+                <th>Badge</th>
                 <th>Category</th>
-                <th>Tier</th>
+                {DISCOUNT_TIERS_ENABLED ? <th>Tier</th> : null}
                 <th>Status</th>
                 <th>Featured</th>
                 <th>Actions</th>
@@ -128,9 +177,10 @@ export default function AdminDiscountsPage() {
                   <td>
                     <AdminTitleLink href={`/admin/discounts/${d.id}`}>{d.title}</AdminTitleLink>
                   </td>
-                  <td>{d.percentage}%</td>
+                  <td>{partnerName(d)}</td>
+                  <td>{getDiscountBadgeLabel(d) ?? "—"}</td>
                   <td>{d.category}</td>
-                  <td>{formatDiscountTierLabel(d.tier)}</td>
+                  {DISCOUNT_TIERS_ENABLED ? <td>{formatDiscountTierLabel(d.tier)}</td> : null}
                   <td>
                     <PublishedBadge isPublished={d.isPublished ?? true} />
                   </td>

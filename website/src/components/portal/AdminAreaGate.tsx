@@ -7,9 +7,11 @@ import { AdminShell } from "@/components/admin/AdminShell";
 import {
   canAccessAdminRoutes,
   canAccessExpertRoutes,
+  canAccessFoundationRoutes,
 } from "@/lib/user-types";
 
 const EXPERT_ALLOWED_PREFIX = "/admin/community";
+const FOUNDATION_ALLOWED_PREFIX = "/admin/resources";
 
 export function AdminAreaGate({ children }: { children: ReactNode }) {
   const { user, loading, profile, profileError, userType, hasPortalAccess, homeRoute } =
@@ -18,9 +20,11 @@ export function AdminAreaGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   const isCommunityRoute = pathname.startsWith(EXPERT_ALLOWED_PREFIX);
+  const isResourcesRoute = pathname.startsWith(FOUNDATION_ALLOWED_PREFIX);
   const allowed =
     canAccessAdminRoutes(userType) ||
-    (isCommunityRoute && canAccessExpertRoutes(userType));
+    (isCommunityRoute && canAccessExpertRoutes(userType)) ||
+    (isResourcesRoute && canAccessFoundationRoutes(userType));
 
   const profileMissing = !loading && !!user && !profile;
 
@@ -76,7 +80,7 @@ export function AdminAreaGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!allowed) {
+  if (!hasPortalAccess || !allowed) {
     return (
       <div className="admin-login-page">
         <p>Redirecting…</p>
@@ -84,5 +88,5 @@ export function AdminAreaGate({ children }: { children: ReactNode }) {
     );
   }
 
-  return <AdminShell expertMode={!canAccessAdminRoutes(userType)}>{children}</AdminShell>;
+  return <AdminShell>{children}</AdminShell>;
 }

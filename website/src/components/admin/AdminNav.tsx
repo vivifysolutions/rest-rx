@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { PortalNavMode } from "@/lib/user-types";
 
 const FULL_NAV = [
   { href: "/admin", label: "Dashboard", exact: true },
-  { href: "/admin/users", label: "Applications" },
+  { href: "/admin/users", label: "Member applications" },
   { href: "/admin/members", label: "Members" },
-  { href: "/admin/discounts", label: "Partnerships" },
+  { href: "/admin/brand-applications", label: "Partner applications" },
+  { href: "/admin/discounts", label: "Discounts" },
   { href: "/admin/events", label: "Events" },
   { href: "/admin/resources", label: "Resources" },
   { href: "/admin/retreats", label: "Retreats" },
@@ -21,9 +23,12 @@ const FULL_NAV = [
 
 const EXPERT_NAV = [{ href: "/admin/community", label: "Community", exact: true }];
 
-export function AdminNav({ expertMode = false }: { expertMode?: boolean }) {
+const FOUNDATION_NAV = [{ href: "/admin/resources", label: "Resources", exact: true }];
+
+export function AdminNav({ navMode = "admin" }: { navMode?: PortalNavMode }) {
   const pathname = usePathname();
-  const navItems = expertMode ? EXPERT_NAV : FULL_NAV;
+  const navItems =
+    navMode === "expert" ? EXPERT_NAV : navMode === "foundation" ? FOUNDATION_NAV : FULL_NAV;
 
   return (
     <nav className="admin-nav" aria-label="Portal navigation">

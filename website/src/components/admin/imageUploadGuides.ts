@@ -19,13 +19,13 @@ export type ImageUploadGuide = {
 export const IMAGE_UPLOAD_GUIDES: Record<ImageUploadGuideKey, ImageUploadGuide> = {
   discount: {
     key: "discount",
-    label: "Partnership / discount cover",
+    label: "Discount cover",
     recommendedSize: "1200 × 675 px",
     aspectRatio: "16∶9 (landscape)",
     formats: "JPG, PNG, or WebP",
     maxFileSize: "8 MB",
-    whereUsed: "Discover discounts — featured carousel, list cards, and detail hero",
-    tips: "Keep logos and text away from the edges; images are center-cropped on smaller cards.",
+    whereUsed: "Discover discounts — featured carousel, list cards, and detail gallery",
+    tips: "Upload multiple photos if you have them. The first image is the cover; members swipe through the rest on the detail screen. Keep logos and text away from the edges.",
   },
   event: {
     key: "event",

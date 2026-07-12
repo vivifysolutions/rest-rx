@@ -72,7 +72,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
   const apiConfigured = apiUrl.length > 0;
 
   const userType = profile?.userType ?? null;
-  const portalAccess = userTypeHasPortalAccess(userType);
+  const portalAccess = userTypeHasPortalAccess(userType, profile?.partnerApplicationStatus);
   const homeRoute = userType ? getHomeRouteForUserType(userType) : "/portal/login";
 
   // Track in-flight profile loads so we don't double-fetch.

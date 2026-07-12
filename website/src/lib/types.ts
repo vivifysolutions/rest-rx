@@ -1,6 +1,6 @@
 export type ApplicationStatus = "pending" | "approved" | "rejected";
 
-export type UserType = "member" | "admin" | "brand_partner" | "expert";
+export type UserType = "member" | "admin" | "brand_partner" | "expert" | "ambassador" | "foundation";
 
 export type ApiUser = {
   id: string;
@@ -15,6 +15,7 @@ export type ApiUser = {
   phone?: string | null;
   userType: UserType;
   applicationStatus: ApplicationStatus;
+  partnerApplicationStatus?: ApplicationStatus | null;
   identityPhotoUrl?: string | null;
   workCredentialPhotoUrl?: string | null;
   onboardingAnswers?: Record<string, unknown> | null;
@@ -32,7 +33,8 @@ export type Discount = {
   id: string;
   title: string;
   description: string | null;
-  percentage: number;
+  percentage: number | null;
+  offerHighlight: string | null;
   category: string;
   location: string | null;
   latitude: number | null;
@@ -40,9 +42,20 @@ export type Discount = {
   tier: string | null;
   claimLink: string | null;
   image: string | null;
+  images: string[];
   isFeatured: boolean;
   isPublished: boolean;
   expiryDate: string | null;
+  ownerId?: string | null;
+  brandPartnerApplicationId?: string | null;
+  brandPartnerApplication?: {
+    id: string;
+    companyName: string;
+    fullName: string;
+    email: string;
+    applicationType?: string;
+    status?: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -50,7 +63,8 @@ export type Discount = {
 export type CreateDiscountInput = {
   title: string;
   description?: string;
-  percentage: number;
+  percentage?: number;
+  offerHighlight?: string;
   category: string;
   location?: string;
   latitude?: number;
@@ -58,9 +72,12 @@ export type CreateDiscountInput = {
   tier?: string;
   claimLink?: string;
   image?: string;
+  images?: string[];
   isFeatured?: boolean;
   isPublished?: boolean;
   expiryDate?: string;
+  /** Admin: link discount to an approved brand partner application. Empty string clears. */
+  brandPartnerApplicationId?: string;
 };
 
 /** Mirrors Prisma `Event`. */

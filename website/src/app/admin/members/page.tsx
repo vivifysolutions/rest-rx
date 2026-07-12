@@ -12,7 +12,31 @@ import {
 import type { ApiUser } from "@/lib/types";
 import { USER_TYPE_LABELS, type UserType } from "@/lib/user-types";
 
-const USER_TYPES: UserType[] = ["member", "admin", "brand_partner", "expert"];
+const USER_TYPES: UserType[] = [
+  "member",
+  "admin",
+  "brand_partner",
+  "expert",
+  "ambassador",
+  "foundation",
+];
+
+function roleBadgeClass(userType: UserType): string {
+  switch (userType) {
+    case "brand_partner":
+      return "admin-badge admin-badge-type-brand";
+    case "expert":
+      return "admin-badge admin-badge-type-expert";
+    case "ambassador":
+      return "admin-badge admin-badge-type-ambassador";
+    case "foundation":
+      return "admin-badge admin-badge-type-foundation";
+    case "admin":
+      return "admin-badge admin-badge-success";
+    default:
+      return "admin-badge admin-badge-type-member";
+  }
+}
 
 export default function AdminMembersPage() {
   const { refreshToken } = usePortalAuth();
@@ -65,7 +89,7 @@ export default function AdminMembersPage() {
     <>
       <ContentPageHeader
         title="Members"
-        description="Approved app users. Manage roles and view profiles for people with access to Rest & Rx."
+        description="Approved accounts by role. Filter by account type to separate healthcare members from brand, expert, ambassador, and foundation partners."
       />
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
@@ -82,9 +106,9 @@ export default function AdminMembersPage() {
           />
         </label>
         <label>
-          Role
+          Account type
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="">All roles</option>
+            <option value="">All types</option>
             {USER_TYPES.map((t) => (
               <option key={t} value={t}>
                 {USER_TYPE_LABELS[t]}
@@ -114,7 +138,7 @@ export default function AdminMembersPage() {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Role</th>
+                <th>Account type</th>
                 <th>Professional info</th>
                 <th>Onboarding</th>
                 <th>Joined</th>
@@ -130,19 +154,25 @@ export default function AdminMembersPage() {
                   </td>
                   <td>{u.email ?? "—"}</td>
                   <td>
-                    <select
-                      value={u.userType}
-                      disabled={savingId === u.id}
-                      onChange={(e) =>
-                        handleUserTypeChange(u.id, e.target.value as UserType)
-                      }
-                    >
-                      {USER_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {USER_TYPE_LABELS[t]}
-                        </option>
-                      ))}
-                    </select>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                      <span className={roleBadgeClass(u.userType)}>
+                        {USER_TYPE_LABELS[u.userType]}
+                      </span>
+                      <select
+                        value={u.userType}
+                        disabled={savingId === u.id}
+                        onChange={(e) =>
+                          handleUserTypeChange(u.id, e.target.value as UserType)
+                        }
+                        aria-label={`Change account type for ${displayUserName(u)}`}
+                      >
+                        {USER_TYPES.map((t) => (
+                          <option key={t} value={t}>
+                            {USER_TYPE_LABELS[t]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </td>
                   <td>
                     {[u.professionalRole, u.specialty].filter(Boolean).join(" · ") || "—"}

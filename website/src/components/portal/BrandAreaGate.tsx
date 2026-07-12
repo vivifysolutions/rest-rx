@@ -66,7 +66,7 @@ export function BrandAreaGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!allowed) {
+  if (!hasPortalAccess || !allowed) {
     return (
       <div className="admin-login-page">
         <p>Redirecting…</p>

@@ -1,3 +1,6 @@
+/** Set to true when member-facing discount tiers (free / silver / gold) ship. */
+export const DISCOUNT_TIERS_ENABLED = false;
+
 /** Canonical discount tiers — stored lowercase; matches mobile discover filters and badges. */
 export const DISCOUNT_TIER_OPTIONS = [
   { value: "free", label: "Free" },

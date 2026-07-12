@@ -179,6 +179,7 @@ export function ResourceForm({
           values={form.images}
           onChange={(urls) => onChange("images", urls)}
           label="Quick Rx images"
+          hint="Add slides in the order members should swipe."
           guide="quick-rx-slide"
         />
       ) : isMicroRxType(form.type) ? null : (

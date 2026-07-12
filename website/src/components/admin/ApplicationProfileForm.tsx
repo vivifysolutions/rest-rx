@@ -228,13 +228,13 @@ export function ApplicationProfileForm({ user, saving, saveError, onSave }: Prop
 
           <div className="admin-form-row">
             <ImageUpload
-              folder="verification/identity"
+              folder="verification/admin/identity"
               label="Identity photo"
               value={form.identityPhotoUrl}
               onChange={(url) => setField("identityPhotoUrl", url)}
             />
             <ImageUpload
-              folder="verification/work-credential"
+              folder="verification/admin/work-credential"
               label="Work credential"
               value={form.workCredentialPhotoUrl}
               onChange={(url) => setField("workCredentialPhotoUrl", url)}
