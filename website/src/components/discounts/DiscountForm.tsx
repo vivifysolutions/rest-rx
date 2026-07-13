@@ -119,10 +119,10 @@ export function DiscountForm({
     <form className="admin-form" onSubmit={handleSubmit}>
       {showPartnerPicker && (
         <label>
-          Brand partner
+          Owner (partner account)
           <span className="admin-field-hint">
-            Optional — link this offer to an approved brand partner so it appears on their
-            application and in their portal.
+            Optional — link to an approved brand partner, expert, or foundation so the offer
+            appears under their application / portal account.
           </span>
           <BrandPartnerPicker
             value={form.brandPartnerApplicationId}

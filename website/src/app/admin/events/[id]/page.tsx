@@ -76,6 +76,23 @@ export default function AdminEventDetailPage() {
       }
     >
       <DetailSection title="Overview">
+        <DetailRow
+          label="Owner"
+          value={
+            item.brandPartnerApplication
+              ? item.brandPartnerApplication.companyName ||
+                item.brandPartnerApplication.fullName ||
+                item.brandPartnerApplication.email
+              : "—"
+          }
+        />
+        {item.brandPartnerApplicationId ? (
+          <DetailRow label="Application">
+            <Link href={`/admin/brand-applications/${item.brandPartnerApplicationId}`}>
+              View partner application
+            </Link>
+          </DetailRow>
+        ) : null}
         <DetailRow label="Category" value={item.category ?? "—"} />
         <DetailRow label="Format" value={item.format ?? "—"} />
         <DetailRow label="Location" value={item.location ?? "—"} />

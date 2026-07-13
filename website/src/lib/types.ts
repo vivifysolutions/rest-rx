@@ -97,6 +97,16 @@ export type Event = {
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
+  ownerId?: string | null;
+  brandPartnerApplicationId?: string | null;
+  brandPartnerApplication?: {
+    id: string;
+    companyName: string;
+    fullName: string;
+    email: string;
+    applicationType?: string;
+    status?: string;
+  } | null;
   createdAt: string;
   updatedAt?: string;
 };
@@ -116,6 +126,8 @@ export type CreateEventInput = {
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
+  /** Admin: link to approved brand / expert / foundation application. Empty string clears. */
+  brandPartnerApplicationId?: string;
 };
 
 /** Mirrors Prisma `Resource`. Uses `topic`/`subTopic` (not category). */
