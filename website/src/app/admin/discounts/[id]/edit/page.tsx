@@ -18,6 +18,7 @@ import {
   updateDiscount,
 } from "@/lib/api";
 import { locationFromListing } from "@/lib/address";
+import { toPartnerOwnerOptions } from "@/lib/partner-owner";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
 
 function discountToForm(d: Discount): DiscountFormValues {
@@ -69,19 +70,7 @@ export default function AdminDiscountEditPage() {
         if (cancelled) return;
         setForm(discountToForm(item));
         setCategories(cats.map((c) => ({ value: c.name, label: c.name })));
-        setPartners(
-          apps
-            .filter((a) => a.applicationType === "brand_partner")
-            .map((a) => ({
-              id: a.id,
-              companyName: a.companyName,
-              fullName: a.fullName,
-              email: a.email,
-            }))
-            .sort((a, b) =>
-              (a.companyName || a.fullName).localeCompare(b.companyName || b.fullName),
-            ),
-        );
+        setPartners(toPartnerOwnerOptions(apps));
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load discount");
       } finally {

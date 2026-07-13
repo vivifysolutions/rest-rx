@@ -4,6 +4,10 @@ import { FormEvent } from "react";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { LocationField } from "@/components/admin/LocationField";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import {
+  BrandPartnerPicker,
+  type BrandPartnerOption,
+} from "@/components/discounts/BrandPartnerPicker";
 import type { LocationValue } from "@/lib/address";
 import type { CreateEventInput } from "@/lib/types";
 
@@ -19,6 +23,7 @@ export type EventFormValues = {
   startDate: string;
   endDate: string;
   isFeatured: boolean;
+  brandPartnerApplicationId: string;
 };
 
 type Props = {
@@ -26,12 +31,18 @@ type Props = {
   onChange: <K extends keyof EventFormValues>(key: K, value: EventFormValues[K]) => void;
   topics: string[];
   formats: string[];
+  showPartnerPicker?: boolean;
+  brandPartners?: BrandPartnerOption[];
+  brandPartnersLoading?: boolean;
   submitLabel?: string;
   onSubmit: (body: CreateEventInput) => Promise<void>;
 };
 
-export function formValuesToEventBody(form: EventFormValues): CreateEventInput {
-  return {
+export function formValuesToEventBody(
+  form: EventFormValues,
+  options?: { includePartner?: boolean },
+): CreateEventInput {
+  const body: CreateEventInput = {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
     category: form.category.trim() || undefined,
@@ -44,6 +55,10 @@ export function formValuesToEventBody(form: EventFormValues): CreateEventInput {
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
   };
+  if (options?.includePartner) {
+    body.brandPartnerApplicationId = form.brandPartnerApplicationId.trim();
+  }
+  return body;
 }
 
 export function EventForm({
@@ -51,16 +66,34 @@ export function EventForm({
   onChange,
   topics,
   formats,
+  showPartnerPicker = false,
+  brandPartners = [],
+  brandPartnersLoading = false,
   submitLabel = "Save event",
   onSubmit,
 }: Props) {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    await onSubmit(formValuesToEventBody(form));
+    await onSubmit(formValuesToEventBody(form, { includePartner: showPartnerPicker }));
   }
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {showPartnerPicker && (
+        <label>
+          Owner (partner account)
+          <span className="admin-field-hint">
+            Optional — link to an approved brand partner, expert, or foundation.
+          </span>
+          <BrandPartnerPicker
+            value={form.brandPartnerApplicationId}
+            partners={brandPartners}
+            loading={brandPartnersLoading}
+            onChange={(id) => onChange("brandPartnerApplicationId", id)}
+          />
+        </label>
+      )}
+
       <label>
         Title *
         <input value={form.title} onChange={(e) => onChange("title", e.target.value)} required />

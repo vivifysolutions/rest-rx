@@ -79,7 +79,7 @@ export default function AdminDiscountDetailPage() {
     >
       <DetailSection title="Overview">
         <DetailRow
-          label="Brand partner"
+          label="Owner"
           value={
             item.brandPartnerApplication
               ? item.brandPartnerApplication.companyName ||

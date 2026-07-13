@@ -20,13 +20,19 @@ import {
   updateDiscount,
 } from "@/lib/api";
 import { getDiscountBadgeLabel } from "@/lib/discountOffer";
+import { toPartnerOwnerOptions } from "@/lib/partner-owner";
 import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
+import { labelApplicationTypeShort } from "@/lib/partner-application-options";
 
 function partnerName(d: Discount): string {
   const app = d.brandPartnerApplication;
   if (!app) return "—";
-  return app.companyName.trim() || app.fullName.trim() || app.email || "—";
+  const name = app.companyName.trim() || app.fullName.trim() || app.email || "—";
+  const type = app.applicationType
+    ? ` (${labelApplicationTypeShort(app.applicationType as "brand_partner" | "expert" | "foundation" | "ambassador")})`
+    : "";
+  return `${name}${type}`;
 }
 
 export default function AdminDiscountsPage() {
@@ -52,19 +58,7 @@ export default function AdminDiscountsPage() {
         return;
       }
       const apps = await getBrandPartnerApplications(token, { status: "approved" });
-      setPartners(
-        apps
-          .filter((a) => a.applicationType === "brand_partner")
-          .map((a) => ({
-            id: a.id,
-            companyName: a.companyName,
-            fullName: a.fullName,
-            email: a.email,
-          }))
-          .sort((a, b) =>
-            (a.companyName || a.fullName).localeCompare(b.companyName || b.fullName),
-          ),
-      );
+      setPartners(toPartnerOwnerOptions(apps));
     } catch {
       setPartners([]);
     } finally {

@@ -8,32 +8,40 @@ import {
   useState,
 } from "react";
 import type { BrandPartnerApplication } from "@/lib/brand-partner-application";
+import { labelApplicationTypeShort } from "@/lib/partner-application-options";
 
-export type BrandPartnerOption = Pick<
+export type PartnerOwnerOption = Pick<
   BrandPartnerApplication,
-  "id" | "companyName" | "fullName" | "email"
+  "id" | "companyName" | "fullName" | "email" | "applicationType"
 >;
 
 type Props = {
   value: string;
-  partners: BrandPartnerOption[];
+  partners: PartnerOwnerOption[];
   onChange: (applicationId: string) => void;
   loading?: boolean;
   disabled?: boolean;
+  placeholder?: string;
 };
 
-function partnerLabel(partner: BrandPartnerOption): string {
+function partnerLabel(partner: PartnerOwnerOption): string {
   return partner.companyName.trim() || partner.fullName.trim() || partner.email;
 }
 
-function partnerSearchText(partner: BrandPartnerOption): string {
-  return [partner.companyName, partner.fullName, partner.email]
+function partnerSearchText(partner: PartnerOwnerOption): string {
+  return [
+    partner.companyName,
+    partner.fullName,
+    partner.email,
+    partner.applicationType,
+    labelApplicationTypeShort(partner.applicationType),
+  ]
     .join(" ")
     .toLowerCase();
 }
 
 /**
- * Searchable picker of approved brand partners for linking discounts.
+ * Searchable picker of approved brand / expert / foundation partners for content ownership.
  */
 export function BrandPartnerPicker({
   value,
@@ -41,6 +49,7 @@ export function BrandPartnerPicker({
   onChange,
   loading = false,
   disabled = false,
+  placeholder = "Search by company, contact, type, or email",
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -111,7 +120,7 @@ export function BrandPartnerPicker({
   const displayValue = open
     ? query
     : selected
-      ? partnerLabel(selected)
+      ? `${partnerLabel(selected)} (${labelApplicationTypeShort(selected.applicationType)})`
       : "";
 
   return (
@@ -130,11 +139,7 @@ export function BrandPartnerPicker({
             setQuery("");
           }}
           onKeyDown={onKeyDown}
-          placeholder={
-            loading
-              ? "Loading brand partners…"
-              : "Search by company, contact, or email"
-          }
+          placeholder={loading ? "Loading partners…" : placeholder}
           disabled={disabled || loading}
           autoComplete="off"
           role="combobox"
@@ -145,7 +150,7 @@ export function BrandPartnerPicker({
           <button
             type="button"
             className="combo-chevron"
-            aria-label="Clear brand partner"
+            aria-label="Clear partner"
             onClick={clear}
             tabIndex={-1}
             disabled={disabled}
@@ -156,7 +161,7 @@ export function BrandPartnerPicker({
           <button
             type="button"
             className="combo-chevron"
-            aria-label="Toggle brand partners"
+            aria-label="Toggle partners"
             onClick={() => {
               if (disabled || loading) return;
               setOpen((v) => !v);
@@ -175,8 +180,8 @@ export function BrandPartnerPicker({
           {filtered.length === 0 ? (
             <li className="combo-item combo-item-empty">
               {partners.length === 0
-                ? "No approved brand partners yet"
-                : "No matching brand partners"}
+                ? "No approved partners yet"
+                : "No matching partners"}
             </li>
           ) : (
             filtered.map((partner, i) => (
@@ -193,6 +198,8 @@ export function BrandPartnerPicker({
               >
                 <strong>{partnerLabel(partner)}</strong>
                 <span className="combo-item-meta">
+                  {labelApplicationTypeShort(partner.applicationType)}
+                  {" · "}
                   {[partner.fullName, partner.email].filter(Boolean).join(" · ")}
                 </span>
               </li>
@@ -203,3 +210,5 @@ export function BrandPartnerPicker({
     </div>
   );
 }
+
+export type BrandPartnerOption = PartnerOwnerOption;

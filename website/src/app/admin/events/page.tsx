@@ -5,9 +5,11 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { EventForm, type EventFormValues } from "@/components/admin/EventForm";
+import type { BrandPartnerOption } from "@/components/discounts/BrandPartnerPicker";
 import {
   createEvent,
   deleteEvent,
+  getBrandPartnerApplications,
   getCategories,
   getEventFormats,
   getEvents,
@@ -15,6 +17,8 @@ import {
 } from "@/lib/api";
 import { EMPTY_LOCATION } from "@/lib/address";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
+import { labelApplicationTypeShort } from "@/lib/partner-application-options";
+import { partnerOwnerDisplayName, toPartnerOwnerOptions } from "@/lib/partner-owner";
 import type { Event } from "@/lib/types";
 
 const EMPTY_FORM: EventFormValues = {
@@ -29,13 +33,26 @@ const EMPTY_FORM: EventFormValues = {
   startDate: "",
   endDate: "",
   isFeatured: false,
+  brandPartnerApplicationId: "",
 };
+
+function ownerLabel(ev: Event): string {
+  const app = ev.brandPartnerApplication;
+  if (!app) return "—";
+  const name = partnerOwnerDisplayName(app);
+  const type = app.applicationType
+    ? ` (${labelApplicationTypeShort(app.applicationType as "brand_partner" | "expert" | "foundation" | "ambassador")})`
+    : "";
+  return `${name}${type}`;
+}
 
 export default function AdminEventsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Event[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [formats, setFormats] = useState<string[]>([]);
+  const [partners, setPartners] = useState<BrandPartnerOption[]>([]);
+  const [partnersLoading, setPartnersLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -43,6 +60,23 @@ export default function AdminEventsPage() {
 
   const update = <K extends keyof EventFormValues>(k: K, v: EventFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
+
+  const loadPartners = useCallback(async () => {
+    setPartnersLoading(true);
+    try {
+      const token = await refreshToken();
+      if (!token) {
+        setPartners([]);
+        return;
+      }
+      const apps = await getBrandPartnerApplications(token, { status: "approved" });
+      setPartners(toPartnerOwnerOptions(apps));
+    } catch {
+      setPartners([]);
+    } finally {
+      setPartnersLoading(false);
+    }
+  }, [refreshToken]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -68,7 +102,8 @@ export default function AdminEventsPage() {
 
   useEffect(() => {
     load();
-  }, [load]);
+    loadPartners();
+  }, [load, loadPartners]);
 
   async function handleCreate(body: Parameters<typeof createEvent>[0]) {
     setError(null);
@@ -76,7 +111,11 @@ export default function AdminEventsPage() {
     try {
       const token = await refreshToken();
       await createEvent(body, token ?? undefined);
-      setSuccess("Event created.");
+      setSuccess(
+        body.brandPartnerApplicationId
+          ? "Event created and linked to partner."
+          : "Event created.",
+      );
       setForm(EMPTY_FORM);
       await load();
     } catch (err) {
@@ -102,7 +141,7 @@ export default function AdminEventsPage() {
     <>
       <ContentPageHeader
         title="Events"
-        description="Workshops, webinars, and gatherings. Create and publish events for the app."
+        description="Workshops, webinars, and gatherings. Optionally assign ownership to an approved brand partner, expert, or foundation."
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
@@ -112,6 +151,9 @@ export default function AdminEventsPage() {
           onChange={update}
           topics={topics}
           formats={formats}
+          showPartnerPicker
+          brandPartners={partners}
+          brandPartnersLoading={partnersLoading}
           submitLabel="Create event"
           onSubmit={handleCreate}
         />
@@ -128,6 +170,7 @@ export default function AdminEventsPage() {
             <thead>
               <tr>
                 <th>Title</th>
+                <th>Owner</th>
                 <th>Category</th>
                 <th>Format</th>
                 <th>Location</th>
@@ -144,6 +187,7 @@ export default function AdminEventsPage() {
                   <td>
                     <AdminTitleLink href={`/admin/events/${ev.id}`}>{ev.title}</AdminTitleLink>
                   </td>
+                  <td>{ownerLabel(ev)}</td>
                   <td>{ev.category ?? "—"}</td>
                   <td>{ev.format ?? "—"}</td>
                   <td>{ev.location ?? "—"}</td>
