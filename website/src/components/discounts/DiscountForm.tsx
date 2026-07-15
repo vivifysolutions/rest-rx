@@ -418,7 +418,7 @@ export function DiscountForm({
           onChange={(loc) => onChange("location", loc)}
           label="Business address"
           placeholder="123 Main St"
-          hint="Search and pick the address, or enter street, city, state, and ZIP. These are converted to map coordinates for nearby offers in the app."
+          hint="Choose Online for virtual businesses (no city/state needed), or enter a street address for in-person locations. Physical addresses are converted to map coordinates for nearby offers in the app."
         />
       </fieldset>
 

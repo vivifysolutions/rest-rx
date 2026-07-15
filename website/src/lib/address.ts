@@ -28,10 +28,17 @@ export const EMPTY_LOCATION: LocationValue = {
 };
 
 const VIRTUAL_LOCATION = /\b(online|virtual|zoom|remote|hybrid)\b/i;
+const ONLINE_FORMAT = /\b(online|virtual|remote)\b/i;
 
 export function isVirtualLocation(location: string | null | undefined): boolean {
   if (!location?.trim()) return false;
   return VIRTUAL_LOCATION.test(location);
+}
+
+/** Event format values that imply no physical venue (city/state not needed). */
+export function isOnlineFormat(format: string | null | undefined): boolean {
+  if (!format?.trim()) return false;
+  return ONLINE_FORMAT.test(format);
 }
 
 export function formatLocationLabel(address: LocationValue): string {
