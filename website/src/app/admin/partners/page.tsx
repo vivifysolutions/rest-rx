@@ -11,12 +11,12 @@ import {
 } from "@/lib/admin-user-display";
 import type { ApiUser } from "@/lib/types";
 import {
-  MEMBER_DIRECTORY_TYPES,
+  PARTNER_DIRECTORY_TYPES,
   USER_TYPE_LABELS,
   type UserType,
 } from "@/lib/user-types";
 
-const USER_TYPES: UserType[] = [
+const ALL_USER_TYPES: UserType[] = [
   "member",
   "admin",
   "brand_partner",
@@ -42,7 +42,7 @@ function roleBadgeClass(userType: UserType): string {
   }
 }
 
-export default function AdminMembersPage() {
+export default function AdminPartnersPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<ApiUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,12 +61,12 @@ export default function AdminMembersPage() {
       const data = await listUsers(token, {
         applicationStatus: "approved",
         userType: filterType || undefined,
-        userTypes: filterType ? undefined : [...MEMBER_DIRECTORY_TYPES],
+        userTypes: filterType ? undefined : [...PARTNER_DIRECTORY_TYPES],
         search: search || undefined,
       });
       setItems(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load members");
+      setError(e instanceof Error ? e.message : "Failed to load partners");
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ export default function AdminMembersPage() {
       setItems((prev) =>
         prev
           .map((u) => (u.id === userId ? updated : u))
-          .filter((u) => MEMBER_DIRECTORY_TYPES.includes(u.userType)),
+          .filter((u) => PARTNER_DIRECTORY_TYPES.includes(u.userType)),
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to update role");
@@ -97,8 +97,8 @@ export default function AdminMembersPage() {
   return (
     <>
       <ContentPageHeader
-        title="Members"
-        description="Approved healthcare members and ambassadors. Brand, expert, and foundation accounts live under Partners."
+        title="Partners"
+        description="Approved brand, expert, and foundation accounts. Healthcare members and ambassadors live under Members."
       />
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
@@ -115,10 +115,10 @@ export default function AdminMembersPage() {
           />
         </label>
         <label>
-          Account type
+          Partner type
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="">All members</option>
-            {MEMBER_DIRECTORY_TYPES.map((t) => (
+            <option value="">All partners</option>
+            {PARTNER_DIRECTORY_TYPES.map((t) => (
               <option key={t} value={t}>
                 {USER_TYPE_LABELS[t]}
               </option>
@@ -140,7 +140,7 @@ export default function AdminMembersPage() {
         {loading ? (
           <p>Loading…</p>
         ) : items.length === 0 ? (
-          <p style={{ color: "var(--text-muted)" }}>No approved members found.</p>
+          <p style={{ color: "var(--text-muted)" }}>No approved partners match this filter.</p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -157,7 +157,7 @@ export default function AdminMembersPage() {
               {items.map((u) => (
                 <tr key={u.id}>
                   <td>
-                    <AdminTitleLink href={`/admin/members/${u.id}`}>
+                    <AdminTitleLink href={`/admin/partners/${u.id}`}>
                       {displayUserName(u)}
                     </AdminTitleLink>
                   </td>
@@ -175,7 +175,7 @@ export default function AdminMembersPage() {
                         }
                         aria-label={`Change account type for ${displayUserName(u)}`}
                       >
-                        {USER_TYPES.map((t) => (
+                        {ALL_USER_TYPES.map((t) => (
                           <option key={t} value={t}>
                             {USER_TYPE_LABELS[t]}
                           </option>

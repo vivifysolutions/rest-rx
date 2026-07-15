@@ -4,10 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { PortalNavMode } from "@/lib/user-types";
 
-const FULL_NAV = [
+type NavItem = { href: string; label: string; exact?: boolean };
+
+const FULL_NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/users", label: "Member applications" },
   { href: "/admin/members", label: "Members" },
+  { href: "/admin/partners", label: "Partners" },
   { href: "/admin/brand-applications", label: "Partner applications" },
   { href: "/admin/discounts", label: "Discounts" },
   { href: "/admin/events", label: "Events" },
@@ -21,9 +24,11 @@ const FULL_NAV = [
   { href: "/admin/categories", label: "Categories" },
 ];
 
-const EXPERT_NAV = [{ href: "/admin/community", label: "Community", exact: true }];
+const EXPERT_NAV: NavItem[] = [{ href: "/admin/community", label: "Community" }];
 
-const FOUNDATION_NAV = [{ href: "/admin/resources", label: "Resources", exact: true }];
+const FOUNDATION_NAV: NavItem[] = [
+  { href: "/admin/resources", label: "Resources", exact: true },
+];
 
 export function AdminNav({ navMode = "admin" }: { navMode?: PortalNavMode }) {
   const pathname = usePathname();

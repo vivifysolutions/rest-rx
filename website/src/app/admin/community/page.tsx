@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import {
   deletePost,
   deleteThread,
@@ -93,7 +94,7 @@ export default function AdminCommunityPage() {
     <>
       <ContentPageHeader
         title="Community"
-        description="Moderate forum threads and feed posts. Pin, lock, or remove content."
+        description="Moderate forum threads and feed posts. Click a title to review replies and comments."
       />
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -136,7 +137,11 @@ export default function AdminCommunityPage() {
             <tbody>
               {threads.map((t) => (
                 <tr key={t.id}>
-                  <td>{t.title}</td>
+                  <td>
+                    <AdminTitleLink href={`/admin/community/${t.id}`}>
+                      {t.title}
+                    </AdminTitleLink>
+                  </td>
                   <td>{t.topic ?? "—"}</td>
                   <td>{authorLabel(t.author)}</td>
                   <td>{t.postCount}</td>
@@ -193,28 +198,34 @@ export default function AdminCommunityPage() {
               </tr>
             </thead>
             <tbody>
-              {posts.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    {p.title || p.content.slice(0, 80)}
-                    {(p.title || p.content).length > 80 ? "…" : ""}
-                  </td>
-                  <td>{p.topic ?? "—"}</td>
-                  <td>{authorLabel(p.author)}</td>
-                  <td>{p.likeCount}</td>
-                  <td>{p.replyCount}</td>
-                  <td>{new Date(p.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="admin-btn admin-btn-sm admin-btn-danger"
-                      onClick={() => handleDeletePost(p.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {posts.map((p) => {
+                const preview = p.title || p.content.slice(0, 80);
+                const full = p.title || p.content;
+                return (
+                  <tr key={p.id}>
+                    <td>
+                      <AdminTitleLink href={`/admin/community/posts/${p.id}`}>
+                        {preview}
+                        {full.length > 80 ? "…" : ""}
+                      </AdminTitleLink>
+                    </td>
+                    <td>{p.topic ?? "—"}</td>
+                    <td>{authorLabel(p.author)}</td>
+                    <td>{p.likeCount}</td>
+                    <td>{p.commentCount ?? p.replyCount ?? 0}</td>
+                    <td>{new Date(p.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn-sm admin-btn-danger"
+                        onClick={() => handleDeletePost(p.id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

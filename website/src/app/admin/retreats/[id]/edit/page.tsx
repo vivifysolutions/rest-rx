@@ -13,6 +13,7 @@ function retreatToForm(item: Retreat): RetreatFormValues {
   return {
     title: item.title,
     description: item.description ?? "",
+    joinInstructions: item.joinInstructions ?? "",
     category: item.category ?? "",
     season: item.season ?? "",
     location: item.location ?? "",
@@ -20,6 +21,7 @@ function retreatToForm(item: Retreat): RetreatFormValues {
     image: item.image ?? "",
     startDate: item.startDate ? item.startDate.slice(0, 10) : "",
     endDate: item.endDate ? item.endDate.slice(0, 10) : "",
+    bookingUrl: item.bookingUrl ?? "",
     isFeatured: item.isFeatured,
   };
 }
@@ -31,6 +33,7 @@ export default function AdminRetreatEditPage() {
   const [form, setForm] = useState<RetreatFormValues>({
     title: "",
     description: "",
+    joinInstructions: "",
     category: "",
     season: "",
     location: "",
@@ -38,6 +41,7 @@ export default function AdminRetreatEditPage() {
     image: "",
     startDate: "",
     endDate: "",
+    bookingUrl: "",
     isFeatured: false,
   });
   const [topics, setTopics] = useState<string[]>([]);

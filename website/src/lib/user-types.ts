@@ -9,6 +9,22 @@ export const USER_TYPE_LABELS: Record<UserType, string> = {
   foundation: "Non-profit / foundation",
 };
 
+/**
+ * Approved mobile-app accounts listed under Admin → Members.
+ * Ambassadors are community members who share on behalf of Rest & Rx.
+ */
+export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador"];
+
+/**
+ * Approved portal partner accounts listed under Admin → Partners.
+ * Ambassadors are not partners — they appear under Members.
+ */
+export const PARTNER_DIRECTORY_TYPES: UserType[] = [
+  "brand_partner",
+  "expert",
+  "foundation",
+];
+
 /** Roles that use the web portal (not the consumer mobile app home). */
 export const PORTAL_USER_TYPES: UserType[] = [
   "admin",

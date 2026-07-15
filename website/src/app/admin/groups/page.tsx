@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { getGroups, updateGroupStatus } from "@/lib/api";
 import type { Group } from "@/lib/types";
 import { formatGroupStatus } from "@/lib/admin-labels";
@@ -17,7 +18,7 @@ export default function AdminGroupsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getGroups({ limit: 100 });
+      const data = await getGroups({ limit: 100, status: "all" });
       setItems(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load groups");
@@ -44,7 +45,7 @@ export default function AdminGroupsPage() {
     <>
       <ContentPageHeader
         title="Groups"
-        description="Community groups created by members. Archive or deactivate groups that violate guidelines."
+        description="Community groups created by members. Click a name to review posts and comments."
       />
 
       {error && <p className="admin-error admin-card">{error}</p>}
@@ -68,7 +69,11 @@ export default function AdminGroupsPage() {
             <tbody>
               {items.map((g) => (
                 <tr key={g.id}>
-                  <td>{g.name}</td>
+                  <td>
+                    <AdminTitleLink href={`/admin/groups/${g.id}`}>
+                      {g.name}
+                    </AdminTitleLink>
+                  </td>
                   <td>{g.topic ?? "—"}</td>
                   <td>
                     {[g.city, g.state, g.country].filter(Boolean).join(", ") || "—"}

@@ -14,6 +14,7 @@ import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import { deleteDiscount, getDiscountById, updateDiscount } from "@/lib/api";
 import { getDiscountBadgeLabel } from "@/lib/discountOffer";
 import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
+import { formatInstagramLabel, instagramProfileUrl } from "@/lib/social";
 import type { Discount } from "@/lib/types";
 
 export default function AdminDiscountDetailPage() {
@@ -95,6 +96,7 @@ export default function AdminDiscountDetailPage() {
             </Link>
           </DetailRow>
         ) : null}
+        <DetailRow label="Offer" value={item.offerSummary?.trim() || getDiscountBadgeLabel(item) || "—"} />
         <DetailRow label="Badge highlight" value={getDiscountBadgeLabel(item) ?? "—"} />
         <DetailRow
           label="Percentage"
@@ -104,7 +106,6 @@ export default function AdminDiscountDetailPage() {
         {DISCOUNT_TIERS_ENABLED ? (
           <DetailRow label="Tier" value={formatDiscountTierLabel(item.tier)} />
         ) : null}
-        <DetailRow label="Location" value={item.location ?? "—"} />
         <DetailRow label="Status">
           <PublishedBadge isPublished={item.isPublished ?? true} />
         </DetailRow>
@@ -116,22 +117,80 @@ export default function AdminDiscountDetailPage() {
       </DetailSection>
 
       {item.description && (
-        <DetailSection title="Description">
+        <DetailSection title="About this offer">
           <DetailRow label="Content">
             <div className="admin-detail-markdown">{item.description}</div>
           </DetailRow>
         </DetailSection>
       )}
 
-      {item.claimLink && (
-        <DetailSection title="Claim link">
-          <DetailRow label="URL">
-            <a href={item.claimLink} target="_blank" rel="noreferrer">
-              Open claim page
-            </a>
+      {item.redemptionInstructions && (
+        <DetailSection title="How to redeem">
+          <DetailRow label="Instructions">
+            <div className="admin-detail-markdown">{item.redemptionInstructions}</div>
           </DetailRow>
         </DetailSection>
       )}
+
+      {item.terms && (
+        <DetailSection title="Terms">
+          <DetailRow label="Content">
+            <div className="admin-detail-markdown">{item.terms}</div>
+          </DetailRow>
+        </DetailSection>
+      )}
+
+      <DetailSection title="Redeem & business">
+        <DetailRow label="Redemption link">
+          {item.claimLink ? (
+            <a href={item.claimLink} target="_blank" rel="noreferrer">
+              Open redemption page
+            </a>
+          ) : (
+            "—"
+          )}
+        </DetailRow>
+        <DetailRow label="Website">
+          {item.website ? (
+            <a href={item.website} target="_blank" rel="noreferrer">
+              {item.website}
+            </a>
+          ) : (
+            "—"
+          )}
+        </DetailRow>
+        <DetailRow label="Instagram">
+          {instagramProfileUrl(item.instagram) ? (
+            <a
+              href={instagramProfileUrl(item.instagram)!}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {formatInstagramLabel(item.instagram)}
+            </a>
+          ) : (
+            "—"
+          )}
+        </DetailRow>
+        <DetailRow label="Phone" value={item.phone ?? "—"} />
+        <DetailRow label="Address">
+          {item.location ? (
+            <a
+              href={
+                item.latitude != null && item.longitude != null
+                  ? `https://www.google.com/maps/search/?api=1&query=${item.latitude},${item.longitude}`
+                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}`
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              {item.location}
+            </a>
+          ) : (
+            "—"
+          )}
+        </DetailRow>
+      </DetailSection>
 
       <DetailSection title="Photos">
         <DetailRow label="Gallery">

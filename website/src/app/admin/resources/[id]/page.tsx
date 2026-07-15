@@ -106,9 +106,17 @@ export default function AdminResourceDetailPage() {
       </DetailSection>
 
       {(microRx || (!isArticleType(item.type) && item.description)) && (
-        <DetailSection title={microRx ? "Prompt" : isAudioType(item.type) ? "Transcript / description" : "Description"}>
+        <DetailSection title={microRx ? "Prompt" : isAudioType(item.type) ? "Transcript / description" : quickRx ? "Caption" : "Description"}>
           <DetailRow label="Content">
             <div className="admin-detail-markdown">{item.description}</div>
+          </DetailRow>
+        </DetailSection>
+      )}
+
+      {quickRx && item.citations && (
+        <DetailSection title="Citations">
+          <DetailRow label="Sources">
+            <div className="admin-detail-markdown">{item.citations}</div>
           </DetailRow>
         </DetailSection>
       )}

@@ -19,20 +19,37 @@ import {
   type UpdateUserProfilePayload,
 } from "@/lib/api";
 import type { ApiUser, ApplicationStatus, UserType } from "@/lib/types";
-import { USER_TYPE_LABELS } from "@/lib/user-types";
+import {
+  PARTNER_DIRECTORY_TYPES,
+  USER_TYPE_LABELS,
+} from "@/lib/user-types";
 
 const USER_TYPES: UserType[] = ["member", "admin", "brand_partner", "expert", "ambassador", "foundation"];
 const APPLICATION_STATUSES: ApplicationStatus[] = ["pending", "approved", "rejected"];
 
 type Props = {
   userId: string;
-  mode: "application" | "member";
+  mode: "application" | "member" | "partner";
 };
+
+function isPartnerType(userType: UserType) {
+  return PARTNER_DIRECTORY_TYPES.includes(userType);
+}
 
 export function AdminUserDetail({ userId, mode }: Props) {
   const { refreshToken } = usePortalAuth();
-  const backHref = mode === "application" ? "/admin/users" : "/admin/members";
-  const backLabel = mode === "application" ? "Member applications" : "Members";
+  const backHref =
+    mode === "application"
+      ? "/admin/users"
+      : mode === "partner"
+        ? "/admin/partners"
+        : "/admin/members";
+  const backLabel =
+    mode === "application"
+      ? "Member applications"
+      : mode === "partner"
+        ? "Partners"
+        : "Members";
 
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,7 +129,14 @@ export function AdminUserDetail({ userId, mode }: Props) {
 
   const isApproved = user.applicationStatus === "approved";
   const wrongSection =
-    (mode === "application" && isApproved) || (mode === "member" && !isApproved);
+    (mode === "application" && isApproved) ||
+    (mode === "member" && (!isApproved || isPartnerType(user.userType))) ||
+    (mode === "partner" && (!isApproved || !isPartnerType(user.userType)));
+
+  const approvedDirectoryHref = isPartnerType(user.userType)
+    ? `/admin/partners/${user.id}`
+    : `/admin/members/${user.id}`;
+  const approvedDirectoryLabel = isPartnerType(user.userType) ? "Partners" : "Members";
 
   return (
     <AdminDetailLayout
@@ -156,8 +180,8 @@ export function AdminUserDetail({ userId, mode }: Props) {
         <div className="admin-callout" style={{ marginBottom: "1rem" }}>
           {isApproved ? (
             <>
-              This user is approved for the app.{" "}
-              <Link href={`/admin/members/${user.id}`}>Open in Members</Link>
+              This user belongs in the approved {approvedDirectoryLabel.toLowerCase()} list.{" "}
+              <Link href={approvedDirectoryHref}>Open in {approvedDirectoryLabel}</Link>
             </>
           ) : (
             <>
@@ -168,7 +192,15 @@ export function AdminUserDetail({ userId, mode }: Props) {
         </div>
       )}
 
-      <DetailSection title={mode === "application" ? "Application status" : "Membership"}>
+      <DetailSection
+        title={
+          mode === "application"
+            ? "Application status"
+            : mode === "partner"
+              ? "Partner account"
+              : "Membership"
+        }
+      >
         <DetailRow label="Application" value={formatApplicationStatus(user.applicationStatus)} />
         {mode === "application" && (
           <DetailRow
@@ -182,7 +214,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
         )}
         <DetailRow label="Role" value={USER_TYPE_LABELS[user.userType]} />
         <DetailRow label="Member since" value={new Date(user.createdAt).toLocaleString()} />
-        {mode === "member" && (
+        {(mode === "member" || mode === "partner") && (
           <DetailRow
             label="Onboarding"
             value={
@@ -223,8 +255,10 @@ export function AdminUserDetail({ userId, mode }: Props) {
 
       {mode === "application" && user.applicationStatus === "pending" && (
         <div className="admin-callout" style={{ marginTop: "0.5rem" }}>
-          Review and edit the profile above, then approve or reject this application. Approved users
-          move to <Link href="/admin/members">Members</Link>.
+          Review and edit the profile above, then approve or reject this application. Approved
+          healthcare members and ambassadors move to <Link href="/admin/members">Members</Link>;
+          approved brand, expert, and foundation accounts move to{" "}
+          <Link href="/admin/partners">Partners</Link>.
         </div>
       )}
     </AdminDetailLayout>
