@@ -9,7 +9,12 @@ import {
   type BrandPartnerOption,
 } from "@/components/discounts/BrandPartnerPicker";
 import type { LocationValue } from "@/lib/address";
-import { locationToApiPayload } from "@/lib/address";
+import {
+  EMPTY_LOCATION,
+  isOnlineFormat,
+  isVirtualLocation,
+  locationToApiPayload,
+} from "@/lib/address";
 import type { CreateEventInput } from "@/lib/types";
 
 export type EventFormValues = {
@@ -121,7 +126,14 @@ export function EventForm({
           <ComboInput
             name="format"
             value={form.format}
-            onChange={(v) => onChange("format", v)}
+            onChange={(v) => {
+              onChange("format", v);
+              if (isOnlineFormat(v)) {
+                onChange("location", { ...EMPTY_LOCATION, line1: "Online" });
+              } else if (isVirtualLocation(form.location.line1)) {
+                onChange("location", { ...EMPTY_LOCATION });
+              }
+            }}
             options={formats}
             placeholder="in-person, virtual…"
           />
@@ -131,9 +143,12 @@ export function EventForm({
       <LocationField
         value={form.location}
         onChange={(loc) => onChange("location", loc)}
-        placeholder="123 Main St (or type Online)"
-        hint="For in-person events, use street, city, state, and ZIP. For virtual events, type Online in the street field."
-        requireCityState={false}
+        placeholder="123 Main St"
+        hint={
+          isOnlineFormat(form.format)
+            ? "Online/virtual format selected — city and state are not required."
+            : "For in-person events, enter street, city, state, and ZIP. Choose Online if there is no physical venue."
+        }
       />
 
       <div className="admin-form-row">
