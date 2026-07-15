@@ -33,7 +33,7 @@ export function ImageUploadGuideReference() {
         </table>
       </div>
       <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "0.75rem", marginBottom: 0 }}>
-        Accepted formats: JPG, PNG, WebP, or GIF · Max 8 MB per image
+        Accepted formats: JPG, PNG, WebP, or GIF · Max 32 MB per image
       </p>
     </section>
   );

@@ -18,6 +18,7 @@ import type { CreateResourceInput } from "@/lib/types";
 export type ResourceFormValues = {
   title: string;
   description: string;
+  citations: string;
   type: string;
   duration: string;
   topic: string;
@@ -31,6 +32,7 @@ export type ResourceFormValues = {
 export const EMPTY_RESOURCE_FORM: ResourceFormValues = {
   title: "",
   description: "",
+  citations: "",
   type: "",
   duration: "",
   topic: "",
@@ -57,6 +59,7 @@ export function formValuesToResourceBody(form: ResourceFormValues): CreateResour
   return {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
+    citations: quickRx ? form.citations.trim() : undefined,
     type: form.type.trim(),
     duration: form.duration.trim() || undefined,
     topic: form.topic.trim() || undefined,
@@ -95,15 +98,33 @@ export function ResourceForm({
 
       {!isArticleType(form.type) && !isMicroRxType(form.type) && (
         <label>
-          {isAudioType(form.type) ? "Transcript / description" : "Description"}
+          {isAudioType(form.type)
+            ? "Transcript / description"
+            : isQuickRxType(form.type)
+              ? "Caption"
+              : "Description"}
           <textarea
             value={form.description}
             onChange={(e) => onChange("description", e.target.value)}
             placeholder={
               isAudioType(form.type)
                 ? "Optional transcript shown when members tap Transcribe"
-                : "Optional short summary"
+                : isQuickRxType(form.type)
+                  ? "Short caption shown under the slides"
+                  : "Optional short summary"
             }
+          />
+        </label>
+      )}
+
+      {isQuickRxType(form.type) && (
+        <label>
+          Citations
+          <textarea
+            value={form.citations}
+            onChange={(e) => onChange("citations", e.target.value)}
+            rows={4}
+            placeholder="Source citations shown under the caption (one per line)"
           />
         </label>
       )}

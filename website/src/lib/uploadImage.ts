@@ -2,7 +2,7 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { auth, storage } from "./firebase";
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+const MAX_BYTES = 32 * 1024 * 1024; // 32 MB
 
 function sanitizeStorageFolder(folder: string): string {
   return folder
@@ -73,7 +73,7 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
   }
   if (file.size > MAX_BYTES) {
     throw new Error(
-      `Image is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 8 MB.`,
+      `Image is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 32 MB.`,
     );
   }
 

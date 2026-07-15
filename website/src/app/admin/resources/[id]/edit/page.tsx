@@ -26,6 +26,7 @@ function resourceToForm(item: Resource): ResourceFormValues {
   return {
     title: item.title,
     description: item.description ?? "",
+    citations: item.citations ?? "",
     type: item.type,
     duration: item.duration ?? "",
     topic: item.topic ?? "",

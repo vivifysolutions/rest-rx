@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent } from "react";
+import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import type { CreateRetreatInput } from "@/lib/types";
@@ -8,9 +9,19 @@ import type { CreateRetreatInput } from "@/lib/types";
 export const RETREAT_LOCATIONS = ["Domestic", "International"] as const;
 export type RetreatLocation = (typeof RETREAT_LOCATIONS)[number];
 
+const JOIN_PLACEHOLDER = `How members join this retreat. Markdown is supported:
+
+1. Tap **Book retreat** to open the booking page
+2. Complete your reservation with the partner
+3. Mention Rest & Rx if a member rate applies
+
+- Include any deposit, waitlist, or application steps
+- Note deadlines or eligibility (e.g. members only)`;
+
 export type RetreatFormValues = {
   title: string;
   description: string;
+  joinInstructions: string;
   category: string;
   season: string;
   location: string;
@@ -18,6 +29,7 @@ export type RetreatFormValues = {
   image: string;
   startDate: string;
   endDate: string;
+  bookingUrl: string;
   isFeatured: boolean;
 };
 
@@ -34,11 +46,13 @@ export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatI
   return {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
+    joinInstructions: form.joinInstructions.trim() || undefined,
     category: form.category.trim() || undefined,
     season: form.season.trim() || undefined,
     location: form.location.trim() || undefined,
     rating: form.rating ? Number(form.rating) : undefined,
     image: form.image.trim() || undefined,
+    bookingUrl: form.bookingUrl.trim() || undefined,
     isFeatured: form.isFeatured,
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
@@ -67,6 +81,24 @@ export function RetreatForm({
       <label>
         Description
         <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} />
+      </label>
+
+      <MarkdownBodyField
+        label="How to join"
+        value={form.joinInstructions}
+        onChange={(v) => onChange("joinInstructions", v)}
+        placeholder={JOIN_PLACEHOLDER}
+        hint="Step-by-step instructions shown on the retreat detail screen before Book retreat — Markdown formatting is supported."
+      />
+
+      <label>
+        Booking URL
+        <input
+          type="url"
+          value={form.bookingUrl}
+          onChange={(e) => onChange("bookingUrl", e.target.value)}
+          placeholder="https://…"
+        />
       </label>
 
       <div className="admin-form-row">

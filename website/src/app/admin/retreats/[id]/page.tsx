@@ -102,6 +102,18 @@ export default function AdminRetreatDetailPage() {
         </DetailSection>
       )}
 
+      {item.joinInstructions && (
+        <DetailSection title="How to join">
+          <DetailRow label="Instructions">
+            <div className="admin-detail-markdown">{item.joinInstructions}</div>
+          </DetailRow>
+        </DetailSection>
+      )}
+
+      <DetailSection title="Booking">
+        <DetailRow label="URL" value={item.bookingUrl ?? "—"} />
+      </DetailSection>
+
       <DetailSection title="Image">
         <DetailRow label="Preview">
           {item.image ? <DetailImage src={item.image} alt={item.title} /> : "—"}

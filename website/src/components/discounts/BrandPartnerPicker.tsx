@@ -12,7 +12,15 @@ import { labelApplicationTypeShort } from "@/lib/partner-application-options";
 
 export type PartnerOwnerOption = Pick<
   BrandPartnerApplication,
-  "id" | "companyName" | "fullName" | "email" | "applicationType"
+  | "id"
+  | "companyName"
+  | "fullName"
+  | "email"
+  | "applicationType"
+  | "website"
+  | "instagram"
+  | "phone"
+  | "address"
 >;
 
 type Props = {

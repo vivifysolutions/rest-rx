@@ -1,11 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { searchAddresses } from "@/lib/api";
-import type { AddressSuggestion, LocationValue } from "@/lib/address";
-
-const DEBOUNCE_MS = 350;
-const MIN_QUERY_LENGTH = 3;
+import { AddressAutocomplete } from "@/components/admin/AddressAutocomplete";
+import type { LocationValue } from "@/lib/address";
 
 type Props = {
   value: LocationValue;
@@ -14,183 +10,90 @@ type Props = {
   hint?: string;
   placeholder?: string;
   required?: boolean;
+  /** When true, city/state are required (physical business addresses). */
+  requireCityState?: boolean;
 };
 
 /**
- * Location search with autocomplete (Green Door pattern).
- * Coordinates are stored internally — admins never enter lat/lng manually.
+ * Street + city + state + ZIP. Autocomplete fills the fields; server geocodes
+ * to latitude / longitude on save (Green Door pattern).
  */
 export function LocationField({
   value,
   onChange,
   label = "Location",
-  hint = "Search for a city, state, venue, or street address. Pick a result or type your own.",
-  placeholder = "e.g. Austin, TX or 123 Main St, Chicago, IL",
+  hint = "Search and pick an address, or enter street, city, state, and ZIP manually.",
+  placeholder = "123 Main St",
   required,
+  requireCityState = true,
 }: Props) {
-  const autoId = useId();
-  const listboxId = `${autoId}-listbox`;
-
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
-  const [activeIndex, setActiveIndex] = useState(-1);
-
-  const rootRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const requestIdRef = useRef(0);
-
-  const displayValue = query || value.location;
-
-  const runSearch = useCallback(async (text: string) => {
-    const trimmed = text.trim();
-    if (trimmed.length < MIN_QUERY_LENGTH) {
-      setSuggestions([]);
-      setLoading(false);
-      return;
-    }
-
-    const requestId = ++requestIdRef.current;
-    setLoading(true);
-    try {
-      const results = await searchAddresses(trimmed);
-      if (requestId !== requestIdRef.current) return;
-      setSuggestions(results);
-      setActiveIndex(results.length ? 0 : -1);
-    } catch {
-      if (requestId !== requestIdRef.current) return;
-      setSuggestions([]);
-      setActiveIndex(-1);
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  const handleInputChange = (text: string) => {
-    setQuery(text);
-    onChange({ location: text, latitude: null, longitude: null });
-    setOpen(true);
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      void runSearch(text);
-    }, DEBOUNCE_MS);
+  const patch = (partial: Partial<LocationValue>) => {
+    onChange({ ...value, ...partial });
   };
-
-  const selectSuggestion = (suggestion: AddressSuggestion) => {
-    onChange({
-      location: suggestion.formatted,
-      latitude: suggestion.latitude,
-      longitude: suggestion.longitude,
-    });
-    setQuery("");
-    setSuggestions([]);
-    setOpen(false);
-    setActiveIndex(-1);
-  };
-
-  const showDropdown =
-    open && (loading || suggestions.length > 0 || query.trim().length >= MIN_QUERY_LENGTH);
-
-  const pinned =
-    value.latitude != null && value.longitude != null ? "Location pinned on map" : null;
 
   return (
-    <div ref={rootRef} style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-      <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--downriver)" }}>
-        {label}
-        {required ? " *" : ""}
-      </span>
-      {hint && (
-        <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.25rem" }}>
-          {hint}
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+      <div>
+        <span className="admin-field-label">
+          {label}
+          {required ? " *" : ""}
         </span>
-      )}
-
-      <div style={{ position: "relative" }}>
-        <input
-          id={autoId}
-          required={required}
-          role="combobox"
-          aria-expanded={showDropdown}
-          aria-controls={listboxId}
-          aria-autocomplete="list"
-          autoComplete="off"
-          value={displayValue}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => {
-            setOpen(true);
-            if (query.trim().length >= MIN_QUERY_LENGTH) void runSearch(query);
-          }}
-          onKeyDown={(e) => {
-            if (!showDropdown) return;
-            if (e.key === "ArrowDown") {
-              e.preventDefault();
-              setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
-            } else if (e.key === "ArrowUp") {
-              e.preventDefault();
-              setActiveIndex((i) => Math.max(i - 1, 0));
-            } else if (e.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
-              e.preventDefault();
-              selectSuggestion(suggestions[activeIndex]);
-            } else if (e.key === "Escape") {
-              setOpen(false);
-            }
-          }}
+        {hint ? <span className="admin-field-hint">{hint}</span> : null}
+        <AddressAutocomplete
+          value={value}
+          onChange={patch}
           placeholder={placeholder}
+          required={required}
         />
-
-        {showDropdown && (
-          <ul
-            id={listboxId}
-            role="listbox"
-            className="combo-list"
-            style={{ position: "absolute", zIndex: 40, top: "calc(100% + 4px)", left: 0, right: 0 }}
-          >
-            {loading && <li className="combo-item combo-item-empty">Searching…</li>}
-            {!loading && suggestions.length === 0 && query.trim().length >= MIN_QUERY_LENGTH && (
-              <li className="combo-item combo-item-empty">
-                No matches — you can still save what you typed.
-              </li>
-            )}
-            {!loading &&
-              suggestions.map((suggestion, index) => (
-                <li
-                  key={`${suggestion.placeId ?? suggestion.formatted}-${index}`}
-                  role="option"
-                  aria-selected={index === activeIndex}
-                  className={`combo-item${index === activeIndex ? " is-highlighted" : ""}`}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    selectSuggestion(suggestion);
-                  }}
-                >
-                  {suggestion.formatted}
-                </li>
-              ))}
-          </ul>
-        )}
       </div>
 
-      {pinned && (
-        <span style={{ fontSize: "0.75rem", color: "var(--astral)" }}>{pinned}</span>
-      )}
+      <label>
+        <span className="admin-field-label">Apt / suite</span>
+        <input
+          value={value.line2}
+          onChange={(e) => patch({ line2: e.target.value })}
+          placeholder="Suite 200"
+        />
+      </label>
+
+      <div className="admin-form-row">
+        <label>
+          <span className="admin-field-label">
+            City
+            {requireCityState ? " *" : ""}
+          </span>
+          <input
+            required={requireCityState && Boolean(value.line1.trim())}
+            value={value.city}
+            onChange={(e) => patch({ city: e.target.value })}
+            placeholder="Austin"
+          />
+        </label>
+        <label>
+          <span className="admin-field-label">
+            State
+            {requireCityState ? " *" : ""}
+          </span>
+          <input
+            required={requireCityState && Boolean(value.line1.trim())}
+            value={value.state}
+            onChange={(e) => patch({ state: e.target.value })}
+            placeholder="TX"
+            maxLength={2}
+            autoCapitalize="characters"
+          />
+        </label>
+        <label>
+          <span className="admin-field-label">ZIP</span>
+          <input
+            value={value.postalCode}
+            onChange={(e) => patch({ postalCode: e.target.value })}
+            placeholder="78701"
+            inputMode="numeric"
+            autoComplete="postal-code"
+          />
+        </label>
+      </div>
     </div>
   );
 }

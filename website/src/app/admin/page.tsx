@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ImageUploadGuideReference } from "@/components/admin/ImageUploadGuideReference";
 import {
-  getBrandPartnerApplications,
+  getCommunityMetrics,
   getDiscounts,
   getEvents,
   getForumPosts,
@@ -14,8 +14,31 @@ import {
   getRetreats,
   getThreads,
   healthCheck,
-  listUsers,
+  type CommunityMetrics,
 } from "@/lib/api";
+import {
+  GEOGRAPHIC_SCOPE_OPTIONS,
+  labelApplicationTypeShort,
+  labelGeographicScope,
+  type PartnerApplicationType,
+} from "@/lib/partner-application-options";
+
+const ROLE_STATS: {
+  label: string;
+  key: keyof CommunityMetrics["counts"];
+  href: string;
+}[] = [
+  { label: "Members", key: "members", href: "/admin/members" },
+  { label: "Brand partners", key: "brandPartners", href: "/admin/partners" },
+  { label: "Experts", key: "experts", href: "/admin/partners" },
+  { label: "Ambassadors", key: "ambassadors", href: "/admin/partners" },
+  { label: "Foundations", key: "foundations", href: "/admin/partners" },
+];
+
+function scopeLabel(value: string): string {
+  if (value === "unspecified") return "Unspecified";
+  return labelGeographicScope(value);
+}
 
 export default function AdminDashboardPage() {
   const { profile, token, refreshToken } = usePortalAuth();
@@ -28,9 +51,9 @@ export default function AdminDashboardPage() {
     posts: null,
     pendingUsers: null,
     pendingPartners: null,
-    members: null,
     pendingReports: null,
   });
+  const [metrics, setMetrics] = useState<CommunityMetrics | null>(null);
   const [apiOk, setApiOk] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,32 +90,26 @@ export default function AdminDashboardPage() {
         let postCount = 0;
         let pendingUsers = 0;
         let pendingPartners = 0;
-        let memberCount = 0;
         let pendingReports = 0;
+        let communityMetrics: CommunityMetrics | null = null;
 
         if (authToken) {
-          const [threadsRes, postsRes, usersRes, partnersRes, membersRes, reportsRes] =
-            await Promise.allSettled([
+          const [threadsRes, postsRes, metricsRes, reportsRes] = await Promise.allSettled([
             getThreads(authToken, { limit: 100 }),
             getForumPosts(authToken, { limit: 100 }),
-            listUsers(authToken, { applicationStatus: "pending", userType: "member" }),
-            getBrandPartnerApplications(authToken, { status: "pending" }),
-            listUsers(authToken, { applicationStatus: "approved", userType: "member" }),
+            getCommunityMetrics(authToken),
             getReports(authToken, "pending"),
           ]);
 
           const threads = unwrap(threadsRes, "Threads");
           const posts = unwrap(postsRes, "Posts");
-          const users = unwrap(usersRes, "Pending member applications");
-          const partners = unwrap(partnersRes, "Pending partner applications");
-          const members = unwrap(membersRes, "Members");
+          communityMetrics = unwrap(metricsRes, "Community metrics");
           const reports = unwrap(reportsRes, "Reports");
 
           threadCount = threads?.length ?? 0;
           postCount = posts?.length ?? 0;
-          pendingUsers = users?.length ?? 0;
-          pendingPartners = partners?.length ?? 0;
-          memberCount = members?.length ?? 0;
+          pendingUsers = communityMetrics?.pending.members ?? 0;
+          pendingPartners = communityMetrics?.pending.partners ?? 0;
           pendingReports = reports?.length ?? 0;
         }
 
@@ -101,6 +118,7 @@ export default function AdminDashboardPage() {
             setApiOk(false);
             setError(failures.join(" · "));
           }
+          setMetrics(communityMetrics);
           setStats({
             discounts: discounts?.length ?? null,
             resources: resources?.length ?? null,
@@ -110,7 +128,6 @@ export default function AdminDashboardPage() {
             posts: postCount,
             pendingUsers,
             pendingPartners,
-            members: memberCount,
             pendingReports,
           });
         }
@@ -128,6 +145,14 @@ export default function AdminDashboardPage() {
     };
   }, [token, refreshToken]);
 
+  const scopeEntries = metrics
+    ? [...GEOGRAPHIC_SCOPE_OPTIONS.map((o) => o.value), "unspecified"].map((key) => ({
+        key,
+        label: scopeLabel(key),
+        count: metrics.locations.byGeographicScope[key] ?? 0,
+      }))
+    : [];
+
   return (
     <>
       <header className="admin-page-header">
@@ -142,6 +167,141 @@ export default function AdminDashboardPage() {
         <p className="admin-error admin-card">{error}</p>
       )}
 
+      <section className="admin-card" style={{ marginBottom: "1.5rem" }}>
+        <h2 className="admin-section-title">Community totals</h2>
+        <p className="admin-field-hint" style={{ marginTop: 0, marginBottom: "1rem" }}>
+          Approved members, brand partners, experts, and ambassadors (plus foundations).
+        </p>
+        <div className="admin-stats">
+          {ROLE_STATS.map(({ label, key, href }) => (
+            <Link key={key} href={href} className="admin-stat" style={{ textDecoration: "none" }}>
+              <div className="admin-stat-value">
+                {metrics ? metrics.counts[key] : "—"}
+              </div>
+              <div className="admin-stat-label">{label}</div>
+            </Link>
+          ))}
+          <Link href="/admin/partners" className="admin-stat" style={{ textDecoration: "none" }}>
+            <div className="admin-stat-value">
+              {metrics ? metrics.counts.partners : "—"}
+            </div>
+            <div className="admin-stat-label">All partners</div>
+          </Link>
+        </div>
+      </section>
+
+      <section className="admin-card" style={{ marginBottom: "1.5rem" }}>
+        <h2 className="admin-section-title">Partner locations</h2>
+        <p className="admin-field-hint" style={{ marginTop: 0, marginBottom: "1rem" }}>
+          From approved partner applications (address and geographic scope). Member
+          profiles do not store a home location yet.
+        </p>
+
+        {metrics ? (
+          <>
+            <div className="admin-stats" style={{ marginBottom: "1.25rem" }}>
+              {scopeEntries.map(({ key, label, count }) => (
+                <div key={key} className="admin-stat">
+                  <div className="admin-stat-value">{count}</div>
+                  <div className="admin-stat-label">{label} scope</div>
+                </div>
+              ))}
+              <div className="admin-stat">
+                <div className="admin-stat-value">{metrics.locations.withAddress}</div>
+                <div className="admin-stat-label">With address</div>
+              </div>
+              <div className="admin-stat">
+                <div className="admin-stat-value">{metrics.locations.withoutAddress}</div>
+                <div className="admin-stat-label">Missing address</div>
+              </div>
+            </div>
+
+            {metrics.locations.byLocation.length > 0 ? (
+              <div className="admin-table-wrap" style={{ marginBottom: "1.25rem" }}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Location</th>
+                      <th>Partners</th>
+                      <th>By type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.locations.byLocation.map((row) => (
+                      <tr key={row.label}>
+                        <td>{row.label}</td>
+                        <td>{row.count}</td>
+                        <td>
+                          {Object.entries(row.byType)
+                            .map(
+                              ([type, count]) =>
+                                `${labelApplicationTypeShort(type as PartnerApplicationType)} (${count})`,
+                            )
+                            .join(" · ")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="admin-empty-hint">No approved partner locations yet.</p>
+            )}
+
+            {metrics.locations.partners.length > 0 && (
+              <details className="admin-advanced">
+                <summary>Full partner location list ({metrics.locations.partners.length})</summary>
+                <div className="admin-table-wrap" style={{ marginTop: "0.75rem" }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Scope</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {metrics.locations.partners.map((row) => (
+                        <tr key={row.applicationId}>
+                          <td>{row.name}</td>
+                          <td>
+                            {labelApplicationTypeShort(
+                              row.applicationType as PartnerApplicationType,
+                            )}
+                          </td>
+                          <td>
+                            {row.address?.trim() || (
+                              <span className="admin-link-muted">Not provided</span>
+                            )}
+                          </td>
+                          <td>
+                            {row.geographicScope
+                              ? scopeLabel(row.geographicScope)
+                              : "—"}
+                          </td>
+                          <td>
+                            <Link
+                              href={`/admin/brand-applications/${row.applicationId}`}
+                              className="admin-link-muted"
+                            >
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+            )}
+          </>
+        ) : (
+          <p className="admin-empty-hint">Loading location metrics…</p>
+        )}
+      </section>
+
       <div className="admin-stats" style={{ marginBottom: "1.5rem" }}>
         {[
           { label: "Discounts", key: "discounts", href: "/admin/discounts" },
@@ -154,7 +314,6 @@ export default function AdminDashboardPage() {
             key: "pendingPartners",
             href: "/admin/brand-applications",
           },
-          { label: "Approved members", key: "members", href: "/admin/members" },
           { label: "Flagged content", key: "pendingReports", href: "/admin/reports" },
           { label: "Threads", key: "threads", href: "/admin/community" },
           { label: "Feed posts", key: "posts", href: "/admin/community" },
@@ -184,7 +343,10 @@ export default function AdminDashboardPage() {
             <Link href="/admin/brand-applications">Review partner applications by type</Link>
           </li>
           <li>
-            <Link href="/admin/members">Manage approved members by account type</Link>
+            <Link href="/admin/members">Manage approved members</Link>
+          </li>
+          <li>
+            <Link href="/admin/partners">Manage approved partners</Link>
           </li>
           <li>
             <Link href="/admin/discounts">Manage discounts</Link>

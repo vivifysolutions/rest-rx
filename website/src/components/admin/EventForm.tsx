@@ -9,6 +9,7 @@ import {
   type BrandPartnerOption,
 } from "@/components/discounts/BrandPartnerPicker";
 import type { LocationValue } from "@/lib/address";
+import { locationToApiPayload } from "@/lib/address";
 import type { CreateEventInput } from "@/lib/types";
 
 export type EventFormValues = {
@@ -42,12 +43,13 @@ export function formValuesToEventBody(
   form: EventFormValues,
   options?: { includePartner?: boolean },
 ): CreateEventInput {
+  const locationPayload = locationToApiPayload(form.location);
   const body: CreateEventInput = {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
     category: form.category.trim() || undefined,
     format: form.format.trim() || undefined,
-    location: form.location.location.trim() || undefined,
+    ...locationPayload,
     price: form.price ? Number(form.price) : undefined,
     registrationUrl: form.registrationUrl.trim() || undefined,
     image: form.image.trim() || undefined,
@@ -129,8 +131,9 @@ export function EventForm({
       <LocationField
         value={form.location}
         onChange={(loc) => onChange("location", loc)}
-        placeholder="City, venue, or Online"
-        hint="For virtual events, type Online or Virtual — no map pin needed."
+        placeholder="123 Main St (or type Online)"
+        hint="For in-person events, use street, city, state, and ZIP. For virtual events, type Online in the street field."
+        requireCityState={false}
       />
 
       <div className="admin-form-row">

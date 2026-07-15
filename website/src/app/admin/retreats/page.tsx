@@ -19,6 +19,7 @@ import type { Retreat } from "@/lib/types";
 const EMPTY_FORM: RetreatFormValues = {
   title: "",
   description: "",
+  joinInstructions: "",
   category: "",
   season: "",
   location: "",
@@ -26,6 +27,7 @@ const EMPTY_FORM: RetreatFormValues = {
   image: "",
   startDate: "",
   endDate: "",
+  bookingUrl: "",
   isFeatured: false,
 };
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent } from "react";
+import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { LocationField } from "@/components/admin/LocationField";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { ReferenceSelect } from "@/components/admin/ReferenceSelect";
@@ -12,20 +13,53 @@ import { DISCOUNT_TIER_OPTIONS, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-d
 import {
   getDiscountBadgeLabel,
   OFFER_HIGHLIGHT_MAX_LENGTH,
+  OFFER_SUMMARY_MAX_LENGTH,
 } from "@/lib/discountOffer";
 import type { LocationValue } from "@/lib/address";
-import { EMPTY_LOCATION } from "@/lib/address";
+import { EMPTY_LOCATION, locationToApiPayload, parseLocationString } from "@/lib/address";
+import { normalizeInstagramHandle } from "@/lib/social";
 import type { CreateDiscountInput } from "@/lib/types";
+
+const OFFER_DETAILS_PLACEHOLDER = `Share background on the partner and what's included. Markdown is supported:
+
+## What's included
+**Bold text** and *italic*
+
+- First benefit
+- Second benefit
+
+> Tip or important note for members`;
+
+const REDEEM_PLACEHOLDER = `How members redeem. Markdown is supported:
+
+1. Tap **Claim discount** (or **Show member card** for in-person offers)
+2. Create an account with your work email
+3. Enter code \`RESTRX\` at checkout
+
+- For in-person: leave Redemption link blank — members show a live Rest & Rx membership card
+- Mention Rest & Rx at the desk`;
+
+const TERMS_PLACEHOLDER = `Optional fine print for this offer. Leave blank to use the default:
+
+Valid for a limited time. Cannot be combined with other offers. Subject to availability.
+
+Markdown is supported if you need bullets or emphasis.`;
 
 export type DiscountFormValues = {
   title: string;
   description: string;
+  offerSummary: string;
   offerHighlight: string;
   percentage: string;
+  redemptionInstructions: string;
+  terms: string;
   category: string;
   location: LocationValue;
   tier: string;
   claimLink: string;
+  website: string;
+  instagram: string;
+  phone: string;
   images: string[];
   isFeatured: boolean;
   expiryDate: string;
@@ -35,12 +69,19 @@ export type DiscountFormValues = {
 export const EMPTY_DISCOUNT_FORM: DiscountFormValues = {
   title: "",
   description: "",
+  offerSummary: "",
   offerHighlight: "",
   percentage: "",
+  redemptionInstructions: "",
+  terms: "",
   category: "",
-  location: EMPTY_LOCATION,
+  location: { ...EMPTY_LOCATION },
+
   tier: "",
   claimLink: "",
+  website: "",
+  instagram: "",
+  phone: "",
   images: [],
   isFeatured: false,
   expiryDate: "",
@@ -74,10 +115,31 @@ export function DiscountForm({
   onSubmit,
 }: Props) {
   const highlightLen = form.offerHighlight.length;
+  const summaryLen = form.offerSummary.length;
   const badgePreview = getDiscountBadgeLabel({
     offerHighlight: form.offerHighlight.trim() || null,
     percentage: form.percentage.trim() ? Number(form.percentage) : null,
   });
+
+  function handlePartnerChange(id: string) {
+    onChange("brandPartnerApplicationId", id);
+    const partner = brandPartners.find((p) => p.id === id);
+    if (!partner) return;
+
+    // Prefill empty contact fields from the linked partner application.
+    if (!form.website.trim() && partner.website?.trim()) {
+      onChange("website", partner.website.trim());
+    }
+    if (!form.instagram.trim() && partner.instagram?.trim()) {
+      onChange("instagram", partner.instagram.trim());
+    }
+    if (!form.phone.trim() && partner.phone?.trim()) {
+      onChange("phone", partner.phone.trim());
+    }
+    if (!form.location.line1.trim() && partner.address?.trim()) {
+      onChange("location", parseLocationString(partner.address.trim()));
+    }
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -91,16 +153,23 @@ export function DiscountForm({
     }
 
     const images = form.images.map((url) => url.trim()).filter(Boolean);
+    const locationPayload = locationToApiPayload(form.location);
 
     const body: CreateDiscountInput = {
       title: form.title.trim(),
       description: form.description.trim() || undefined,
+      offerSummary: form.offerSummary.trim() || undefined,
       offerHighlight: highlight || undefined,
       percentage,
+      redemptionInstructions: form.redemptionInstructions.trim() || undefined,
+      terms: form.terms.trim() || undefined,
       category: form.category.trim(),
-      location: form.location.location.trim() || undefined,
+      ...locationPayload,
       tier: DISCOUNT_TIERS_ENABLED ? form.tier.trim() || undefined : undefined,
       claimLink: form.claimLink.trim() || undefined,
+      website: form.website.trim() || undefined,
+      instagram: normalizeInstagramHandle(form.instagram),
+      phone: form.phone.trim() || undefined,
       image: images[0],
       images,
       isFeatured: showFeatured ? form.isFeatured : undefined,
@@ -119,63 +188,125 @@ export function DiscountForm({
     <form className="admin-form" onSubmit={handleSubmit}>
       {showPartnerPicker && (
         <label>
-          Owner (partner account)
+          <span className="admin-field-label">Owner (partner account)</span>
           <span className="admin-field-hint">
             Optional — link to an approved brand partner, expert, or foundation so the offer
-            appears under their application / portal account.
+            appears under their application / portal account. Selecting a partner prefills empty
+            business contact fields when available.
           </span>
           <BrandPartnerPicker
             value={form.brandPartnerApplicationId}
             partners={brandPartners}
             loading={brandPartnersLoading}
-            onChange={(id) => onChange("brandPartnerApplicationId", id)}
+            onChange={handlePartnerChange}
           />
         </label>
       )}
 
-      <label>
-        Title *
-        <input
-          value={form.title}
-          onChange={(e) => onChange("title", e.target.value)}
-          required
-        />
-      </label>
+      <fieldset className="admin-form-fieldset">
+        <legend>Offer</legend>
 
-      <label>
-        Full offer details
-        <span className="admin-field-hint">
-          Complete terms members see on the detail screen — e.g. &quot;First class free, then
-          $5.99/month.&quot;
-        </span>
-        <textarea
+        <label>
+          <span className="admin-field-label">Offer title *</span>
+          <span className="admin-field-hint">One-line name shown at the top of the offer in the app.</span>
+          <input
+            value={form.title}
+            onChange={(e) => onChange("title", e.target.value.replace(/\n/g, " "))}
+            required
+            maxLength={80}
+            placeholder="Partner name or offer name"
+          />
+        </label>
+
+        <label>
+          <span className="admin-field-label">Offer</span>
+          <span className="admin-field-hint">
+            The deal members see under Offer details — promo code, % off, or freebie. Example:
+            &quot;Use code RESTRX for 15% off&quot; or &quot;First class free for healthcare workers&quot;.
+          </span>
+          <input
+            value={form.offerSummary}
+            onChange={(e) =>
+              onChange("offerSummary", e.target.value.slice(0, OFFER_SUMMARY_MAX_LENGTH))
+            }
+            maxLength={OFFER_SUMMARY_MAX_LENGTH}
+            placeholder="Use code RESTRX for 15% off"
+          />
+          <span className="admin-char-count">
+            {summaryLen}/{OFFER_SUMMARY_MAX_LENGTH}
+          </span>
+        </label>
+
+        <MarkdownBodyField
+          label="About this offer"
           value={form.description}
-          onChange={(e) => onChange("description", e.target.value)}
-          rows={4}
+          onChange={(v) => onChange("description", v)}
+          placeholder={OFFER_DETAILS_PLACEHOLDER}
+          hint="Longer background and what's included — Markdown formatting renders on the offer screen. Separate from the Offer line above."
         />
-      </label>
 
-      <label>
-        Badge highlight
-        <span className="admin-field-hint">
-          Short label for cards and the featured carousel ({OFFER_HIGHLIGHT_MAX_LENGTH} characters
-          max). Example: &quot;1st class free&quot; or &quot;Free trial&quot;.
-        </span>
-        <input
-          value={form.offerHighlight}
-          onChange={(e) => onChange("offerHighlight", e.target.value.slice(0, OFFER_HIGHLIGHT_MAX_LENGTH))}
-          maxLength={OFFER_HIGHLIGHT_MAX_LENGTH}
-          placeholder="1st class free"
+        <MarkdownBodyField
+          label="How to redeem"
+          value={form.redemptionInstructions}
+          onChange={(v) => onChange("redemptionInstructions", v)}
+          placeholder={REDEEM_PLACEHOLDER}
+          hint="Step-by-step instructions shown before Claim / Show member card — Markdown formatting is supported."
         />
-        <span className="admin-char-count">
-          {highlightLen}/{OFFER_HIGHLIGHT_MAX_LENGTH}
-        </span>
-      </label>
 
-      {DISCOUNT_TIERS_ENABLED ? (
-        <div className="admin-form-row">
+        <MarkdownBodyField
+          label="Terms"
+          value={form.terms}
+          onChange={(v) => onChange("terms", v)}
+          placeholder={TERMS_PLACEHOLDER}
+          hint="Fine print on the offer detail screen. Leave blank to use the default mobile copy."
+        />
+
+        <label>
+          <span className="admin-field-label">Badge highlight</span>
+          <span className="admin-field-hint">
+            Short label for cards and the featured carousel ({OFFER_HIGHLIGHT_MAX_LENGTH} characters
+            max). Example: &quot;15% off&quot; or &quot;1st class free&quot;.
+          </span>
+          <input
+            value={form.offerHighlight}
+            onChange={(e) =>
+              onChange("offerHighlight", e.target.value.slice(0, OFFER_HIGHLIGHT_MAX_LENGTH))
+            }
+            maxLength={OFFER_HIGHLIGHT_MAX_LENGTH}
+            placeholder="15% off"
+          />
+          <span className="admin-char-count">
+            {highlightLen}/{OFFER_HIGHLIGHT_MAX_LENGTH}
+          </span>
+        </label>
+
+        {DISCOUNT_TIERS_ENABLED ? (
+          <div className="admin-form-row">
+            <label>
+              <span className="admin-field-label">Percentage off (0–100)</span>
+              <span className="admin-field-hint">Optional — use for classic % off offers.</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={form.percentage}
+                onChange={(e) => onChange("percentage", e.target.value)}
+              />
+            </label>
+            <label>
+              <span className="admin-field-label">Tier</span>
+              <ReferenceSelect
+                name="tier"
+                value={form.tier}
+                onChange={(v) => onChange("tier", v)}
+                options={DISCOUNT_TIER_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
+                placeholder="Select tier"
+              />
+            </label>
+          </div>
+        ) : (
           <label>
-            Percentage off (0–100)
+            <span className="admin-field-label">Percentage off (0–100)</span>
             <span className="admin-field-hint">Optional — use for classic % off offers.</span>
             <input
               type="number"
@@ -185,95 +316,124 @@ export function DiscountForm({
               onChange={(e) => onChange("percentage", e.target.value)}
             />
           </label>
-          <label>
-            Tier
-            <ReferenceSelect
-              name="tier"
-              value={form.tier}
-              onChange={(v) => onChange("tier", v)}
-              options={DISCOUNT_TIER_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
-              placeholder="Select tier"
-            />
-          </label>
-        </div>
-      ) : (
+        )}
+
+        {badgePreview ? (
+          <p className="admin-field-hint">
+            Badge preview: <strong>{badgePreview}</strong>
+            {form.offerHighlight.trim() ? " (uses highlight)" : " (uses percentage)"}
+          </p>
+        ) : null}
+
         <label>
-          Percentage off (0–100)
-          <span className="admin-field-hint">Optional — use for classic % off offers.</span>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={form.percentage}
-            onChange={(e) => onChange("percentage", e.target.value)}
+          <span className="admin-field-label">Category *</span>
+          <ReferenceSelect
+            name="category"
+            value={form.category}
+            onChange={(v) => onChange("category", v)}
+            options={categoryOptions}
+            placeholder="Select category"
+            required
           />
         </label>
-      )}
 
-      {badgePreview ? (
-        <p className="admin-field-hint" style={{ marginTop: "-0.25rem" }}>
-          Badge preview: <strong>{badgePreview}</strong>
-          {form.offerHighlight.trim() ? " (uses highlight)" : " (uses percentage)"}
-        </p>
-      ) : null}
-
-      <label>
-        Category *
-        <ReferenceSelect
-          name="category"
-          value={form.category}
-          onChange={(v) => onChange("category", v)}
-          options={categoryOptions}
-          placeholder="Select category"
-          required
-        />
-      </label>
-
-      <LocationField
-        value={form.location}
-        onChange={(loc) => onChange("location", loc)}
-        placeholder="City, state, or street address"
-      />
-
-      <label>
-        Partner redemption link
-        <input
-          type="url"
-          value={form.claimLink}
-          onChange={(e) => onChange("claimLink", e.target.value)}
-          placeholder="https://partner.com/redeem/..."
-        />
-      </label>
-
-      <MultipleImageUpload
-        folder="discounts"
-        values={form.images}
-        onChange={(urls) => onChange("images", urls)}
-        label="Discount photos"
-        maxImages={10}
-        guide="discount"
-        hint="Upload multiple images. The first photo is the cover on browse cards; members can swipe through all photos on the detail screen."
-      />
-
-      <label>
-        Expiry date
-        <input
-          type="date"
-          value={form.expiryDate}
-          onChange={(e) => onChange("expiryDate", e.target.value)}
-        />
-      </label>
-
-      {showFeatured && (
-        <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
+        <label>
+          <span className="admin-field-label">Expiry date</span>
           <input
-            type="checkbox"
-            checked={form.isFeatured}
-            onChange={(e) => onChange("isFeatured", e.target.checked)}
+            type="date"
+            value={form.expiryDate}
+            onChange={(e) => onChange("expiryDate", e.target.value)}
           />
-          Featured on Discover home
         </label>
-      )}
+
+        {showFeatured && (
+          <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(e) => onChange("isFeatured", e.target.checked)}
+            />
+            Featured on Discover home
+          </label>
+        )}
+      </fieldset>
+
+      <fieldset className="admin-form-fieldset">
+        <legend>Redeem &amp; business</legend>
+
+        <label>
+          <span className="admin-field-label">Redemption link</span>
+          <span className="admin-field-hint">
+            URL opened when members tap Claim discount (booking page, promo link, or partner
+            checkout). Leave blank for in-person redemption — members will show a live Rest &amp; Rx
+            membership card instead (screenshots blocked).
+          </span>
+          <input
+            type="url"
+            value={form.claimLink}
+            onChange={(e) => onChange("claimLink", e.target.value)}
+            placeholder="https://partner.com/redeem/..."
+          />
+        </label>
+
+        <label>
+          <span className="admin-field-label">Business website</span>
+          <span className="admin-field-hint">Domain or full URL — opens in the app when tapped.</span>
+          <input
+            value={form.website}
+            onChange={(e) => onChange("website", e.target.value)}
+            placeholder="partner.com"
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
+        </label>
+
+        <label>
+          <span className="admin-field-label">Instagram username</span>
+          <span className="admin-field-hint">
+            Username only (e.g. partner). The app builds the Instagram link for members.
+          </span>
+          <input
+            value={form.instagram}
+            onChange={(e) => onChange("instagram", e.target.value)}
+            placeholder="partner"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+        </label>
+
+        <label>
+          <span className="admin-field-label">Phone number</span>
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={(e) => onChange("phone", e.target.value)}
+            placeholder="(555) 123-4567"
+          />
+        </label>
+
+        <LocationField
+          value={form.location}
+          onChange={(loc) => onChange("location", loc)}
+          label="Business address"
+          placeholder="123 Main St"
+          hint="Search and pick the address, or enter street, city, state, and ZIP. These are converted to map coordinates for nearby offers in the app."
+        />
+      </fieldset>
+
+      <fieldset className="admin-form-fieldset">
+        <legend>Photos</legend>
+        <MultipleImageUpload
+          folder="discounts"
+          values={form.images}
+          onChange={(urls) => onChange("images", urls)}
+          label="Discount photos"
+          maxImages={10}
+          guide="discount"
+          hint="Upload multiple images. The first photo is the cover on browse cards; members can swipe through all photos on the detail screen."
+        />
+      </fieldset>
 
       {!hideSubmit && (
         <button type="submit" className="admin-btn admin-btn-primary">

@@ -13,10 +13,12 @@ import type {
   Discount,
   Event,
   ForumPost,
+  ForumPostDetail,
   Group,
   Resource,
   Retreat,
   Thread,
+  ThreadDetail,
 } from "./types";
 
 const getBaseUrl = (): string => {
@@ -113,12 +115,60 @@ export async function listUsers(
   token: string,
   params?: {
     userType?: string;
+    userTypes?: string[];
     applicationStatus?: string;
     excludeApplicationStatus?: string;
     search?: string;
   },
 ): Promise<ApiUser[]> {
-  return request<ApiUser[]>(`/users${buildQuery(params)}`, { token });
+  const { userTypes, ...rest } = params ?? {};
+  return request<ApiUser[]>(
+    `/users${buildQuery({
+      ...rest,
+      userTypes: userTypes?.length ? userTypes.join(",") : undefined,
+    })}`,
+    { token },
+  );
+}
+
+export type CommunityMetrics = {
+  counts: {
+    members: number;
+    brandPartners: number;
+    experts: number;
+    ambassadors: number;
+    foundations: number;
+    partners: number;
+  };
+  pending: {
+    members: number;
+    partners: number;
+  };
+  locations: {
+    withAddress: number;
+    withoutAddress: number;
+    byGeographicScope: Record<string, number>;
+    byLocation: Array<{
+      label: string;
+      region: string | null;
+      count: number;
+      byType: Record<string, number>;
+    }>;
+    partners: Array<{
+      applicationId: string;
+      applicationType: string;
+      name: string;
+      address: string | null;
+      locationLabel: string;
+      region: string | null;
+      geographicScope: string | null;
+      userId: string | null;
+    }>;
+  };
+};
+
+export async function getCommunityMetrics(token: string): Promise<CommunityMetrics> {
+  return request<CommunityMetrics>("/users/metrics", { token });
 }
 
 export async function getUser(token: string, userId: string): Promise<ApiUser> {
@@ -466,14 +516,27 @@ export async function getThreads(
   return res.data;
 }
 
+export async function getThreadById(token: string, id: string): Promise<ThreadDetail> {
+  return request<ThreadDetail>(`/threads/${id}`, { token });
+}
+
 export async function getForumPosts(
   token: string,
-  params?: { search?: string; page?: number; limit?: number },
+  params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    groupId?: string;
+  },
 ): Promise<ForumPost[]> {
   const res = await request<{ data: ForumPost[] }>(`/posts${buildQuery(params)}`, {
     token,
   });
   return res.data;
+}
+
+export async function getForumPostById(token: string, id: string): Promise<ForumPostDetail> {
+  return request<ForumPostDetail>(`/posts/${id}`, { token });
 }
 
 // -- Moderation --------------------------------------------------------------
@@ -523,9 +586,14 @@ export async function getGroups(params?: {
   search?: string;
   page?: number;
   limit?: number;
+  status?: "active" | "inactive" | "archived" | "all";
 }): Promise<Group[]> {
   const res = await request<{ groups: Group[] }>(`/groups${buildQuery(params)}`);
   return res.groups;
+}
+
+export async function getGroupById(id: string, token?: string): Promise<Group> {
+  return request<Group>(`/groups/${id}`, { token });
 }
 
 export async function updateGroupStatus(

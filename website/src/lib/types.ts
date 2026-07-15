@@ -35,12 +35,18 @@ export type Discount = {
   description: string | null;
   percentage: number | null;
   offerHighlight: string | null;
+  offerSummary: string | null;
+  redemptionInstructions: string | null;
+  terms: string | null;
   category: string;
   location: string | null;
   latitude: number | null;
   longitude: number | null;
   tier: string | null;
   claimLink: string | null;
+  website: string | null;
+  instagram: string | null;
+  phone: string | null;
   image: string | null;
   images: string[];
   isFeatured: boolean;
@@ -65,12 +71,26 @@ export type CreateDiscountInput = {
   description?: string;
   percentage?: number;
   offerHighlight?: string;
+  offerSummary?: string;
+  redemptionInstructions?: string;
+  terms?: string;
   category: string;
   location?: string;
+  /** Structured address — preferred for geocoding to lat/lng. */
+  address?: {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  };
   latitude?: number;
   longitude?: number;
   tier?: string;
   claimLink?: string;
+  website?: string;
+  instagram?: string;
+  phone?: string;
   image?: string;
   images?: string[];
   isFeatured?: boolean;
@@ -115,6 +135,13 @@ export type CreateEventInput = {
   title: string;
   description?: string;
   location?: string;
+  address?: {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  };
   latitude?: number;
   longitude?: number;
   category?: string;
@@ -135,6 +162,7 @@ export type Resource = {
   id: string;
   title: string;
   description: string | null;
+  citations: string | null;
   type: string;
   duration: string | null;
   topic: string | null;
@@ -151,6 +179,7 @@ export type Resource = {
 export type CreateResourceInput = {
   title: string;
   description?: string;
+  citations?: string;
   type: string;
   duration?: string;
   topic?: string;
@@ -179,6 +208,7 @@ export type Retreat = {
   startDate: string | null;
   endDate: string | null;
   bookingUrl?: string | null;
+  joinInstructions: string | null;
   createdAt: string;
   updatedAt?: string;
 };
@@ -198,23 +228,48 @@ export type CreateRetreatInput = {
   startDate?: string;
   endDate?: string;
   bookingUrl?: string;
+  joinInstructions?: string;
+};
+
+export type ForumAuthor = {
+  id: string;
+  displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+};
+
+export type ForumComment = {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: ForumAuthor;
+  likeCount: number;
 };
 
 export type Thread = {
   id: string;
   title: string;
   content: string;
-  topic?: string;
+  topic?: string | null;
   isPinned: boolean;
   isLocked: boolean;
   createdAt: string;
-  author: {
-    id: string;
-    displayName?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-  };
+  author: ForumAuthor;
   postCount: number;
+};
+
+export type ThreadPost = {
+  id: string;
+  content: string;
+  title?: string | null;
+  createdAt: string;
+  author: ForumAuthor;
+  likeCount: number;
+  comments: ForumComment[];
+};
+
+export type ThreadDetail = Thread & {
+  posts: ThreadPost[];
 };
 
 export type ForumPost = {
@@ -223,14 +278,14 @@ export type ForumPost = {
   content: string;
   topic?: string | null;
   createdAt: string;
-  author: {
-    id: string;
-    displayName?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-  };
+  author: ForumAuthor;
   likeCount: number;
-  replyCount: number;
+  replyCount?: number;
+  commentCount?: number;
+};
+
+export type ForumPostDetail = ForumPost & {
+  comments: ForumComment[];
 };
 
 export type ContentReport = {
@@ -254,6 +309,7 @@ export type Group = {
   id: string;
   name: string;
   description: string | null;
+  coverImageUrl?: string | null;
   status: "active" | "inactive" | "archived";
   topic?: string | null;
   country?: string | null;
@@ -261,6 +317,17 @@ export type Group = {
   city?: string | null;
   memberCount: number;
   createdAt: string;
+  creatorId?: string;
+  creator?: {
+    id: string;
+    displayName?: string | null;
+    professionalRole?: string | null;
+  };
+  members?: Array<{
+    id: string;
+    displayName?: string | null;
+    professionalRole?: string | null;
+  }>;
 };
 
 export type Affirmation = {

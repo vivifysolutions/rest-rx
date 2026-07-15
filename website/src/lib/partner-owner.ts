@@ -19,6 +19,10 @@ export function toPartnerOwnerOptions(
       fullName: a.fullName,
       email: a.email,
       applicationType: a.applicationType,
+      website: a.website,
+      instagram: a.instagram,
+      phone: a.phone,
+      address: a.address,
     }))
     .sort((a, b) =>
       (a.companyName || a.fullName).localeCompare(b.companyName || b.fullName),

@@ -340,9 +340,10 @@ export default function AdminBrandApplicationDetailPage() {
         <div className="admin-callout">
           {app.applicationType === "ambassador" ? (
             <>
-              Approve to grant mobile app access. Ambassadors sign in through the Rest &amp; Rx app
-              — they do not use the web portal. Set account type to Member first if you are denying
-              ambassador access.
+              Approve to grant mobile app access. Ambassadors are community members who share on
+              behalf of Rest &amp; Rx — they use the mobile app (not the web portal) and appear under{" "}
+              <Link href="/admin/members">Members</Link> after approval. Set account type to Member
+              first if you are denying ambassador access.
             </>
           ) : app.applicationType === "foundation" ? (
             <>
