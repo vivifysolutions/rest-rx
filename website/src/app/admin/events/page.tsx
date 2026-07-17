@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { EventForm, type EventFormValues } from "@/components/admin/EventForm";
 import type { BrandPartnerOption } from "@/components/discounts/BrandPartnerPicker";
@@ -16,10 +17,27 @@ import {
   updateEvent,
 } from "@/lib/api";
 import { EMPTY_LOCATION } from "@/lib/address";
+import {
+  compareBoolDesc,
+  compareDateAsc,
+  compareText,
+  sortBy,
+} from "@/lib/admin-sort";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import { labelApplicationTypeShort } from "@/lib/partner-application-options";
 import { partnerOwnerDisplayName, toPartnerOwnerOptions } from "@/lib/partner-owner";
 import type { Event } from "@/lib/types";
+
+type EventSort = "title" | "category" | "format" | "start" | "status" | "featured";
+
+const SORT_OPTIONS: { value: EventSort; label: string }[] = [
+  { value: "title", label: "Title" },
+  { value: "category", label: "Category" },
+  { value: "format", label: "Format" },
+  { value: "start", label: "Start date" },
+  { value: "status", label: "Status" },
+  { value: "featured", label: "Featured first" },
+];
 
 const EMPTY_FORM: EventFormValues = {
   title: "",
@@ -33,6 +51,7 @@ const EMPTY_FORM: EventFormValues = {
   startDate: "",
   endDate: "",
   isFeatured: false,
+  isFeaturedOnHome: false,
   brandPartnerApplicationId: "",
 };
 
@@ -57,9 +76,35 @@ export default function AdminEventsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<EventFormValues>(EMPTY_FORM);
+  const [sortByKey, setSortByKey] = useState<EventSort>("start");
 
   const update = <K extends keyof EventFormValues>(k: K, v: EventFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
+
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "category":
+            return compareText(a.category, b.category) || compareText(a.title, b.title);
+          case "format":
+            return compareText(a.format, b.format) || compareText(a.title, b.title);
+          case "start":
+            return compareDateAsc(a.startDate, b.startDate) || compareText(a.title, b.title);
+          case "status": {
+            const aPub = a.isPublished ?? true;
+            const bPub = b.isPublished ?? true;
+            return Number(bPub) - Number(aPub) || compareText(a.title, b.title);
+          }
+          case "featured":
+            return compareBoolDesc(a.isFeatured, b.isFeatured) || compareText(a.title, b.title);
+          case "title":
+          default:
+            return compareText(a.title, b.title);
+        }
+      }),
+    [items, sortByKey],
+  );
 
   const loadPartners = useCallback(async () => {
     setPartnersLoading(true);
@@ -161,6 +206,10 @@ export default function AdminEventsPage() {
         {error && <p className="admin-error">{error}</p>}
       </div>
 
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
+      </div>
+
       <div className="admin-card admin-table-wrap">
         <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>All events</h2>
         {loading ? (
@@ -182,7 +231,7 @@ export default function AdminEventsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((ev) => (
+              {sorted.map((ev) => (
                 <tr key={ev.id}>
                   <td>
                     <AdminTitleLink href={`/admin/events/${ev.id}`}>{ev.title}</AdminTitleLink>

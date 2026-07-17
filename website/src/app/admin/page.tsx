@@ -30,8 +30,8 @@ const ROLE_STATS: {
 }[] = [
   { label: "Members", key: "members", href: "/admin/members" },
   { label: "Brand partners", key: "brandPartners", href: "/admin/partners" },
-  { label: "Experts", key: "experts", href: "/admin/partners" },
-  { label: "Ambassadors", key: "ambassadors", href: "/admin/partners" },
+  { label: "Experts", key: "experts", href: "/admin/members" },
+  { label: "Ambassadors", key: "ambassadors", href: "/admin/members" },
   { label: "Foundations", key: "foundations", href: "/admin/partners" },
 ];
 

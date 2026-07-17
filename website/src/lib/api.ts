@@ -1,4 +1,5 @@
 import { buildQuery, ADMIN_QUERY } from "./buildQuery";
+import { notifyAdminMetricsChanged } from "@/lib/admin-metrics-events";
 import type { BrandPartnerApplication } from "@/lib/brand-partner-application";
 import { normalizeBrandPartnerApplication } from "@/lib/brand-partner-application";
 import type {
@@ -139,6 +140,7 @@ export type CommunityMetrics = {
     ambassadors: number;
     foundations: number;
     partners: number;
+    totalApproved: number;
   };
   pending: {
     members: number;
@@ -180,11 +182,13 @@ export async function updateUserType(
   userId: string,
   userType: string,
 ): Promise<ApiUser> {
-  return request<ApiUser>(`/users/${userId}/user-type`, {
+  const user = await request<ApiUser>(`/users/${userId}/user-type`, {
     method: "PATCH",
     token,
     body: { userType },
   });
+  notifyAdminMetricsChanged();
+  return user;
 }
 
 export async function updateApplicationStatus(
@@ -192,11 +196,13 @@ export async function updateApplicationStatus(
   userId: string,
   applicationStatus: string,
 ): Promise<ApiUser> {
-  return request<ApiUser>(`/users/${userId}/application-status`, {
+  const user = await request<ApiUser>(`/users/${userId}/application-status`, {
     method: "PATCH",
     token,
     body: { applicationStatus },
   });
+  notifyAdminMetricsChanged();
+  return user;
 }
 
 export type UpdateUserProfilePayload = {
@@ -266,6 +272,7 @@ export async function approveBrandPartnerApplication(
     method: "PATCH",
     token,
   });
+  notifyAdminMetricsChanged();
   return normalizeBrandPartnerApplication(item);
 }
 
@@ -273,10 +280,12 @@ export async function rejectBrandPartnerApplication(
   token: string,
   id: string,
 ): Promise<BrandPartnerApplication> {
-  return request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
+  const item = await request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
     method: "PATCH",
     token,
   });
+  notifyAdminMetricsChanged();
+  return normalizeBrandPartnerApplication(item);
 }
 
 // -- Reference data (used to populate form dropdowns) ------------------------

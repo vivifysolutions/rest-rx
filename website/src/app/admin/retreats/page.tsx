@@ -29,6 +29,7 @@ const EMPTY_FORM: RetreatFormValues = {
   endDate: "",
   bookingUrl: "",
   isFeatured: false,
+  isFeaturedOnHome: false,
 };
 
 export default function AdminRetreatsPage() {

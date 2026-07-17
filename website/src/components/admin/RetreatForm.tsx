@@ -3,11 +3,23 @@
 import { FormEvent } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
+import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import type { CreateRetreatInput } from "@/lib/types";
 
 export const RETREAT_LOCATIONS = ["Domestic", "International"] as const;
 export type RetreatLocation = (typeof RETREAT_LOCATIONS)[number];
+
+const ABOUT_PLACEHOLDER = `What this retreat is about. Markdown is supported:
+
+## Overview
+**Bold** highlights and *emphasis*
+
+- Who it's for
+- What's included
+- Atmosphere or setting
+
+> Optional callout for packing lists or travel notes`;
 
 const JOIN_PLACEHOLDER = `How members join this retreat. Markdown is supported:
 
@@ -31,6 +43,7 @@ export type RetreatFormValues = {
   endDate: string;
   bookingUrl: string;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
 };
 
 type Props = {
@@ -54,6 +67,7 @@ export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatI
     image: form.image.trim() || undefined,
     bookingUrl: form.bookingUrl.trim() || undefined,
     isFeatured: form.isFeatured,
+    isFeaturedOnHome: form.isFeaturedOnHome,
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
   };
@@ -74,14 +88,25 @@ export function RetreatForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      <FeaturedToggle
+        isFeatured={form.isFeatured}
+        isFeaturedOnHome={form.isFeaturedOnHome}
+        onChangeFeatured={(next) => onChange("isFeatured", next)}
+        onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+        sectionLabel="Retreats"
+      />
+
       <label>
         Title *
         <input value={form.title} onChange={(e) => onChange("title", e.target.value)} required />
       </label>
-      <label>
-        Description
-        <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} />
-      </label>
+      <MarkdownBodyField
+        label="About this retreat"
+        value={form.description}
+        onChange={(v) => onChange("description", v)}
+        placeholder={ABOUT_PLACEHOLDER}
+        hint="Longer retreat copy shown on the detail screen — Markdown formatting renders in the app."
+      />
 
       <MarkdownBodyField
         label="How to join"
@@ -168,15 +193,6 @@ export function RetreatForm({
           <input type="date" value={form.endDate} onChange={(e) => onChange("endDate", e.target.value)} />
         </label>
       </div>
-
-      <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-        <input
-          type="checkbox"
-          checked={form.isFeatured}
-          onChange={(e) => onChange("isFeatured", e.target.checked)}
-        />
-        Featured on Discover home
-      </label>
 
       <button type="submit" className="admin-btn admin-btn-primary">
         {submitLabel}

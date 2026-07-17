@@ -23,6 +23,7 @@ function retreatToForm(item: Retreat): RetreatFormValues {
     endDate: item.endDate ? item.endDate.slice(0, 10) : "",
     bookingUrl: item.bookingUrl ?? "",
     isFeatured: item.isFeatured,
+    isFeaturedOnHome: item.isFeaturedOnHome ?? false,
   };
 }
 
@@ -43,6 +44,7 @@ export default function AdminRetreatEditPage() {
     endDate: "",
     bookingUrl: "",
     isFeatured: false,
+    isFeaturedOnHome: false,
   });
   const [topics, setTopics] = useState<string[]>([]);
   const [seasons, setSeasons] = useState<string[]>([]);

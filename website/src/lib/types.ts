@@ -50,6 +50,7 @@ export type Discount = {
   image: string | null;
   images: string[];
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   isPublished: boolean;
   expiryDate: string | null;
   ownerId?: string | null;
@@ -94,6 +95,7 @@ export type CreateDiscountInput = {
   image?: string;
   images?: string[];
   isFeatured?: boolean;
+  isFeaturedOnHome?: boolean;
   isPublished?: boolean;
   expiryDate?: string;
   /** Admin: link discount to an approved brand partner application. Empty string clears. */
@@ -114,6 +116,7 @@ export type Event = {
   price: number | null;
   registrationUrl: string | null;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
@@ -150,6 +153,7 @@ export type CreateEventInput = {
   price?: number;
   registrationUrl?: string;
   isFeatured?: boolean;
+  isFeaturedOnHome?: boolean;
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
@@ -158,10 +162,22 @@ export type CreateEventInput = {
 };
 
 /** Mirrors Prisma `Resource`. Uses `topic`/`subTopic` (not category). */
+export type ResourceSharedBy = {
+  id: string;
+  displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  userType?: UserType | null;
+  professionalRole?: string | null;
+  specialty?: string | null;
+  applicationStatus?: ApplicationStatus | null;
+};
+
 export type Resource = {
   id: string;
   title: string;
   description: string | null;
+  caption: string | null;
   citations: string | null;
   type: string;
   duration: string | null;
@@ -171,14 +187,18 @@ export type Resource = {
   images: string[];
   mediaUrl: string | null;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Member shown as “Shared by” in the app. */
+  sharedBy?: ResourceSharedBy | null;
 };
 
 export type CreateResourceInput = {
   title: string;
   description?: string;
+  caption?: string;
   citations?: string;
   type: string;
   duration?: string;
@@ -188,7 +208,10 @@ export type CreateResourceInput = {
   images?: string[];
   mediaUrl?: string;
   isFeatured?: boolean;
+  isFeaturedOnHome?: boolean;
   isPublished?: boolean;
+  /** User id of the expert/member who shared this resource. Empty string clears on update. */
+  updatedById?: string;
 };
 
 /** Mirrors Prisma `Retreat`. */
@@ -204,6 +227,7 @@ export type Retreat = {
   rating: number | null;
   image: string | null;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
@@ -224,6 +248,7 @@ export type CreateRetreatInput = {
   rating?: number;
   image?: string;
   isFeatured?: boolean;
+  isFeaturedOnHome?: boolean;
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;

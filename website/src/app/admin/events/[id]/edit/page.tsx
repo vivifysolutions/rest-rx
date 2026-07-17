@@ -39,6 +39,7 @@ function eventToForm(item: Event): EventFormValues {
     startDate: toDatetimeLocal(item.startDate),
     endDate: toDatetimeLocal(item.endDate),
     isFeatured: item.isFeatured,
+    isFeaturedOnHome: item.isFeaturedOnHome ?? false,
     brandPartnerApplicationId: item.brandPartnerApplicationId ?? "",
   };
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent } from "react";
+import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
+import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { LocationField } from "@/components/admin/LocationField";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
@@ -17,6 +19,16 @@ import {
 } from "@/lib/address";
 import type { CreateEventInput } from "@/lib/types";
 
+const EVENT_ABOUT_PLACEHOLDER = `What this event is about. Markdown is supported:
+
+## What to expect
+**Bold** details and *emphasis*
+
+- Who it's for
+- What members will walk away with
+
+> Optional callout for dress code, materials, or notes`;
+
 export type EventFormValues = {
   title: string;
   description: string;
@@ -29,6 +41,7 @@ export type EventFormValues = {
   startDate: string;
   endDate: string;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   brandPartnerApplicationId: string;
 };
 
@@ -59,6 +72,7 @@ export function formValuesToEventBody(
     registrationUrl: form.registrationUrl.trim() || undefined,
     image: form.image.trim() || undefined,
     isFeatured: form.isFeatured,
+    isFeaturedOnHome: form.isFeaturedOnHome,
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
   };
@@ -86,6 +100,14 @@ export function EventForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      <FeaturedToggle
+        isFeatured={form.isFeatured}
+        isFeaturedOnHome={form.isFeaturedOnHome}
+        onChangeFeatured={(next) => onChange("isFeatured", next)}
+        onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+        sectionLabel="Events"
+      />
+
       {showPartnerPicker && (
         <label>
           Owner (partner account)
@@ -105,10 +127,13 @@ export function EventForm({
         Title *
         <input value={form.title} onChange={(e) => onChange("title", e.target.value)} required />
       </label>
-      <label>
-        Description
-        <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} />
-      </label>
+      <MarkdownBodyField
+        label="About"
+        value={form.description}
+        onChange={(v) => onChange("description", v)}
+        placeholder={EVENT_ABOUT_PLACEHOLDER}
+        hint="Longer event copy shown on the detail screen — Markdown formatting renders in the app."
+      />
 
       <div className="admin-form-row">
         <label>
@@ -199,15 +224,6 @@ export function EventForm({
         onChange={(url) => onChange("image", url)}
         guide="event"
       />
-
-      <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-        <input
-          type="checkbox"
-          checked={form.isFeatured}
-          onChange={(e) => onChange("isFeatured", e.target.checked)}
-        />
-        Featured on Discover home
-      </label>
 
       <button type="submit" className="admin-btn admin-btn-primary">
         {submitLabel}
