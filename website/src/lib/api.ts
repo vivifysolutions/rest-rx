@@ -191,11 +191,12 @@ export async function updateApplicationStatus(
   token: string,
   userId: string,
   applicationStatus: string,
+  rejectionReason?: string,
 ): Promise<ApiUser> {
   return request<ApiUser>(`/users/${userId}/application-status`, {
     method: "PATCH",
     token,
-    body: { applicationStatus },
+    body: { applicationStatus, rejectionReason },
   });
 }
 
