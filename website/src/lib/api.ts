@@ -238,6 +238,29 @@ export async function submitBrandPartnerApplication(
   return normalizeBrandPartnerApplication(result);
 }
 
+/** Edits and resubmits a rejected application in place (no duplicate row). */
+export async function resubmitBrandPartnerApplication(
+  token: string,
+  body: unknown,
+): Promise<BrandPartnerApplication> {
+  const result = await request<BrandPartnerApplication>("/brand-partner-applications/me", {
+    method: "PATCH",
+    token,
+    body,
+  });
+  return normalizeBrandPartnerApplication(result);
+}
+
+/** The signed-in applicant's own most recent partner application, or null if they've never applied. */
+export async function getMyBrandPartnerApplication(
+  token: string,
+): Promise<BrandPartnerApplication | null> {
+  const result = await request<BrandPartnerApplication | null>("/brand-partner-applications/me", {
+    token,
+  });
+  return result ? normalizeBrandPartnerApplication(result) : null;
+}
+
 export async function getBrandPartnerApplications(
   token: string,
   params?: { status?: string; applicationType?: string },

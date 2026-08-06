@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
+import { canResubmitPartnerApplication } from "@/lib/user-types";
 
 function ConnectionStatus() {
   const { apiStatus, pingApi } = usePortalAuth();
@@ -62,7 +63,11 @@ export default function PortalLoginPage() {
     if (loading) return;
     if (!user || !profile) return;
     if (!hasPortalAccess) {
-      router.replace("/portal/unauthorized");
+      if (canResubmitPartnerApplication(profile.userType, profile.partnerApplicationStatus)) {
+        router.replace("/resubmit");
+      } else {
+        router.replace("/portal/unauthorized");
+      }
     } else {
       router.replace(homeRoute);
     }
