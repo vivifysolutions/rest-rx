@@ -381,18 +381,11 @@ export type GuidedGoal = {
   title: string;
   description: string | null;
   goalType: "habit" | "streak" | "milestone" | null;
-  category:
-    | "physical"
-    | "spiritual"
-    | "community"
-    | "emotional"
-    | "lifestyle"
-    | "mental_wellness";
+  /** Wellness topic name from `GET /topics`. */
+  category: string;
   targetValue: number;
   unit: string | null;
   checkInIncrement: number;
-  habitAmount: number | null;
-  frequencyPerWeek: number | null;
   cadence: "daily" | "weekly" | "monthly" | "yearly";
   isGuided: boolean;
   memberCount: number;
@@ -404,11 +397,9 @@ export type CreateGuidedGoalInput = {
   title: string;
   description?: string;
   goalType?: "habit" | "streak" | "milestone";
-  category: GuidedGoal["category"];
+  category: string;
   targetValue: number;
   unit?: string;
   checkInIncrement?: number;
-  habitAmount?: number;
-  frequencyPerWeek?: number;
   cadence?: GuidedGoal["cadence"];
 };

@@ -3,22 +3,15 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { ReferenceSelect } from "@/components/admin/ReferenceSelect";
 import {
   createAdminGuidedGoal,
   deleteAdminGuidedGoal,
   getAdminGuidedGoals,
+  getTopics,
   updateAdminGuidedGoal,
 } from "@/lib/api";
 import type { CreateGuidedGoalInput, GuidedGoal } from "@/lib/types";
-
-const CATEGORIES: Array<{ value: GuidedGoal["category"]; label: string }> = [
-  { value: "physical", label: "Physical" },
-  { value: "spiritual", label: "Spiritual" },
-  { value: "community", label: "Community" },
-  { value: "emotional", label: "Emotional" },
-  { value: "lifestyle", label: "Lifestyle" },
-  { value: "mental_wellness", label: "Mental Wellness" },
-];
 
 const CADENCES: Array<{ value: GuidedGoal["cadence"]; label: string }> = [
   { value: "daily", label: "Daily" },
@@ -27,18 +20,21 @@ const CADENCES: Array<{ value: GuidedGoal["cadence"]; label: string }> = [
   { value: "yearly", label: "Yearly" },
 ];
 
+const CADENCE_PERIOD_NOUN: Record<GuidedGoal["cadence"], string> = {
+  daily: "day",
+  weekly: "week",
+  monthly: "month",
+  yearly: "year",
+};
+
 const EMPTY_FORM = {
   title: "",
   description: "",
-  category: "" as "" | GuidedGoal["category"],
+  category: "",
   cadence: "weekly" as GuidedGoal["cadence"],
   targetValue: "",
   unit: "times",
 };
-
-function categoryLabel(value: GuidedGoal["category"]): string {
-  return CATEGORIES.find((c) => c.value === value)?.label ?? value;
-}
 
 function cadenceLabel(value: GuidedGoal["cadence"]): string {
   return CADENCES.find((c) => c.value === value)?.label ?? value;
@@ -47,6 +43,7 @@ function cadenceLabel(value: GuidedGoal["cadence"]): string {
 export default function AdminGoalsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<GuidedGoal[]>([]);
+  const [topics, setTopics] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -60,10 +57,12 @@ export default function AdminGoalsPage() {
     try {
       const token = await refreshToken();
       if (!token) throw new Error("Not signed in");
-      const data = await getAdminGuidedGoals(token, {
-        search: search || undefined,
-      });
+      const [data, topicList] = await Promise.all([
+        getAdminGuidedGoals(token, { search: search || undefined }),
+        getTopics(),
+      ]);
       setItems(data.items);
+      setTopics(topicList.map((t) => t.name));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load goals");
     } finally {
@@ -156,6 +155,8 @@ export default function AdminGoalsPage() {
     setError(null);
   }
 
+  const categoryOptions = topics.map((name) => ({ value: name, label: name }));
+
   return (
     <>
       <ContentPageHeader
@@ -192,23 +193,14 @@ export default function AdminGoalsPage() {
           <div className="admin-form-row">
             <label>
               Category *
-              <select
+              <ReferenceSelect
+                name="category"
                 value={form.category}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    category: e.target.value as GuidedGoal["category"] | "",
-                  }))
-                }
+                onChange={(v) => setForm((p) => ({ ...p, category: v }))}
+                options={categoryOptions}
+                placeholder="Select wellness category"
                 required
-              >
-                <option value="">Select category</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
             <label>
               Cadence *
@@ -232,7 +224,7 @@ export default function AdminGoalsPage() {
           </div>
           <div className="admin-form-row">
             <label>
-              Target times per {form.cadence === "daily" ? "day" : form.cadence.replace("ly", "")} *
+              Target times per {CADENCE_PERIOD_NOUN[form.cadence]} *
               <input
                 type="number"
                 min={0.01}
@@ -255,7 +247,7 @@ export default function AdminGoalsPage() {
           </div>
           <p className="admin-field-hint" style={{ marginTop: "-0.25rem" }}>
             Habits use target × cadence (e.g. 3× a week). Members check in once per day toward that
-            target.
+            target. Categories come from wellness topics.
           </p>
           <button type="submit" className="admin-btn admin-btn-primary">
             {editingId ? "Save changes" : "Create guided goal"}
@@ -318,7 +310,7 @@ export default function AdminGoalsPage() {
                       </div>
                     ) : null}
                   </td>
-                  <td>{categoryLabel(g.category)}</td>
+                  <td>{g.category}</td>
                   <td>
                     {g.targetValue}
                     {g.unit ? ` ${g.unit}` : ""} / {cadenceLabel(g.cadence).toLowerCase()}
