@@ -16,6 +16,8 @@ import type {
   ForumPost,
   ForumPostDetail,
   Group,
+  GuidedGoal,
+  CreateGuidedGoalInput,
   Resource,
   Retreat,
   Thread,
@@ -652,4 +654,35 @@ export async function updateAffirmation(
 
 export async function deleteAffirmation(token: string, id: string): Promise<void> {
   await request<void>(`/affirmations/${id}`, { method: "DELETE", token });
+}
+
+// -- Guided goals (Rest & Rx challenges) -------------------------------------
+
+export async function getAdminGuidedGoals(
+  token: string,
+  params?: { search?: string },
+): Promise<{ items: GuidedGoal[]; total: number }> {
+  return request<{ items: GuidedGoal[]; total: number }>(
+    `/goals/admin${buildQuery(params)}`,
+    { token },
+  );
+}
+
+export async function createAdminGuidedGoal(
+  token: string,
+  body: CreateGuidedGoalInput,
+): Promise<GuidedGoal> {
+  return request<GuidedGoal>("/goals/admin", { method: "POST", token, body });
+}
+
+export async function updateAdminGuidedGoal(
+  token: string,
+  id: string,
+  body: Partial<CreateGuidedGoalInput>,
+): Promise<GuidedGoal> {
+  return request<GuidedGoal>(`/goals/admin/${id}`, { method: "PATCH", token, body });
+}
+
+export async function deleteAdminGuidedGoal(token: string, id: string): Promise<void> {
+  await request<void>(`/goals/admin/${id}`, { method: "DELETE", token });
 }

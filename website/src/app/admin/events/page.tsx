@@ -47,7 +47,7 @@ const EMPTY_FORM: EventFormValues = {
   location: { ...EMPTY_LOCATION },
   price: "",
   registrationUrl: "",
-  image: "",
+  images: [],
   startDate: "",
   endDate: "",
   isFeatured: false,

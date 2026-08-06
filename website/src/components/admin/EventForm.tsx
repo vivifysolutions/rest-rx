@@ -5,7 +5,7 @@ import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { LocationField } from "@/components/admin/LocationField";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import {
   BrandPartnerPicker,
   type BrandPartnerOption,
@@ -37,7 +37,7 @@ export type EventFormValues = {
   location: LocationValue;
   price: string;
   registrationUrl: string;
-  image: string;
+  images: string[];
   startDate: string;
   endDate: string;
   isFeatured: boolean;
@@ -62,6 +62,7 @@ export function formValuesToEventBody(
   options?: { includePartner?: boolean },
 ): CreateEventInput {
   const locationPayload = locationToApiPayload(form.location);
+  const images = form.images.map((url) => url.trim()).filter(Boolean);
   const body: CreateEventInput = {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
@@ -70,7 +71,8 @@ export function formValuesToEventBody(
     ...locationPayload,
     price: form.price ? Number(form.price) : undefined,
     registrationUrl: form.registrationUrl.trim() || undefined,
-    image: form.image.trim() || undefined,
+    image: images[0],
+    images,
     isFeatured: form.isFeatured,
     isFeaturedOnHome: form.isFeaturedOnHome,
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
@@ -218,12 +220,18 @@ export function EventForm({
         </label>
       </div>
 
-      <ImageUpload
-        folder="events"
-        value={form.image}
-        onChange={(url) => onChange("image", url)}
-        guide="event"
-      />
+      <fieldset className="admin-form-fieldset">
+        <legend>Photos</legend>
+        <MultipleImageUpload
+          folder="events"
+          values={form.images}
+          onChange={(urls) => onChange("images", urls)}
+          label="Event photos"
+          maxImages={10}
+          guide="event"
+          hint="Upload multiple images. The first photo is the cover on browse cards; members can swipe through all photos on the detail screen."
+        />
+      </fieldset>
 
       <button type="submit" className="admin-btn admin-btn-primary">
         {submitLabel}

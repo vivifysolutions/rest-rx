@@ -4,7 +4,7 @@ import { FormEvent } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import type { CreateRetreatInput } from "@/lib/types";
 
 export const RETREAT_LOCATIONS = ["Domestic", "International"] as const;
@@ -38,7 +38,7 @@ export type RetreatFormValues = {
   season: string;
   location: string;
   rating: string;
-  image: string;
+  images: string[];
   startDate: string;
   endDate: string;
   bookingUrl: string;
@@ -56,6 +56,7 @@ type Props = {
 };
 
 export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatInput {
+  const images = form.images.map((url) => url.trim()).filter(Boolean);
   return {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
@@ -64,7 +65,8 @@ export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatI
     season: form.season.trim() || undefined,
     location: form.location.trim() || undefined,
     rating: form.rating ? Number(form.rating) : undefined,
-    image: form.image.trim() || undefined,
+    image: images[0],
+    images,
     bookingUrl: form.bookingUrl.trim() || undefined,
     isFeatured: form.isFeatured,
     isFeaturedOnHome: form.isFeaturedOnHome,
@@ -176,12 +178,18 @@ export function RetreatForm({
         />
       </label>
 
-      <ImageUpload
-        folder="retreats"
-        value={form.image}
-        onChange={(url) => onChange("image", url)}
-        guide="retreat"
-      />
+      <fieldset className="admin-form-fieldset">
+        <legend>Photos</legend>
+        <MultipleImageUpload
+          folder="retreats"
+          values={form.images}
+          onChange={(urls) => onChange("images", urls)}
+          label="Retreat photos"
+          maxImages={10}
+          guide="retreat"
+          hint="Upload multiple images. The first photo is the cover on browse cards; members can swipe through all photos on the detail screen."
+        />
+      </fieldset>
 
       <div className="admin-form-row">
         <label>

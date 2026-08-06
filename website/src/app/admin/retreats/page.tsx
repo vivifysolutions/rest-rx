@@ -24,7 +24,7 @@ const EMPTY_FORM: RetreatFormValues = {
   season: "",
   location: "",
   rating: "",
-  image: "",
+  images: [],
   startDate: "",
   endDate: "",
   bookingUrl: "",

@@ -112,6 +112,7 @@ export type Event = {
   longitude: number | null;
   category: string | null;
   image: string | null;
+  images?: string[];
   format: string | null;
   price: number | null;
   registrationUrl: string | null;
@@ -149,6 +150,7 @@ export type CreateEventInput = {
   longitude?: number;
   category?: string;
   image?: string;
+  images?: string[];
   format?: string;
   price?: number;
   registrationUrl?: string;
@@ -226,6 +228,7 @@ export type Retreat = {
   category: string | null;
   rating: number | null;
   image: string | null;
+  images?: string[];
   isFeatured: boolean;
   isFeaturedOnHome: boolean;
   isPublished: boolean;
@@ -247,6 +250,7 @@ export type CreateRetreatInput = {
   category?: string;
   rating?: number;
   image?: string;
+  images?: string[];
   isFeatured?: boolean;
   isFeaturedOnHome?: boolean;
   isPublished?: boolean;
@@ -369,4 +373,42 @@ export type AffirmationTopic = {
   slug: string;
   title: string;
   description: string;
+};
+
+/** Rest & Rx curated goal shown in "Guided for you". */
+export type GuidedGoal = {
+  id: string;
+  title: string;
+  description: string | null;
+  goalType: "habit" | "streak" | "milestone" | null;
+  category:
+    | "physical"
+    | "spiritual"
+    | "community"
+    | "emotional"
+    | "lifestyle"
+    | "mental_wellness";
+  targetValue: number;
+  unit: string | null;
+  checkInIncrement: number;
+  habitAmount: number | null;
+  frequencyPerWeek: number | null;
+  cadence: "daily" | "weekly" | "monthly" | "yearly";
+  isGuided: boolean;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateGuidedGoalInput = {
+  title: string;
+  description?: string;
+  goalType?: "habit" | "streak" | "milestone";
+  category: GuidedGoal["category"];
+  targetValue: number;
+  unit?: string;
+  checkInIncrement?: number;
+  habitAmount?: number;
+  frequencyPerWeek?: number;
+  cadence?: GuidedGoal["cadence"];
 };
