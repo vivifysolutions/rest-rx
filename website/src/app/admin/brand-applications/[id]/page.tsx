@@ -10,7 +10,9 @@ import {
   DetailSection,
   DetailVerificationPhoto,
 } from "@/components/admin/AdminDetailView";
+import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
 import {
+  ApiError,
   approveBrandPartnerApplication,
   getBrandPartnerApplication,
   rejectBrandPartnerApplication,
@@ -59,6 +61,9 @@ export default function AdminBrandApplicationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [savingType, setSavingType] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectError, setRejectError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,17 +97,21 @@ export default function AdminBrandApplicationDetailPage() {
     }
   }
 
-  async function handleReject() {
+  async function handleReject(reason: string) {
     if (!app) return;
-    setBusy(true);
+    setRejecting(true);
+    setRejectError(null);
     try {
       const token = await refreshToken();
       if (!token) return;
-      setApp(await rejectBrandPartnerApplication(token, app.id));
+      setApp(await rejectBrandPartnerApplication(token, app.id, reason));
+      setRejectModalOpen(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Reject failed");
+      setRejectError(
+        e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Failed to reject application",
+      );
     } finally {
-      setBusy(false);
+      setRejecting(false);
     }
   }
 
@@ -134,6 +143,7 @@ export default function AdminBrandApplicationDetailPage() {
   const currentType = (app.user?.userType as UserType | undefined) ?? undefined;
 
   return (
+    <>
     <AdminDetailLayout
       backHref="/admin/brand-applications"
       backLabel="Partner applications"
@@ -149,7 +159,12 @@ export default function AdminBrandApplicationDetailPage() {
             >
               Approve
             </button>
-            <button type="button" className="admin-btn" disabled={busy} onClick={handleReject}>
+            <button
+              type="button"
+              className="admin-btn"
+              disabled={busy}
+              onClick={() => setRejectModalOpen(true)}
+            >
               Reject
             </button>
           </>
@@ -363,5 +378,13 @@ export default function AdminBrandApplicationDetailPage() {
 
       {error && <p className="admin-error">{error}</p>}
     </AdminDetailLayout>
+    <RejectApplicationModal
+      open={rejectModalOpen}
+      saving={rejecting}
+      error={rejectError}
+      onCancel={() => setRejectModalOpen(false)}
+      onSubmit={handleReject}
+    />
+    </>
   );
 }

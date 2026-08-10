@@ -296,11 +296,14 @@ export async function approveBrandPartnerApplication(
 export async function rejectBrandPartnerApplication(
   token: string,
   id: string,
+  rejectionReason: string,
 ): Promise<BrandPartnerApplication> {
-  return request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
+  const item = await request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
     method: "PATCH",
     token,
+    body: { rejectionReason },
   });
+  return normalizeBrandPartnerApplication(item);
 }
 
 // -- Reference data (used to populate form dropdowns) ------------------------

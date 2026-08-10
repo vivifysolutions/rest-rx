@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import {
+  ApiError,
   approveBrandPartnerApplication,
   getBrandPartnerApplications,
   rejectBrandPartnerApplication,
@@ -52,6 +54,9 @@ export default function AdminBrandApplicationsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectError, setRejectError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,17 +102,26 @@ export default function AdminBrandApplicationsPage() {
     }
   }
 
-  async function handleReject(id: string) {
-    setBusyId(id);
+  async function handleReject(reason: string) {
+    if (!rejectTargetId) return;
+    setRejecting(true);
+    setRejectError(null);
     try {
       const token = await refreshToken();
       if (!token) return;
-      await rejectBrandPartnerApplication(token, id);
+      await rejectBrandPartnerApplication(token, rejectTargetId, reason);
+      setRejectTargetId(null);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Reject failed");
+      setRejectError(
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Failed to reject application",
+      );
     } finally {
-      setBusyId(null);
+      setRejecting(false);
     }
   }
 
@@ -118,7 +132,10 @@ export default function AdminBrandApplicationsPage() {
         description="Review by partner type: brand partners, expert contributors, ambassadors, and non-profits. Approve after review; access stays locked until approved."
       />
 
-      <div className="admin-card admin-filter-bar" style={{ marginBottom: "0.75rem" }}>
+      <div
+        className="admin-card admin-filter-bar"
+        style={{ marginBottom: "0.75rem" }}
+      >
         <span className="admin-filter-label">Status</span>
         {(["pending", "approved", "rejected", "all"] as const).map((status) => (
           <button
@@ -132,7 +149,10 @@ export default function AdminBrandApplicationsPage() {
         ))}
       </div>
 
-      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+      <div
+        className="admin-card admin-filter-bar"
+        style={{ marginBottom: "1rem" }}
+      >
         <span className="admin-filter-label">Type</span>
         <button
           type="button"
@@ -163,7 +183,9 @@ export default function AdminBrandApplicationsPage() {
         {loading ? (
           <p>Loading…</p>
         ) : items.length === 0 ? (
-          <p style={{ color: "var(--text-muted)" }}>No applications match this filter.</p>
+          <p style={{ color: "var(--text-muted)" }}>
+            No applications match this filter.
+          </p>
         ) : (
           <table className="admin-table">
             <thead>
@@ -181,19 +203,30 @@ export default function AdminBrandApplicationsPage() {
               {items.map((app) => (
                 <tr key={app.id}>
                   <td>
-                    <Link href={`/admin/brand-applications/${app.id}`} className="admin-title-link">
+                    <Link
+                      href={`/admin/brand-applications/${app.id}`}
+                      className="admin-title-link"
+                    >
                       {app.companyName}
                     </Link>
                   </td>
                   <td>
                     {app.fullName}
                     <br />
-                    <span style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                    <span
+                      style={{
+                        color: "var(--text-muted)",
+                        fontSize: "0.85rem",
+                      }}
+                    >
                       {app.email}
                     </span>
                   </td>
                   <td>
-                    <span className={typeBadgeClass(app.applicationType)} title={labelApplicationType(app.applicationType)}>
+                    <span
+                      className={typeBadgeClass(app.applicationType)}
+                      title={labelApplicationType(app.applicationType)}
+                    >
                       {labelApplicationTypeShort(app.applicationType)}
                     </span>
                   </td>
@@ -210,7 +243,13 @@ export default function AdminBrandApplicationsPage() {
                   <td>{new Date(app.createdAt).toLocaleDateString()}</td>
                   <td>
                     {app.status === "pending" && (
-                      <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "0.35rem",
+                          flexWrap: "wrap",
+                        }}
+                      >
                         <button
                           type="button"
                           className="admin-btn admin-btn-primary"
@@ -223,7 +262,7 @@ export default function AdminBrandApplicationsPage() {
                           type="button"
                           className="admin-btn"
                           disabled={busyId === app.id}
-                          onClick={() => handleReject(app.id)}
+                          onClick={() => setRejectTargetId(app.id)}
                         >
                           Reject
                         </button>
@@ -236,6 +275,14 @@ export default function AdminBrandApplicationsPage() {
           </table>
         )}
       </div>
+
+      <RejectApplicationModal
+        open={rejectTargetId !== null}
+        saving={rejecting}
+        error={rejectError}
+        onCancel={() => setRejectTargetId(null)}
+        onSubmit={handleReject}
+      />
     </>
   );
 }
