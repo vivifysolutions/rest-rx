@@ -17,6 +17,7 @@ import type {
   Group,
   Resource,
   Retreat,
+  Suggestion,
   Thread,
   ThreadDetail,
 } from "./types";
@@ -566,6 +567,13 @@ export async function getReports(
   status?: string,
 ): Promise<ContentReport[]> {
   return request<ContentReport[]>(`/reports${buildQuery({ status })}`, { token });
+}
+
+export async function getSuggestions(
+  token: string,
+  category?: string,
+): Promise<Suggestion[]> {
+  return request<Suggestion[]>(`/suggestions${buildQuery({ category })}`, { token });
 }
 
 export async function updateReportStatus(
