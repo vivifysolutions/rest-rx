@@ -16,6 +16,7 @@ export type ApiUser = {
   userType: UserType;
   applicationStatus: ApplicationStatus;
   partnerApplicationStatus?: ApplicationStatus | null;
+  isActive: boolean;
   identityPhotoUrl?: string | null;
   workCredentialPhotoUrl?: string | null;
   onboardingAnswers?: Record<string, unknown> | null;

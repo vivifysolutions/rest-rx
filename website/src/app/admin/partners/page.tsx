@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
+import { ActiveBadge, ActiveToggleButton } from "@/components/admin/ActiveBadge";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
-import { listUsers, updateUserType } from "@/lib/api";
+import { listUsers, updateUserActive, updateUserType } from "@/lib/api";
 import {
   displayUserName,
   onboardingSummary,
@@ -94,6 +95,22 @@ export default function AdminPartnersPage() {
     }
   }
 
+  async function handleActiveChange(userId: string, isActive: boolean) {
+    setSavingId(userId);
+    try {
+      const token = await refreshToken();
+      if (!token) throw new Error("Not authenticated");
+      const updated = await updateUserActive(token, userId, isActive);
+      // Keep the row visible either way — an admin needs to see inactive partners
+      // here in order to reactivate them, unlike a type change that leaves the filter.
+      setItems((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update status");
+    } finally {
+      setSavingId(null);
+    }
+  }
+
   return (
     <>
       <ContentPageHeader
@@ -148,6 +165,7 @@ export default function AdminPartnersPage() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Account type</th>
+                <th>Status</th>
                 <th>Professional info</th>
                 <th>Onboarding</th>
                 <th>Joined</th>
@@ -181,6 +199,16 @@ export default function AdminPartnersPage() {
                           </option>
                         ))}
                       </select>
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                      <ActiveBadge isActive={u.isActive} />
+                      <ActiveToggleButton
+                        isActive={u.isActive}
+                        onToggle={() => handleActiveChange(u.id, !u.isActive)}
+                        disabled={savingId === u.id}
+                      />
                     </div>
                   </td>
                   <td>
