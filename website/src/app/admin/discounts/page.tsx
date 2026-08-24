@@ -162,6 +162,8 @@ export default function AdminDiscountsPage() {
                 {DISCOUNT_TIERS_ENABLED ? <th>Tier</th> : null}
                 <th>Status</th>
                 <th>Featured</th>
+                <th>Discover order</th>
+                <th>Home order</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -179,6 +181,8 @@ export default function AdminDiscountsPage() {
                     <PublishedBadge isPublished={d.isPublished ?? true} />
                   </td>
                   <td>{d.isFeatured ? "Yes" : "—"}</td>
+                  <td>{d.featuredOrder ?? "—"}</td>
+                  <td>{d.featuredOnHomeOrder ?? "—"}</td>
                   <td>
                     <ContentRowActions
                       isPublished={d.isPublished ?? true}

@@ -62,6 +62,9 @@ export type DiscountFormValues = {
   phone: string;
   images: string[];
   isFeatured: boolean;
+  featuredOrder: string;
+  isFeaturedOnHome: boolean;
+  featuredOnHomeOrder: string;
   expiryDate: string;
   brandPartnerApplicationId: string;
 };
@@ -84,6 +87,9 @@ export const EMPTY_DISCOUNT_FORM: DiscountFormValues = {
   phone: "",
   images: [],
   isFeatured: false,
+  featuredOrder: "",
+  isFeaturedOnHome: false,
+  featuredOnHomeOrder: "",
   expiryDate: "",
   brandPartnerApplicationId: "",
 };
@@ -154,6 +160,8 @@ export function DiscountForm({
 
     const images = form.images.map((url) => url.trim()).filter(Boolean);
     const locationPayload = locationToApiPayload(form.location);
+    const featuredOrderRaw = form.featuredOrder.trim();
+    const featuredOnHomeOrderRaw = form.featuredOnHomeOrder.trim();
 
     const body: CreateDiscountInput = {
       title: form.title.trim(),
@@ -173,6 +181,10 @@ export function DiscountForm({
       image: images[0],
       images,
       isFeatured: showFeatured ? form.isFeatured : undefined,
+      featuredOrder: showFeatured && featuredOrderRaw ? Number(featuredOrderRaw) : undefined,
+      isFeaturedOnHome: showFeatured ? form.isFeaturedOnHome : undefined,
+      featuredOnHomeOrder:
+        showFeatured && featuredOnHomeOrderRaw ? Number(featuredOnHomeOrderRaw) : undefined,
       expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : undefined,
     };
 
@@ -347,14 +359,53 @@ export function DiscountForm({
         </label>
 
         {showFeatured && (
-          <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              type="checkbox"
-              checked={form.isFeatured}
-              onChange={(e) => onChange("isFeatured", e.target.checked)}
-            />
-            Featured on Discover home
-          </label>
+          <div className="admin-form-row">
+            <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
+              <input
+                type="checkbox"
+                checked={form.isFeatured}
+                onChange={(e) => onChange("isFeatured", e.target.checked)}
+              />
+              Featured on Discover home
+            </label>
+            <label>
+              <span className="admin-field-label">Discover order</span>
+              <span className="admin-field-hint">
+                Lowest number shows first. Leave blank to sort last (unranked).
+              </span>
+              <input
+                type="number"
+                min={1}
+                value={form.featuredOrder}
+                onChange={(e) => onChange("featuredOrder", e.target.value)}
+              />
+            </label>
+          </div>
+        )}
+
+        {showFeatured && (
+          <div className="admin-form-row">
+            <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
+              <input
+                type="checkbox"
+                checked={form.isFeaturedOnHome}
+                onChange={(e) => onChange("isFeaturedOnHome", e.target.checked)}
+              />
+              Featured on Home
+            </label>
+            <label>
+              <span className="admin-field-label">Home order</span>
+              <span className="admin-field-hint">
+                Lowest number shows first. Leave blank to sort last (unranked).
+              </span>
+              <input
+                type="number"
+                min={1}
+                value={form.featuredOnHomeOrder}
+                onChange={(e) => onChange("featuredOnHomeOrder", e.target.value)}
+              />
+            </label>
+          </div>
         )}
       </fieldset>
 
