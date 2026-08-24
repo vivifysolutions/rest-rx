@@ -10,20 +10,16 @@ export const USER_TYPE_LABELS: Record<UserType, string> = {
 };
 
 /**
- * Approved mobile-app accounts listed under Admin → Members.
- * Ambassadors are community members who share on behalf of Rest & Rx.
+ * Approved accounts listed under Admin → Members.
+ * Ambassadors and experts appear here alongside healthcare members.
  */
-export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador"];
+export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador", "expert"];
 
 /**
  * Approved portal partner accounts listed under Admin → Partners.
- * Ambassadors are not partners — they appear under Members.
+ * Experts and ambassadors are listed under Members.
  */
-export const PARTNER_DIRECTORY_TYPES: UserType[] = [
-  "brand_partner",
-  "expert",
-  "foundation",
-];
+export const PARTNER_DIRECTORY_TYPES: UserType[] = ["brand_partner", "foundation"];
 
 /** Roles that use the web portal (not the consumer mobile app home). */
 export const PORTAL_USER_TYPES: UserType[] = [

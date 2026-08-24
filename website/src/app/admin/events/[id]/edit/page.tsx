@@ -35,10 +35,11 @@ function eventToForm(item: Event): EventFormValues {
     location: locationFromListing(item),
     price: item.price != null ? String(item.price) : "",
     registrationUrl: item.registrationUrl ?? "",
-    image: item.image ?? "",
+    images: item.images?.length ? item.images : item.image ? [item.image] : [],
     startDate: toDatetimeLocal(item.startDate),
     endDate: toDatetimeLocal(item.endDate),
     isFeatured: item.isFeatured,
+    isFeaturedOnHome: item.isFeaturedOnHome ?? false,
     brandPartnerApplicationId: item.brandPartnerApplicationId ?? "",
   };
 }

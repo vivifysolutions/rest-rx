@@ -1,4 +1,5 @@
 import { buildQuery, ADMIN_QUERY } from "./buildQuery";
+import { notifyAdminMetricsChanged } from "@/lib/admin-metrics-events";
 import type { BrandPartnerApplication } from "@/lib/brand-partner-application";
 import { normalizeBrandPartnerApplication } from "@/lib/brand-partner-application";
 import type {
@@ -15,6 +16,8 @@ import type {
   ForumPost,
   ForumPostDetail,
   Group,
+  GuidedGoal,
+  CreateGuidedGoalInput,
   Resource,
   Retreat,
   Thread,
@@ -139,6 +142,7 @@ export type CommunityMetrics = {
     ambassadors: number;
     foundations: number;
     partners: number;
+    totalApproved: number;
   };
   pending: {
     members: number;
@@ -180,11 +184,13 @@ export async function updateUserType(
   userId: string,
   userType: string,
 ): Promise<ApiUser> {
-  return request<ApiUser>(`/users/${userId}/user-type`, {
+  const user = await request<ApiUser>(`/users/${userId}/user-type`, {
     method: "PATCH",
     token,
     body: { userType },
   });
+  notifyAdminMetricsChanged();
+  return user;
 }
 
 export async function updateApplicationStatus(
@@ -193,11 +199,13 @@ export async function updateApplicationStatus(
   applicationStatus: string,
   rejectionReason?: string,
 ): Promise<ApiUser> {
-  return request<ApiUser>(`/users/${userId}/application-status`, {
+  const user = await request<ApiUser>(`/users/${userId}/application-status`, {
     method: "PATCH",
     token,
     body: { applicationStatus, rejectionReason },
   });
+  notifyAdminMetricsChanged();
+  return user;
 }
 
 export type UpdateUserProfilePayload = {
@@ -290,6 +298,7 @@ export async function approveBrandPartnerApplication(
     method: "PATCH",
     token,
   });
+  notifyAdminMetricsChanged();
   return normalizeBrandPartnerApplication(item);
 }
 
@@ -303,6 +312,7 @@ export async function rejectBrandPartnerApplication(
     token,
     body: { rejectionReason },
   });
+  notifyAdminMetricsChanged();
   return normalizeBrandPartnerApplication(item);
 }
 
@@ -670,4 +680,35 @@ export async function updateAffirmation(
 
 export async function deleteAffirmation(token: string, id: string): Promise<void> {
   await request<void>(`/affirmations/${id}`, { method: "DELETE", token });
+}
+
+// -- Guided goals (Rest & Rx challenges) -------------------------------------
+
+export async function getAdminGuidedGoals(
+  token: string,
+  params?: { search?: string },
+): Promise<{ items: GuidedGoal[]; total: number }> {
+  return request<{ items: GuidedGoal[]; total: number }>(
+    `/goals/admin${buildQuery(params)}`,
+    { token },
+  );
+}
+
+export async function createAdminGuidedGoal(
+  token: string,
+  body: CreateGuidedGoalInput,
+): Promise<GuidedGoal> {
+  return request<GuidedGoal>("/goals/admin", { method: "POST", token, body });
+}
+
+export async function updateAdminGuidedGoal(
+  token: string,
+  id: string,
+  body: Partial<CreateGuidedGoalInput>,
+): Promise<GuidedGoal> {
+  return request<GuidedGoal>(`/goals/admin/${id}`, { method: "PATCH", token, body });
+}
+
+export async function deleteAdminGuidedGoal(token: string, id: string): Promise<void> {
+  await request<void>(`/goals/admin/${id}`, { method: "DELETE", token });
 }

@@ -2,6 +2,7 @@
 
 import { FormEvent } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
+import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { LocationField } from "@/components/admin/LocationField";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { ReferenceSelect } from "@/components/admin/ReferenceSelect";
@@ -19,6 +20,8 @@ import type { LocationValue } from "@/lib/address";
 import { EMPTY_LOCATION, locationToApiPayload, parseLocationString } from "@/lib/address";
 import { normalizeInstagramHandle } from "@/lib/social";
 import type { CreateDiscountInput } from "@/lib/types";
+
+import { DEFAULT_DISCOUNT_TERMS } from "@/lib/discountTerms";
 
 const OFFER_DETAILS_PLACEHOLDER = `Share background on the partner and what's included. Markdown is supported:
 
@@ -39,11 +42,9 @@ const REDEEM_PLACEHOLDER = `How members redeem. Markdown is supported:
 - For in-person: leave Redemption link blank — members show a live Rest & Rx membership card
 - Mention Rest & Rx at the desk`;
 
-const TERMS_PLACEHOLDER = `Optional fine print for this offer. Leave blank to use the default:
+const TERMS_PLACEHOLDER = `Leave blank to use the default terms, or customize:
 
-Valid for a limited time. Cannot be combined with other offers. Subject to availability.
-
-Markdown is supported if you need bullets or emphasis.`;
+${DEFAULT_DISCOUNT_TERMS}`;
 
 export type DiscountFormValues = {
   title: string;
@@ -62,6 +63,7 @@ export type DiscountFormValues = {
   phone: string;
   images: string[];
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   expiryDate: string;
   brandPartnerApplicationId: string;
 };
@@ -84,6 +86,7 @@ export const EMPTY_DISCOUNT_FORM: DiscountFormValues = {
   phone: "",
   images: [],
   isFeatured: false,
+  isFeaturedOnHome: false,
   expiryDate: "",
   brandPartnerApplicationId: "",
 };
@@ -162,7 +165,7 @@ export function DiscountForm({
       offerHighlight: highlight || undefined,
       percentage,
       redemptionInstructions: form.redemptionInstructions.trim() || undefined,
-      terms: form.terms.trim() || undefined,
+      terms: form.terms.trim() || DEFAULT_DISCOUNT_TERMS,
       category: form.category.trim(),
       ...locationPayload,
       tier: DISCOUNT_TIERS_ENABLED ? form.tier.trim() || undefined : undefined,
@@ -173,6 +176,7 @@ export function DiscountForm({
       image: images[0],
       images,
       isFeatured: showFeatured ? form.isFeatured : undefined,
+      isFeaturedOnHome: showFeatured ? form.isFeaturedOnHome : undefined,
       expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : undefined,
     };
 
@@ -186,6 +190,16 @@ export function DiscountForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {showFeatured && (
+        <FeaturedToggle
+          isFeatured={form.isFeatured}
+          isFeaturedOnHome={form.isFeaturedOnHome}
+          onChangeFeatured={(next) => onChange("isFeatured", next)}
+          onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+          sectionLabel="Discounts"
+        />
+      )}
+
       {showPartnerPicker && (
         <label>
           <span className="admin-field-label">Owner (partner account)</span>
@@ -207,14 +221,16 @@ export function DiscountForm({
         <legend>Offer</legend>
 
         <label>
-          <span className="admin-field-label">Offer title *</span>
-          <span className="admin-field-hint">One-line name shown at the top of the offer in the app.</span>
+          <span className="admin-field-label">Brand or business name *</span>
+          <span className="admin-field-hint">
+            Brand or business name shown at the top of the offer in the app.
+          </span>
           <input
             value={form.title}
             onChange={(e) => onChange("title", e.target.value.replace(/\n/g, " "))}
             required
             maxLength={80}
-            placeholder="Partner name or offer name"
+            placeholder="Brand or business name"
           />
         </label>
 
@@ -345,17 +361,6 @@ export function DiscountForm({
             onChange={(e) => onChange("expiryDate", e.target.value)}
           />
         </label>
-
-        {showFeatured && (
-          <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              type="checkbox"
-              checked={form.isFeatured}
-              onChange={(e) => onChange("isFeatured", e.target.checked)}
-            />
-            Featured on Discover home
-          </label>
-        )}
       </fieldset>
 
       <fieldset className="admin-form-fieldset">
