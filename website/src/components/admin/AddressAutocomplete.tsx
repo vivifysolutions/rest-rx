@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { searchAddresses } from "@/lib/api";
 import type { AddressSuggestion, LocationValue } from "@/lib/address";
-import { formatLocationLabel, suggestionToForm } from "@/lib/address";
+import { formatLocationLabel, parseManualAddressQuery, suggestionToForm } from "@/lib/address";
 
 const DEBOUNCE_MS = 350;
 const MIN_QUERY_LENGTH = 3;
@@ -16,8 +16,8 @@ type Props = {
 };
 
 /**
- * Street search with autocomplete — fills street / city / state / ZIP on select
- * (Green Door pattern). Coordinates are resolved server-side on save.
+ * Street search with autocomplete — fills street / city / state / ZIP on select.
+ * Coordinates are resolved server-side on save.
  */
 export function AddressAutocomplete({
   value,
@@ -82,6 +82,18 @@ export function AddressAutocomplete({
     };
   }, []);
 
+  const commitManual = (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    const parsed = parseManualAddressQuery(trimmed);
+    onChange(parsed);
+    setQuery(parsed.line1 ?? trimmed);
+    setSelectedLabel(null);
+    setSuggestions([]);
+    setOpen(false);
+    setActiveIndex(-1);
+  };
+
   const handleInputChange = (text: string) => {
     setQuery(text);
     setSelectedLabel(null);
@@ -103,8 +115,9 @@ export function AddressAutocomplete({
     setActiveIndex(-1);
   };
 
-  const showDropdown =
-    open && (loading || suggestions.length > 0 || query.trim().length >= MIN_QUERY_LENGTH);
+  const showEmpty =
+    !loading && suggestions.length === 0 && query.trim().length >= MIN_QUERY_LENGTH;
+  const showDropdown = open && (loading || suggestions.length > 0 || showEmpty);
 
   return (
     <div ref={rootRef} style={{ position: "relative" }}>
@@ -130,9 +143,13 @@ export function AddressAutocomplete({
           } else if (e.key === "ArrowUp") {
             e.preventDefault();
             setActiveIndex((i) => Math.max(i - 1, 0));
-          } else if (e.key === "Enter" && activeIndex >= 0 && suggestions[activeIndex]) {
+          } else if (e.key === "Enter") {
             e.preventDefault();
-            selectSuggestion(suggestions[activeIndex]);
+            if (activeIndex >= 0 && suggestions[activeIndex]) {
+              selectSuggestion(suggestions[activeIndex]);
+            } else if (showEmpty) {
+              commitManual(query);
+            }
           } else if (e.key === "Escape") {
             setOpen(false);
           }
@@ -148,9 +165,23 @@ export function AddressAutocomplete({
           style={{ position: "absolute", zIndex: 40, top: "calc(100% + 4px)", left: 0, right: 0 }}
         >
           {loading && <li className="combo-item combo-item-empty">Searching…</li>}
-          {!loading && suggestions.length === 0 && query.trim().length >= MIN_QUERY_LENGTH && (
-            <li className="combo-item combo-item-empty">
-              No matches — fill in city, state, and ZIP below.
+          {showEmpty && (
+            <li className="combo-item" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span className="combo-item-empty" style={{ padding: 0 }}>
+                No matches from search. You can still save a manual address.
+              </span>
+              <button
+                type="button"
+                className="admin-btn"
+                style={{ width: "100%", justifyContent: "flex-start", textAlign: "left" }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => commitManual(query)}
+              >
+                Use “{query.trim()}” as street address
+              </button>
+              <span className="combo-item-empty" style={{ padding: 0 }}>
+                Then fill city, state, and ZIP below.
+              </span>
             </li>
           )}
           {!loading &&

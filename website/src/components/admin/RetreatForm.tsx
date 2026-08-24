@@ -3,11 +3,23 @@
 import { FormEvent } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
+import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import type { CreateRetreatInput } from "@/lib/types";
 
 export const RETREAT_LOCATIONS = ["Domestic", "International"] as const;
 export type RetreatLocation = (typeof RETREAT_LOCATIONS)[number];
+
+const ABOUT_PLACEHOLDER = `What this retreat is about. Markdown is supported:
+
+## Overview
+**Bold** highlights and *emphasis*
+
+- Who it's for
+- What's included
+- Atmosphere or setting
+
+> Optional callout for packing lists or travel notes`;
 
 const JOIN_PLACEHOLDER = `How members join this retreat. Markdown is supported:
 
@@ -26,11 +38,12 @@ export type RetreatFormValues = {
   season: string;
   location: string;
   rating: string;
-  image: string;
+  images: string[];
   startDate: string;
   endDate: string;
   bookingUrl: string;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
 };
 
 type Props = {
@@ -43,6 +56,7 @@ type Props = {
 };
 
 export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatInput {
+  const images = form.images.map((url) => url.trim()).filter(Boolean);
   return {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
@@ -51,9 +65,11 @@ export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatI
     season: form.season.trim() || undefined,
     location: form.location.trim() || undefined,
     rating: form.rating ? Number(form.rating) : undefined,
-    image: form.image.trim() || undefined,
+    image: images[0],
+    images,
     bookingUrl: form.bookingUrl.trim() || undefined,
     isFeatured: form.isFeatured,
+    isFeaturedOnHome: form.isFeaturedOnHome,
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
   };
@@ -74,14 +90,25 @@ export function RetreatForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      <FeaturedToggle
+        isFeatured={form.isFeatured}
+        isFeaturedOnHome={form.isFeaturedOnHome}
+        onChangeFeatured={(next) => onChange("isFeatured", next)}
+        onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+        sectionLabel="Retreats"
+      />
+
       <label>
         Title *
         <input value={form.title} onChange={(e) => onChange("title", e.target.value)} required />
       </label>
-      <label>
-        Description
-        <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} />
-      </label>
+      <MarkdownBodyField
+        label="About this retreat"
+        value={form.description}
+        onChange={(v) => onChange("description", v)}
+        placeholder={ABOUT_PLACEHOLDER}
+        hint="Longer retreat copy shown on the detail screen — Markdown formatting renders in the app."
+      />
 
       <MarkdownBodyField
         label="How to join"
@@ -151,12 +178,18 @@ export function RetreatForm({
         />
       </label>
 
-      <ImageUpload
-        folder="retreats"
-        value={form.image}
-        onChange={(url) => onChange("image", url)}
-        guide="retreat"
-      />
+      <fieldset className="admin-form-fieldset">
+        <legend>Photos</legend>
+        <MultipleImageUpload
+          folder="retreats"
+          values={form.images}
+          onChange={(urls) => onChange("images", urls)}
+          label="Retreat photos"
+          maxImages={10}
+          guide="retreat"
+          hint="Upload multiple images. The first photo is the cover on browse cards; members can swipe through all photos on the detail screen."
+        />
+      </fieldset>
 
       <div className="admin-form-row">
         <label>
@@ -168,15 +201,6 @@ export function RetreatForm({
           <input type="date" value={form.endDate} onChange={(e) => onChange("endDate", e.target.value)} />
         </label>
       </div>
-
-      <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-        <input
-          type="checkbox"
-          checked={form.isFeatured}
-          onChange={(e) => onChange("isFeatured", e.target.checked)}
-        />
-        Featured on Discover home
-      </label>
 
       <button type="submit" className="admin-btn admin-btn-primary">
         {submitLabel}

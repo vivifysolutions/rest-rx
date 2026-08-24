@@ -39,6 +39,7 @@ function discountToForm(d: Discount): DiscountFormValues {
     phone: d.phone ?? "",
     images: d.images?.length ? d.images : d.image ? [d.image] : [],
     isFeatured: d.isFeatured,
+    isFeaturedOnHome: d.isFeaturedOnHome ?? false,
     expiryDate: d.expiryDate ? d.expiryDate.slice(0, 10) : "",
     brandPartnerApplicationId: d.brandPartnerApplicationId ?? "",
   };

@@ -59,6 +59,29 @@ export function suggestionToForm(suggestion: AddressSuggestion): LocationValue {
   };
 }
 
+/**
+ * Best-effort parse when the user commits a typed address with no autocomplete hit.
+ * Supports "123 Main St, Atlanta, GA 30308" and "123 Main St, Atlanta, GA".
+ */
+export function parseManualAddressQuery(query: string): Partial<LocationValue> {
+  const trimmed = query.trim();
+  if (!trimmed) return {};
+
+  const full = trimmed.match(
+    /^(.+?),\s*([^,]+),\s*([A-Za-z]{2})(?:\s+(\d{5}(?:-\d{4})?))?\s*$/,
+  );
+  if (full) {
+    return {
+      line1: full[1].trim(),
+      city: full[2].trim(),
+      state: full[3].toUpperCase(),
+      postalCode: full[4] ?? "",
+    };
+  }
+
+  return { line1: trimmed };
+}
+
 /** Best-effort parse of stored "Street, City, ST ZIP" back into form fields. */
 export function parseLocationString(location: string | null | undefined): LocationValue {
   if (!location?.trim()) return { ...EMPTY_LOCATION };
