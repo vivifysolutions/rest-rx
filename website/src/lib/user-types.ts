@@ -40,6 +40,20 @@ export function hasPortalAccess(
   return partnerApplicationStatus === "approved";
 }
 
+/**
+ * True for a rejected partner applicant (brand, expert, ambassador, foundation).
+ * They fix and resubmit on the website /resubmit form rather than the mobile signup flow.
+ */
+export function canResubmitPartnerApplication(
+  userType: UserType | undefined | null,
+  partnerApplicationStatus?: PartnerApplicationStatus | null,
+): boolean {
+  if (!userType) return false;
+  return (
+    ["brand_partner", "expert", "ambassador", "foundation"] as UserType[]
+  ).includes(userType) && partnerApplicationStatus === "rejected";
+}
+
 export function getHomeRouteForUserType(userType: UserType): string {
   switch (userType) {
     case "admin":

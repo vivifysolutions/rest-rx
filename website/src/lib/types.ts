@@ -1,3 +1,5 @@
+import type { ApplicationRejectionIssue } from "./application-rejection";
+
 export type ApplicationStatus = "pending" | "approved" | "rejected";
 
 export type UserType = "member" | "admin" | "brand_partner" | "expert" | "ambassador" | "foundation";
@@ -15,6 +17,7 @@ export type ApiUser = {
   phone?: string | null;
   userType: UserType;
   applicationStatus: ApplicationStatus;
+  rejectionIssue?: ApplicationRejectionIssue | null;
   partnerApplicationStatus?: ApplicationStatus | null;
   identityPhotoUrl?: string | null;
   workCredentialPhotoUrl?: string | null;

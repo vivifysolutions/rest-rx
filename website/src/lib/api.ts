@@ -197,11 +197,13 @@ export async function updateApplicationStatus(
   token: string,
   userId: string,
   applicationStatus: string,
+  rejectionReason?: string,
+  rejectionIssue?: string,
 ): Promise<ApiUser> {
   const user = await request<ApiUser>(`/users/${userId}/application-status`, {
     method: "PATCH",
     token,
-    body: { applicationStatus },
+    body: { applicationStatus, rejectionReason, rejectionIssue },
   });
   notifyAdminMetricsChanged();
   return user;
@@ -231,6 +233,11 @@ export async function updateUserProfile(
   });
 }
 
+export async function deleteUser(token: string, userId: string): Promise<void> {
+  await request<void>(`/users/${userId}`, { method: "DELETE", token });
+  notifyAdminMetricsChanged();
+}
+
 // -- Brand partner applications -----------------------------------------------
 
 export async function submitBrandPartnerApplication(
@@ -243,6 +250,29 @@ export async function submitBrandPartnerApplication(
     body,
   });
   return normalizeBrandPartnerApplication(result);
+}
+
+/** Edits and resubmits a rejected application in place (no duplicate row). */
+export async function resubmitBrandPartnerApplication(
+  token: string,
+  body: unknown,
+): Promise<BrandPartnerApplication> {
+  const result = await request<BrandPartnerApplication>("/brand-partner-applications/me", {
+    method: "PATCH",
+    token,
+    body,
+  });
+  return normalizeBrandPartnerApplication(result);
+}
+
+/** The signed-in applicant's own most recent partner application, or null if they've never applied. */
+export async function getMyBrandPartnerApplication(
+  token: string,
+): Promise<BrandPartnerApplication | null> {
+  const result = await request<BrandPartnerApplication | null>("/brand-partner-applications/me", {
+    token,
+  });
+  return result ? normalizeBrandPartnerApplication(result) : null;
 }
 
 export async function getBrandPartnerApplications(
@@ -281,10 +311,13 @@ export async function approveBrandPartnerApplication(
 export async function rejectBrandPartnerApplication(
   token: string,
   id: string,
+  rejectionReason: string,
+  rejectionIssue: string,
 ): Promise<BrandPartnerApplication> {
   const item = await request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
     method: "PATCH",
     token,
+    body: { rejectionReason, rejectionIssue },
   });
   notifyAdminMetricsChanged();
   return normalizeBrandPartnerApplication(item);
