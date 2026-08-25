@@ -55,7 +55,10 @@ export default function AdminBrandApplicationsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{
+    id: string;
+    applicationType: PartnerApplicationType;
+  } | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [rejectError, setRejectError] = useState<string | null>(null);
 
@@ -104,7 +107,7 @@ export default function AdminBrandApplicationsPage() {
   }
 
   async function handleReject(payload: { reason: string; issue?: string }) {
-    if (!rejectTargetId || !payload.issue) return;
+    if (!rejectTarget || !payload.issue) return;
     setRejecting(true);
     setRejectError(null);
     try {
@@ -112,11 +115,11 @@ export default function AdminBrandApplicationsPage() {
       if (!token) return;
       await rejectBrandPartnerApplication(
         token,
-        rejectTargetId,
+        rejectTarget.id,
         payload.reason,
         payload.issue,
       );
-      setRejectTargetId(null);
+      setRejectTarget(null);
       await load();
     } catch (e) {
       setRejectError(
@@ -130,8 +133,6 @@ export default function AdminBrandApplicationsPage() {
       setRejecting(false);
     }
   }
-
-  const rejectTarget = items.find((item) => item.id === rejectTargetId);
 
   return (
     <>
@@ -268,9 +269,15 @@ export default function AdminBrandApplicationsPage() {
                         </button>
                         <button
                           type="button"
-                          className="admin-btn"
+                          className="admin-btn admin-btn-danger"
                           disabled={busyId === app.id}
-                          onClick={() => setRejectTargetId(app.id)}
+                          onClick={() => {
+                            setRejectError(null);
+                            setRejectTarget({
+                              id: app.id,
+                              applicationType: app.applicationType,
+                            });
+                          }}
                         >
                           Reject
                         </button>
@@ -285,14 +292,15 @@ export default function AdminBrandApplicationsPage() {
       </div>
 
       <RejectApplicationModal
-        open={rejectTargetId !== null}
+        open={rejectTarget !== null}
         saving={rejecting}
         error={rejectError}
         includeIssueSelect
         issueSelectAudience="website"
         issueOptions={partnerRejectionIssuesFor(rejectTarget?.applicationType)}
         onCancel={() => {
-          setRejectTargetId(null);
+          if (rejecting) return;
+          setRejectTarget(null);
           setRejectError(null);
         }}
         onSubmit={handleReject}

@@ -164,7 +164,7 @@ export default function AdminBrandApplicationDetailPage() {
             </button>
             <button
               type="button"
-              className="admin-btn"
+              className="admin-btn admin-btn-danger"
               disabled={busy}
               onClick={() => setRejectModalOpen(true)}
             >
@@ -397,6 +397,7 @@ export default function AdminBrandApplicationDetailPage() {
       issueSelectAudience="website"
       issueOptions={partnerRejectionIssuesFor(app.applicationType)}
       onCancel={() => {
+        if (rejecting) return;
         setRejectModalOpen(false);
         setRejectError(null);
       }}

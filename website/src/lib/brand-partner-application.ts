@@ -165,7 +165,7 @@ export type BrandPartnerApplication = {
     applicationStatus: string;
     applicationSubmittedAt: string | null;
   } | null;
-  discounts: Array<{
+  discounts?: Array<{
     id: string;
     title: string;
     description?: string | null;

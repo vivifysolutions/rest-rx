@@ -367,6 +367,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
       error={rejectError}
       includeIssueSelect
       onCancel={() => {
+        if (rejecting) return;
         setRejectModalOpen(false);
         setRejectError(null);
       }}

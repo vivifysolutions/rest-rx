@@ -68,7 +68,9 @@ export function RejectApplicationModal({
         justifyContent: "center",
         zIndex: 1000,
       }}
-      onClick={onCancel}
+      onClick={() => {
+        if (!saving) onCancel();
+      }}
     >
       <div
         style={{
