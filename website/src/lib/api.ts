@@ -233,6 +233,11 @@ export async function updateUserProfile(
   });
 }
 
+export async function deleteUser(token: string, userId: string): Promise<void> {
+  await request<void>(`/users/${userId}`, { method: "DELETE", token });
+  notifyAdminMetricsChanged();
+}
+
 // -- Brand partner applications -----------------------------------------------
 
 export async function submitBrandPartnerApplication(

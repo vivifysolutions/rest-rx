@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import {
@@ -14,6 +15,7 @@ import { formatApplicationStatus } from "@/lib/admin-labels";
 import { displayUserName } from "@/lib/admin-user-display";
 import {
   ApiError,
+  deleteUser,
   getUser,
   updateApplicationStatus,
   updateUserProfile,
@@ -38,7 +40,8 @@ function isPartnerType(userType: UserType) {
 }
 
 export function AdminUserDetail({ userId, mode }: Props) {
-  const { refreshToken } = usePortalAuth();
+  const router = useRouter();
+  const { refreshToken, profile } = usePortalAuth();
   const backHref =
     mode === "application"
       ? "/admin/users"
@@ -61,6 +64,8 @@ export function AdminUserDetail({ userId, mode }: Props) {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [rejectError, setRejectError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,6 +152,36 @@ export function AdminUserDetail({ userId, mode }: Props) {
     }
   }
 
+  async function handleDelete() {
+    if (!user || profile?.id === user.id) return;
+    const name = displayUserName(user);
+    if (
+      !confirm(
+        `Delete ${name}? Their account, sign-in, and personal data will be permanently removed. This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const token = await refreshToken();
+      if (!token) throw new Error("Not authenticated");
+      await deleteUser(token, user.id);
+      router.push(backHref);
+    } catch (e) {
+      setDeleteError(
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Failed to delete user",
+      );
+      setDeleting(false);
+    }
+  }
+
   if (loading) return <p>Loading…</p>;
   if (error || !user) {
     return <p className="admin-error">{error ?? "User not found"}</p>;
@@ -158,6 +193,8 @@ export function AdminUserDetail({ userId, mode }: Props) {
       : [];
 
   const isApproved = user.applicationStatus === "approved";
+  const isSelf = profile?.id === user.id;
+  const metaBusy = savingMeta || deleting;
   const wrongSection =
     (mode === "application" && isApproved) ||
     (mode === "member" && (!isApproved || isPartnerType(user.userType))) ||
@@ -182,7 +219,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
                 <button
                   className="admin-link-muted"
                   onClick={() => handleStatusChange("pending")}
-                  disabled={savingMeta}
+                  disabled={metaBusy}
                   style={{ background: "none", border: "none", cursor: "pointer" }}
                 >
                   Reset to pending
@@ -192,7 +229,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
                 <button
                   className="admin-btn admin-btn-primary"
                   onClick={() => handleStatusChange("approved")}
-                  disabled={savingMeta}
+                  disabled={metaBusy}
                 >
                   Approve
                 </button>
@@ -201,7 +238,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
                 <button
                   className="admin-btn admin-btn-danger"
                   onClick={() => setRejectModalOpen(true)}
-                  disabled={savingMeta}
+                  disabled={metaBusy}
                 >
                   Reject
                 </button>
@@ -211,7 +248,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
           <select
             value={user.userType}
             onChange={(e) => handleUserTypeChange(e.target.value as UserType)}
-            disabled={savingMeta}
+            disabled={metaBusy}
             className="admin-btn"
             style={{ fontSize: "0.85rem" }}
           >
@@ -221,9 +258,23 @@ export function AdminUserDetail({ userId, mode }: Props) {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            className="admin-btn admin-btn-danger"
+            onClick={() => void handleDelete()}
+            disabled={metaBusy || isSelf}
+            title={isSelf ? "You cannot delete your own account" : undefined}
+          >
+            {deleting ? "Deleting…" : "Delete user"}
+          </button>
         </>
       }
     >
+      {deleteError && (
+        <p className="admin-error" style={{ marginBottom: "1rem" }}>
+          {deleteError}
+        </p>
+      )}
       {wrongSection && (
         <div className="admin-callout" style={{ marginBottom: "1rem" }}>
           {isApproved ? (
