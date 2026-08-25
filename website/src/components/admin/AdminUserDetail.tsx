@@ -104,14 +104,22 @@ export function AdminUserDetail({ userId, mode }: Props) {
     }
   }
 
-  async function handleReject(reason: string) {
-    if (!user) return;
+  async function handleReject(payload: { reason: string; issue?: string }) {
+    if (!user || !payload.issue) return;
     setRejecting(true);
     setRejectError(null);
     try {
       const token = await refreshToken();
       if (!token) return;
-      setUser(await updateApplicationStatus(token, user.id, "rejected", reason));
+      setUser(
+        await updateApplicationStatus(
+          token,
+          user.id,
+          "rejected",
+          payload.reason,
+          payload.issue,
+        ),
+      );
       setRejectModalOpen(false);
     } catch (e) {
       setRejectError(
@@ -306,6 +314,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
       open={rejectModalOpen}
       saving={rejecting}
       error={rejectError}
+      includeIssueSelect
       onCancel={() => {
         setRejectModalOpen(false);
         setRejectError(null);

@@ -383,7 +383,7 @@ export default function AdminBrandApplicationDetailPage() {
       saving={rejecting}
       error={rejectError}
       onCancel={() => setRejectModalOpen(false)}
-      onSubmit={handleReject}
+      onSubmit={({ reason }) => handleReject(reason)}
     />
     </>
   );

@@ -198,11 +198,12 @@ export async function updateApplicationStatus(
   userId: string,
   applicationStatus: string,
   rejectionReason?: string,
+  rejectionIssue?: string,
 ): Promise<ApiUser> {
   const user = await request<ApiUser>(`/users/${userId}/application-status`, {
     method: "PATCH",
     token,
-    body: { applicationStatus, rejectionReason },
+    body: { applicationStatus, rejectionReason, rejectionIssue },
   });
   notifyAdminMetricsChanged();
   return user;

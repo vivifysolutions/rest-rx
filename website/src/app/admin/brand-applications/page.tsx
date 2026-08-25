@@ -281,7 +281,7 @@ export default function AdminBrandApplicationsPage() {
         saving={rejecting}
         error={rejectError}
         onCancel={() => setRejectTargetId(null)}
-        onSubmit={handleReject}
+        onSubmit={({ reason }) => handleReject(reason)}
       />
     </>
   );
