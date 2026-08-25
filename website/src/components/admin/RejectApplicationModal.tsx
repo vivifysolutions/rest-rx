@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import {
   APPLICATION_REJECTION_ISSUES,
-  type ApplicationRejectionIssue,
+  partnerRejectionNotesRequired,
+  type RejectionIssueOption,
 } from "@/lib/application-rejection";
 
 export type RejectApplicationPayload = {
   reason: string;
-  issue?: ApplicationRejectionIssue;
+  issue?: string;
 };
 
 type Props = {
@@ -17,6 +18,10 @@ type Props = {
   error: string | null;
   /** Member applications: require an issue so the app can route to the right screen. */
   includeIssueSelect?: boolean;
+  /** Partner applications resubmit on the website, not in the app. */
+  issueSelectAudience?: "app" | "website";
+  /** Override the default member issues (used for partner application types). */
+  issueOptions?: RejectionIssueOption[];
   onCancel: () => void;
   onSubmit: (payload: RejectApplicationPayload) => void;
 };
@@ -26,11 +31,18 @@ export function RejectApplicationModal({
   saving,
   error,
   includeIssueSelect = false,
+  issueSelectAudience = "app",
+  issueOptions,
   onCancel,
   onSubmit,
 }: Props) {
   const [reason, setReason] = useState("");
-  const [issue, setIssue] = useState<ApplicationRejectionIssue | "">("");
+  const [issue, setIssue] = useState("");
+
+  const options = issueOptions ?? [...APPLICATION_REJECTION_ISSUES];
+  const approveAsMember = issue === "approved_as_member";
+  const notesRequired =
+    !includeIssueSelect || partnerRejectionNotesRequired(issue);
 
   useEffect(() => {
     if (open) {
@@ -41,7 +53,6 @@ export function RejectApplicationModal({
 
   if (!open) return null;
 
-  const notesRequired = !includeIssueSelect || issue === "other";
   const canSubmit =
     (!includeIssueSelect || Boolean(issue)) &&
     (!notesRequired || Boolean(reason.trim()));
@@ -68,10 +79,16 @@ export function RejectApplicationModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ marginTop: 0 }}>Reject application</h3>
+        <h3 style={{ marginTop: 0 }}>
+          {approveAsMember ? "Approve as a member" : "Reject application"}
+        </h3>
         <p style={{ fontSize: "0.9rem", opacity: 0.75 }}>
           {includeIssueSelect
-            ? "Select what needs to be fixed so the applicant is sent to that screen in the app. Optional notes are included in their email."
+            ? issueSelectAudience === "website"
+              ? approveAsMember
+                ? "They will not receive the elevated role. They will get member access to the app, and we'll email them to explain."
+                : "Select what needs to be fixed so we can tell the applicant in their email. They'll update and resubmit from the website."
+              : "Select what needs to be fixed so the applicant is sent to that screen in the app. Optional notes are included in their email."
             : "The applicant will receive an email letting them know their verification wasn't approved. This reason will be included in that email alongside our standard email template."}
         </p>
         {includeIssueSelect ? (
@@ -84,14 +101,12 @@ export function RejectApplicationModal({
             </span>
             <select
               value={issue}
-              onChange={(e) =>
-                setIssue(e.target.value as ApplicationRejectionIssue | "")
-              }
+              onChange={(e) => setIssue(e.target.value)}
               disabled={saving}
               style={{ width: "100%" }}
             >
               <option value="">Select an issue</option>
-              {APPLICATION_REJECTION_ISSUES.map((option) => (
+              {options.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -134,18 +149,22 @@ export function RejectApplicationModal({
             Cancel
           </button>
           <button
-            className="admin-btn admin-btn-danger"
+            className={approveAsMember ? "admin-btn admin-btn-primary" : "admin-btn admin-btn-danger"}
             onClick={() =>
               onSubmit({
                 reason: reason.trim(),
-                issue: includeIssueSelect
-                  ? (issue as ApplicationRejectionIssue)
-                  : undefined,
+                issue: includeIssueSelect ? issue : undefined,
               })
             }
             disabled={saving || !canSubmit}
           >
-            {saving ? "Rejecting…" : "Reject & notify applicant"}
+            {saving
+              ? approveAsMember
+                ? "Saving…"
+                : "Rejecting…"
+              : approveAsMember
+                ? "Approve as member & notify"
+                : "Reject & notify applicant"}
           </button>
         </div>
       </div>

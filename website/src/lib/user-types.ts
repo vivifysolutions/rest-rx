@@ -41,9 +41,8 @@ export function hasPortalAccess(
 }
 
 /**
- * True for a rejected brand_partner/expert/foundation applicant — they don't have
- * app access, so a rejection is resolved by resubmitting the /partner form (not the
- * mobile signup flow). Ambassadors go through the mobile app instead, not this portal.
+ * True for a rejected partner applicant (brand, expert, ambassador, foundation).
+ * They fix and resubmit on the website /resubmit form rather than the mobile signup flow.
  */
 export function canResubmitPartnerApplication(
   userType: UserType | undefined | null,
@@ -51,7 +50,7 @@ export function canResubmitPartnerApplication(
 ): boolean {
   if (!userType) return false;
   return (
-    ["brand_partner", "expert", "foundation"] as UserType[]
+    ["brand_partner", "expert", "ambassador", "foundation"] as UserType[]
   ).includes(userType) && partnerApplicationStatus === "rejected";
 }
 

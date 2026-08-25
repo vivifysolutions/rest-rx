@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
+import { partnerRejectionIssuesFor } from "@/lib/application-rejection";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import {
   ApiError,
@@ -102,14 +103,19 @@ export default function AdminBrandApplicationsPage() {
     }
   }
 
-  async function handleReject(reason: string) {
-    if (!rejectTargetId) return;
+  async function handleReject(payload: { reason: string; issue?: string }) {
+    if (!rejectTargetId || !payload.issue) return;
     setRejecting(true);
     setRejectError(null);
     try {
       const token = await refreshToken();
       if (!token) return;
-      await rejectBrandPartnerApplication(token, rejectTargetId, reason);
+      await rejectBrandPartnerApplication(
+        token,
+        rejectTargetId,
+        payload.reason,
+        payload.issue,
+      );
       setRejectTargetId(null);
       await load();
     } catch (e) {
@@ -124,6 +130,8 @@ export default function AdminBrandApplicationsPage() {
       setRejecting(false);
     }
   }
+
+  const rejectTarget = items.find((item) => item.id === rejectTargetId);
 
   return (
     <>
@@ -280,8 +288,14 @@ export default function AdminBrandApplicationsPage() {
         open={rejectTargetId !== null}
         saving={rejecting}
         error={rejectError}
-        onCancel={() => setRejectTargetId(null)}
-        onSubmit={({ reason }) => handleReject(reason)}
+        includeIssueSelect
+        issueSelectAudience="website"
+        issueOptions={partnerRejectionIssuesFor(rejectTarget?.applicationType)}
+        onCancel={() => {
+          setRejectTargetId(null);
+          setRejectError(null);
+        }}
+        onSubmit={handleReject}
       />
     </>
   );

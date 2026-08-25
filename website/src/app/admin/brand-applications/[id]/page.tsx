@@ -11,6 +11,7 @@ import {
   DetailVerificationPhoto,
 } from "@/components/admin/AdminDetailView";
 import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
+import { labelRejectionIssue, partnerRejectionIssuesFor } from "@/lib/application-rejection";
 import {
   ApiError,
   approveBrandPartnerApplication,
@@ -97,14 +98,16 @@ export default function AdminBrandApplicationDetailPage() {
     }
   }
 
-  async function handleReject(reason: string) {
-    if (!app) return;
+  async function handleReject(payload: { reason: string; issue?: string }) {
+    if (!app || !payload.issue) return;
     setRejecting(true);
     setRejectError(null);
     try {
       const token = await refreshToken();
       if (!token) return;
-      setApp(await rejectBrandPartnerApplication(token, app.id, reason));
+      setApp(
+        await rejectBrandPartnerApplication(token, app.id, payload.reason, payload.issue),
+      );
       setRejectModalOpen(false);
     } catch (e) {
       setRejectError(
@@ -174,6 +177,14 @@ export default function AdminBrandApplicationDetailPage() {
       <DetailSection title="Application">
         <DetailRow label="Type" value={labelApplicationType(app.applicationType)} />
         <DetailRow label="Status" value={statusLabel(app.status)} />
+        {app.status === "rejected" ? (
+          <>
+            <DetailRow label="Rejection issue" value={labelRejectionIssue(app.rejectionIssue)} />
+            {app.rejectionReason ? (
+              <DetailRow label="Reviewer note" value={app.rejectionReason} />
+            ) : null}
+          </>
+        ) : null}
         <DetailRow label="Contact" value={`${app.fullName} (${app.email})`} />
         {app.representativeTitle && (
           <DetailRow label="Representative title" value={app.representativeTitle} />
@@ -382,8 +393,14 @@ export default function AdminBrandApplicationDetailPage() {
       open={rejectModalOpen}
       saving={rejecting}
       error={rejectError}
-      onCancel={() => setRejectModalOpen(false)}
-      onSubmit={({ reason }) => handleReject(reason)}
+      includeIssueSelect
+      issueSelectAudience="website"
+      issueOptions={partnerRejectionIssuesFor(app.applicationType)}
+      onCancel={() => {
+        setRejectModalOpen(false);
+        setRejectError(null);
+      }}
+      onSubmit={handleReject}
     />
     </>
   );

@@ -146,6 +146,8 @@ export type BrandPartnerApplication = {
   expertTopics: string[] | null;
   contentResourceTypes: string[] | null;
   message: string | null;
+  rejectionIssue?: string | null;
+  rejectionReason?: string | null;
   userId: string | null;
   user?: {
     id: string;

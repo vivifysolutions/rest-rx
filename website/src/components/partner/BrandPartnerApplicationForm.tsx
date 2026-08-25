@@ -93,6 +93,42 @@ function getSteps(applicationType: PartnerApplicationType | ""): string[] {
   return steps;
 }
 
+/** Which wizard step to open when a rejected applicant comes back to fix a specific issue. */
+function stepForRejectionIssue(
+  applicationType: PartnerApplicationType | "",
+  issue?: string | null,
+): string {
+  switch (issue) {
+    case "credentials":
+      return "Professional credentials";
+    case "details":
+      return "Details";
+    case "more_business_info":
+      return "Business basics";
+    case "offer_not_clear":
+      return "Details";
+    case "more_info":
+      return "Details";
+    default:
+      if (applicationType === "brand_partner") return "Business basics";
+      if (needsProfessionalCredentials(applicationType)) return "Professional credentials";
+      if (isFoundationType(applicationType)) return "Organization & contact";
+      return "Details";
+  }
+}
+
+function initialStepIndex(
+  mode: "create" | "resubmit",
+  applicationType: PartnerApplicationType | "",
+  issue?: string | null,
+): number {
+  if (mode !== "resubmit") return 0;
+  const steps = getSteps(applicationType);
+  const target = stepForRejectionIssue(applicationType, issue);
+  const index = steps.indexOf(target);
+  return index >= 0 ? index : 0;
+}
+
 function toggleInList(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
@@ -352,11 +388,19 @@ type Props = {
   mode?: "create" | "resubmit";
   /** Prefill for resubmit mode, from the applicant's previous (rejected) application. */
   initialData?: PartnerApplicationFormData;
+  /** Opens the wizard on the step that matches what the reviewer asked them to fix. */
+  rejectionIssue?: string | null;
 };
 
-export default function BrandPartnerApplicationForm({ mode = "create", initialData }: Props) {
+export default function BrandPartnerApplicationForm({
+  mode = "create",
+  initialData,
+  rejectionIssue,
+}: Props) {
   const isResubmitting = mode === "resubmit";
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(() =>
+    initialStepIndex(mode, initialData?.applicationType ?? "", rejectionIssue),
+  );
   const [form, setForm] = useState<PartnerApplicationFormData>(
     initialData ?? EMPTY_PARTNER_APPLICATION_FORM,
   );

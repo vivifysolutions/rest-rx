@@ -312,11 +312,12 @@ export async function rejectBrandPartnerApplication(
   token: string,
   id: string,
   rejectionReason: string,
+  rejectionIssue: string,
 ): Promise<BrandPartnerApplication> {
   const item = await request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
     method: "PATCH",
     token,
-    body: { rejectionReason },
+    body: { rejectionReason, rejectionIssue },
   });
   notifyAdminMetricsChanged();
   return normalizeBrandPartnerApplication(item);
