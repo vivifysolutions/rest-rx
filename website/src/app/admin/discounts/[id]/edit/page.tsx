@@ -41,7 +41,8 @@ function discountToForm(d: Discount): DiscountFormValues {
     isFeatured: d.isFeatured,
     featuredOrder: d.featuredOrder != null ? String(d.featuredOrder) : "",
     isFeaturedOnHome: d.isFeaturedOnHome ?? false,
-    featuredOnHomeOrder: d.featuredOnHomeOrder != null ? String(d.featuredOnHomeOrder) : "",
+    featuredOnHomeOrder:
+      d.featuredOnHomeOrder != null ? String(d.featuredOnHomeOrder) : "",
     expiryDate: d.expiryDate ? d.expiryDate.slice(0, 10) : "",
     brandPartnerApplicationId: d.brandPartnerApplicationId ?? "",
   };
@@ -52,14 +53,18 @@ export default function AdminDiscountEditPage() {
   const router = useRouter();
   const { refreshToken } = usePortalAuth();
   const [form, setForm] = useState<DiscountFormValues>(EMPTY_DISCOUNT_FORM);
-  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+  const [categories, setCategories] = useState<
+    { value: string; label: string }[]
+  >([]);
   const [partners, setPartners] = useState<BrandPartnerOption[]>([]);
   const [partnersLoading, setPartnersLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const update = <K extends keyof DiscountFormValues>(k: K, v: DiscountFormValues[K]) =>
-    setForm((prev) => ({ ...prev, [k]: v }));
+  const update = <K extends keyof DiscountFormValues>(
+    k: K,
+    v: DiscountFormValues[K],
+  ) => setForm((prev) => ({ ...prev, [k]: v }));
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +86,8 @@ export default function AdminDiscountEditPage() {
         setCategories(cats.map((c) => ({ value: c.name, label: c.name })));
         setPartners(toPartnerOwnerOptions(apps));
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load discount");
+        if (!cancelled)
+          setError(e instanceof Error ? e.message : "Failed to load discount");
       } finally {
         if (!cancelled) {
           setLoading(false);

@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import {
@@ -19,11 +20,21 @@ import {
   getDiscounts,
   updateDiscount,
 } from "@/lib/api";
+import { compareBoolDesc, compareText, sortBy } from "@/lib/admin-sort";
 import { getDiscountBadgeLabel } from "@/lib/discountOffer";
 import { toPartnerOwnerOptions } from "@/lib/partner-owner";
 import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
 import { labelApplicationTypeShort } from "@/lib/partner-application-options";
+
+type DiscountSort = "name" | "category" | "featured" | "status";
+
+const SORT_OPTIONS: { value: DiscountSort; label: string }[] = [
+  { value: "name", label: "Brand / business name" },
+  { value: "category", label: "Category" },
+  { value: "featured", label: "Featured first" },
+  { value: "status", label: "Status" },
+];
 
 function partnerName(d: Discount): string {
   const app = d.brandPartnerApplication;
@@ -45,9 +56,31 @@ export default function AdminDiscountsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<DiscountFormValues>(EMPTY_DISCOUNT_FORM);
+  const [sortByKey, setSortByKey] = useState<DiscountSort>("name");
 
   const update = <K extends keyof DiscountFormValues>(k: K, v: DiscountFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
+
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "category":
+            return compareText(a.category, b.category) || compareText(a.title, b.title);
+          case "featured":
+            return compareBoolDesc(a.isFeatured, b.isFeatured) || compareText(a.title, b.title);
+          case "status": {
+            const aPub = a.isPublished ?? true;
+            const bPub = b.isPublished ?? true;
+            return Number(bPub) - Number(aPub) || compareText(a.title, b.title);
+          }
+          case "name":
+          default:
+            return compareText(a.title, b.title);
+        }
+      }),
+    [items, sortByKey],
+  );
 
   const loadPartners = useCallback(async () => {
     setPartnersLoading(true);
@@ -147,6 +180,10 @@ export default function AdminDiscountsPage() {
         {error && <p className="admin-error">{error}</p>}
       </div>
 
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
+      </div>
+
       <div className="admin-card admin-table-wrap">
         <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>All discounts</h2>
         {loading ? (
@@ -155,7 +192,7 @@ export default function AdminDiscountsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Title</th>
+                <th>Brand / business</th>
                 <th>Partner</th>
                 <th>Badge</th>
                 <th>Category</th>
@@ -168,7 +205,7 @@ export default function AdminDiscountsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((d) => (
+              {sorted.map((d) => (
                 <tr key={d.id}>
                   <td>
                     <AdminTitleLink href={`/admin/discounts/${d.id}`}>{d.title}</AdminTitleLink>

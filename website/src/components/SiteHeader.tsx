@@ -1,15 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { onAuthStateChanged, signOut as firebaseSignOut, type User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const HIDDEN_PREFIXES = ["/admin", "/portal", "/brand"];
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return unsubscribe;
+  }, []);
+
   if (HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return null;
+  }
+
+  async function handleSignOut() {
+    await firebaseSignOut(auth);
+    router.push("/portal/login");
   }
 
   return (
@@ -57,21 +73,42 @@ export function SiteHeader() {
           >
             Partner
           </Link>
-          <Link
-            href="/portal/login"
-            style={{
-              display: "inline-block",
-              padding: "0.5rem 1.25rem",
-              background: "var(--astral)",
-              color: "white",
-              borderRadius: "50px",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              boxShadow: "0 4px 14px rgba(52, 131, 165, 0.35)",
-            }}
-          >
-            Sign in
-          </Link>
+          {user ? (
+            <button
+              type="button"
+              onClick={() => void handleSignOut()}
+              style={{
+                display: "inline-block",
+                padding: "0.5rem 1.25rem",
+                background: "var(--astral)",
+                color: "white",
+                borderRadius: "50px",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                border: "none",
+                cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(52, 131, 165, 0.35)",
+              }}
+            >
+              Sign out
+            </button>
+          ) : (
+            <Link
+              href="/portal/login"
+              style={{
+                display: "inline-block",
+                padding: "0.5rem 1.25rem",
+                background: "var(--astral)",
+                color: "white",
+                borderRadius: "50px",
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                boxShadow: "0 4px 14px rgba(52, 131, 165, 0.35)",
+              }}
+            >
+              Sign in
+            </Link>
+          )}
         </nav>
       </div>
     </header>

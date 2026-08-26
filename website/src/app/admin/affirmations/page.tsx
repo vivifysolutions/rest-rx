@@ -3,6 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import {
   createAffirmation,
   deleteAffirmation,
@@ -11,6 +12,13 @@ import {
   updateAffirmation,
 } from "@/lib/api";
 import type { Affirmation, AffirmationTopic } from "@/lib/types";
+
+const AFFIRMATION_PLACEHOLDER = `I am grounded, capable, and **at peace**.
+
+*Optional italic emphasis*
+
+For faith-based entries, keep scripture in quotes after the message:
+I am held in grace. "The Lord is my shepherd" — Psalm 23:1`;
 
 const EMPTY_FORM = {
   topicSlug: "",
@@ -125,15 +133,15 @@ export default function AdminAffirmationsPage() {
               ))}
             </select>
           </label>
-          <label>
-            Affirmation text *
-            <textarea
-              value={form.body}
-              onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))}
-              required
-              rows={4}
-            />
-          </label>
+          <MarkdownBodyField
+            label="Affirmation text"
+            value={form.body}
+            onChange={(v) => setForm((p) => ({ ...p, body: v }))}
+            required
+            rows={5}
+            placeholder={AFFIRMATION_PLACEHOLDER}
+            hint="Markdown (**bold**, *italic*, lists) renders on the affirmation detail and swipe screens. Cards show a plain-text preview."
+          />
           <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
             <input
               type="checkbox"

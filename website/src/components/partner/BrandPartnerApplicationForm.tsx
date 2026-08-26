@@ -15,6 +15,7 @@ import {
   getTopics,
   markApplicationSubmitted,
   patchMe,
+  resubmitBrandPartnerApplication,
   submitBrandPartnerApplication,
 } from "@/lib/api";
 import {
@@ -90,6 +91,42 @@ function getSteps(applicationType: PartnerApplicationType | ""): string[] {
   }
   steps.push("Details", "Review");
   return steps;
+}
+
+/** Which wizard step to open when a rejected applicant comes back to fix a specific issue. */
+function stepForRejectionIssue(
+  applicationType: PartnerApplicationType | "",
+  issue?: string | null,
+): string {
+  switch (issue) {
+    case "credentials":
+      return "Professional credentials";
+    case "details":
+      return "Details";
+    case "more_business_info":
+      return "Business basics";
+    case "offer_not_clear":
+      return "Details";
+    case "more_info":
+      return "Details";
+    default:
+      if (applicationType === "brand_partner") return "Business basics";
+      if (needsProfessionalCredentials(applicationType)) return "Professional credentials";
+      if (isFoundationType(applicationType)) return "Organization & contact";
+      return "Details";
+  }
+}
+
+function initialStepIndex(
+  mode: "create" | "resubmit",
+  applicationType: PartnerApplicationType | "",
+  issue?: string | null,
+): number {
+  if (mode !== "resubmit") return 0;
+  const steps = getSteps(applicationType);
+  const target = stepForRejectionIssue(applicationType, issue);
+  const index = steps.indexOf(target);
+  return index >= 0 ? index : 0;
 }
 
 function toggleInList(list: string[], value: string): string[] {
@@ -346,9 +383,27 @@ function SocialProfileFields({
   );
 }
 
-export default function BrandPartnerApplicationForm() {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [form, setForm] = useState<PartnerApplicationFormData>(EMPTY_PARTNER_APPLICATION_FORM);
+type Props = {
+  /** "resubmit" is used from /resubmit — editing an existing rejected application in place. */
+  mode?: "create" | "resubmit";
+  /** Prefill for resubmit mode, from the applicant's previous (rejected) application. */
+  initialData?: PartnerApplicationFormData;
+  /** Opens the wizard on the step that matches what the reviewer asked them to fix. */
+  rejectionIssue?: string | null;
+};
+
+export default function BrandPartnerApplicationForm({
+  mode = "create",
+  initialData,
+  rejectionIssue,
+}: Props) {
+  const isResubmitting = mode === "resubmit";
+  const [stepIndex, setStepIndex] = useState(() =>
+    initialStepIndex(mode, initialData?.applicationType ?? "", rejectionIssue),
+  );
+  const [form, setForm] = useState<PartnerApplicationFormData>(
+    initialData ?? EMPTY_PARTNER_APPLICATION_FORM,
+  );
   const [discountCategories, setDiscountCategories] = useState<{ value: string; label: string }[]>(
     [],
   );
@@ -583,9 +638,11 @@ export default function BrandPartnerApplicationForm() {
       const phoneDigits = form.applicant.phone.replace(/\D/g, "");
       if (phoneDigits.length !== 10) return "Enter a 10-digit phone number.";
     }
-    if (form.applicant.password.length < 6) return "Password must be at least 6 characters.";
-    if (form.applicant.password !== form.applicant.confirmPassword) {
-      return "Passwords do not match.";
+    if (!isResubmitting) {
+      if (form.applicant.password.length < 6) return "Password must be at least 6 characters.";
+      if (form.applicant.password !== form.applicant.confirmPassword) {
+        return "Passwords do not match.";
+      }
     }
     if (!needsProfessionalCredentials(form.applicationType) &&
       !isFoundationType(form.applicationType) &&
@@ -798,7 +855,11 @@ export default function BrandPartnerApplicationForm() {
         token = await ensureApplicantSignedIn();
       }
 
-      await submitBrandPartnerApplication(token, toPartnerApplicationPayload(form));
+      if (isResubmitting) {
+        await resubmitBrandPartnerApplication(token, toPartnerApplicationPayload(form));
+      } else {
+        await submitBrandPartnerApplication(token, toPartnerApplicationPayload(form));
+      }
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : getFirebaseAuthErrorMessage(err));
@@ -980,6 +1041,12 @@ export default function BrandPartnerApplicationForm() {
               organization&apos;s content.
             </p>
           )}
+          {isResubmitting && (
+            <p className="partner-form-hint" style={{ marginTop: 0 }}>
+              We&apos;ve filled in your previous application — update whatever needs fixing and
+              resubmit.
+            </p>
+          )}
           <label>
             Email *
             <input
@@ -999,26 +1066,32 @@ export default function BrandPartnerApplicationForm() {
               placeholder={healthcareApplicant ? "10-digit mobile number" : undefined}
             />
           </label>
-          <label>
-            {healthcareApplicant || foundationApplicant ? "Create password *" : "Create portal password *"}
-            <input
-              type="password"
-              value={form.applicant.password}
-              onChange={(e) => updateApplicant({ password: e.target.value })}
-              minLength={6}
-              required
-            />
-          </label>
-          <label>
-            Confirm password *
-            <input
-              type="password"
-              value={form.applicant.confirmPassword}
-              onChange={(e) => updateApplicant({ confirmPassword: e.target.value })}
-              minLength={6}
-              required
-            />
-          </label>
+          {!isResubmitting && (
+            <>
+              <label>
+                {healthcareApplicant || foundationApplicant
+                  ? "Create password *"
+                  : "Create portal password *"}
+                <input
+                  type="password"
+                  value={form.applicant.password}
+                  onChange={(e) => updateApplicant({ password: e.target.value })}
+                  minLength={6}
+                  required
+                />
+              </label>
+              <label>
+                Confirm password *
+                <input
+                  type="password"
+                  value={form.applicant.confirmPassword}
+                  onChange={(e) => updateApplicant({ confirmPassword: e.target.value })}
+                  minLength={6}
+                  required
+                />
+              </label>
+            </>
+          )}
         </div>
       );
     }

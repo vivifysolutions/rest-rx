@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import {
   AdminDetailLayout,
-  DetailImage,
+  DetailImageGrid,
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
@@ -129,9 +129,16 @@ export default function AdminEventDetailPage() {
         </DetailSection>
       )}
 
-      <DetailSection title="Image">
-        <DetailRow label="Preview">
-          {item.image ? <DetailImage src={item.image} alt={item.title} /> : "—"}
+      <DetailSection title="Photos">
+        <DetailRow label="Gallery">
+          {item.images?.length || item.image ? (
+            <DetailImageGrid
+              urls={item.images?.length ? item.images : item.image ? [item.image] : []}
+              label="Event photos"
+            />
+          ) : (
+            "—"
+          )}
         </DetailRow>
       </DetailSection>
     </AdminDetailLayout>

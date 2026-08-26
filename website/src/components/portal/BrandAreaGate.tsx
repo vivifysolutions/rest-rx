@@ -4,7 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { BrandShell } from "@/components/brand/BrandShell";
-import { canAccessBrandRoutes } from "@/lib/user-types";
+import { canAccessBrandRoutes, canResubmitPartnerApplication } from "@/lib/user-types";
 
 export function BrandAreaGate({ children }: { children: ReactNode }) {
   const { user, loading, profile, profileError, userType, hasPortalAccess, homeRoute } =
@@ -26,7 +26,11 @@ export function BrandAreaGate({ children }: { children: ReactNode }) {
     }
     if (!profile) return;
     if (!hasPortalAccess) {
-      router.replace("/portal/unauthorized");
+      if (canResubmitPartnerApplication(profile.userType, profile.partnerApplicationStatus)) {
+        router.replace("/resubmit");
+      } else {
+        router.replace("/portal/unauthorized");
+      }
       return;
     }
     if (!allowed) {

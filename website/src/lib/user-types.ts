@@ -10,20 +10,16 @@ export const USER_TYPE_LABELS: Record<UserType, string> = {
 };
 
 /**
- * Approved mobile-app accounts listed under Admin → Members.
- * Ambassadors are community members who share on behalf of Rest & Rx.
+ * Approved accounts listed under Admin → Members.
+ * Ambassadors and experts appear here alongside healthcare members.
  */
-export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador"];
+export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador", "expert"];
 
 /**
  * Approved portal partner accounts listed under Admin → Partners.
- * Ambassadors are not partners — they appear under Members.
+ * Experts and ambassadors are listed under Members.
  */
-export const PARTNER_DIRECTORY_TYPES: UserType[] = [
-  "brand_partner",
-  "expert",
-  "foundation",
-];
+export const PARTNER_DIRECTORY_TYPES: UserType[] = ["brand_partner", "foundation"];
 
 /** Roles that use the web portal (not the consumer mobile app home). */
 export const PORTAL_USER_TYPES: UserType[] = [
@@ -42,6 +38,20 @@ export function hasPortalAccess(
   if (!userType || !PORTAL_USER_TYPES.includes(userType)) return false;
   if (userType === "admin") return true;
   return partnerApplicationStatus === "approved";
+}
+
+/**
+ * True for a rejected partner applicant (brand, expert, ambassador, foundation).
+ * They fix and resubmit on the website /resubmit form rather than the mobile signup flow.
+ */
+export function canResubmitPartnerApplication(
+  userType: UserType | undefined | null,
+  partnerApplicationStatus?: PartnerApplicationStatus | null,
+): boolean {
+  if (!userType) return false;
+  return (
+    ["brand_partner", "expert", "ambassador", "foundation"] as UserType[]
+  ).includes(userType) && partnerApplicationStatus === "rejected";
 }
 
 export function getHomeRouteForUserType(userType: UserType): string {
