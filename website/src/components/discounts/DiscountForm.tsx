@@ -215,13 +215,39 @@ export function DiscountForm({
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
       {showFeatured && (
-        <FeaturedToggle
-          isFeatured={form.isFeatured}
-          isFeaturedOnHome={form.isFeaturedOnHome}
-          onChangeFeatured={(next) => onChange("isFeatured", next)}
-          onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
-          sectionLabel="Discounts"
-        />
+        <>
+          <FeaturedToggle
+            isFeatured={form.isFeatured}
+            isFeaturedOnHome={form.isFeaturedOnHome}
+            onChangeFeatured={(next) => onChange("isFeatured", next)}
+            onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+            sectionLabel="Discounts"
+          />
+          <label>
+            <span className="admin-field-label">Home order</span>
+            <span className="admin-field-hint">
+              Lowest number shows first. Leave blank to sort last (unranked).
+            </span>
+            <input
+              type="number"
+              min={1}
+              value={form.featuredOnHomeOrder}
+              onChange={(e) => onChange("featuredOnHomeOrder", e.target.value)}
+            />
+          </label>
+          <label>
+            <span className="admin-field-label">Discover order</span>
+            <span className="admin-field-hint">
+              Lowest number shows first. Leave blank to sort last (unranked).
+            </span>
+            <input
+              type="number"
+              min={1}
+              value={form.featuredOrder}
+              onChange={(e) => onChange("featuredOrder", e.target.value)}
+            />
+          </label>
+        </>
       )}
 
       {showPartnerPicker && (
@@ -406,69 +432,6 @@ export function DiscountForm({
           />
         </label>
 
-        {showFeatured && (
-          <>
-            <label
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={form.isFeatured}
-                onChange={(e) => onChange("isFeatured", e.target.checked)}
-              />
-              Featured on Discover home
-            </label>
-            <label>
-              <span className="admin-field-label">Discover order</span>
-              <span className="admin-field-hint">
-                Lowest number shows first. Leave blank to sort last (unranked).
-              </span>
-              <input
-                type="number"
-                min={1}
-                value={form.featuredOrder}
-                onChange={(e) => onChange("featuredOrder", e.target.value)}
-              />
-            </label>
-          </>
-        )}
-
-        {showFeatured && (
-          <>
-            <label
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={form.isFeaturedOnHome}
-                onChange={(e) => onChange("isFeaturedOnHome", e.target.checked)}
-              />
-              Featured on Home
-            </label>
-            <label>
-              <span className="admin-field-label">Home order</span>
-              <span className="admin-field-hint">
-                Lowest number shows first. Leave blank to sort last (unranked).
-              </span>
-              <input
-                type="number"
-                min={1}
-                value={form.featuredOnHomeOrder}
-                onChange={(e) =>
-                  onChange("featuredOnHomeOrder", e.target.value)
-                }
-              />
-            </label>
-          </>
-        )}
       </fieldset>
 
       <fieldset className="admin-form-fieldset">
