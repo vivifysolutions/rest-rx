@@ -359,7 +359,7 @@ export function DiscountForm({
         </label>
 
         {showFeatured && (
-          <div className="admin-form-row">
+          <>
             <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
               <input
                 type="checkbox"
@@ -380,11 +380,11 @@ export function DiscountForm({
                 onChange={(e) => onChange("featuredOrder", e.target.value)}
               />
             </label>
-          </div>
+          </>
         )}
 
         {showFeatured && (
-          <div className="admin-form-row">
+          <>
             <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
               <input
                 type="checkbox"
@@ -405,7 +405,7 @@ export function DiscountForm({
                 onChange={(e) => onChange("featuredOnHomeOrder", e.target.value)}
               />
             </label>
-          </div>
+          </>
         )}
       </fieldset>
 
