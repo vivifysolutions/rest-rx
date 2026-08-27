@@ -149,6 +149,7 @@ export type CommunityMetrics = {
     members: number;
     partners: number;
     suggestions: number;
+    reports: number;
   };
   locations: {
     withAddress: number;
@@ -626,11 +627,13 @@ export async function updateSuggestionStatus(
   id: string,
   status: "pending" | "reviewed",
 ): Promise<Suggestion> {
-  return request<Suggestion>(`/suggestions/${id}/status`, {
+  const suggestion = await request<Suggestion>(`/suggestions/${id}/status`, {
     method: "PATCH",
     token,
     body: { status },
   });
+  notifyAdminMetricsChanged();
+  return suggestion;
 }
 
 export async function updateReportStatus(
@@ -638,11 +641,13 @@ export async function updateReportStatus(
   id: string,
   status: "pending" | "reviewed" | "dismissed",
 ): Promise<ContentReport> {
-  return request<ContentReport>(`/reports/${id}/status`, {
+  const report = await request<ContentReport>(`/reports/${id}/status`, {
     method: "PATCH",
     token,
     body: { status },
   });
+  notifyAdminMetricsChanged();
+  return report;
 }
 
 // -- Groups ------------------------------------------------------------------
