@@ -196,6 +196,18 @@ export async function updateUserType(
   return user;
 }
 
+export async function updateUserActive(
+  token: string,
+  userId: string,
+  isActive: boolean,
+): Promise<ApiUser> {
+  return request<ApiUser>(`/users/${userId}/active`, {
+    method: "PATCH",
+    token,
+    body: { isActive },
+  });
+}
+
 export async function updateApplicationStatus(
   token: string,
   userId: string,

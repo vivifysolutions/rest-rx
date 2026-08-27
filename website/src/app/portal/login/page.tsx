@@ -44,6 +44,7 @@ export default function PortalLoginPage() {
     user,
     profile,
     profileError,
+    deactivatedMessage,
     apiConfigured,
     apiStatus,
     hasPortalAccess,
@@ -75,10 +76,10 @@ export default function PortalLoginPage() {
 
   useEffect(() => {
     if (!submitting) return;
-    if (profile || profileError) {
+    if (profile || profileError || deactivatedMessage) {
       setSubmitting(false);
     }
-  }, [submitting, profile, profileError]);
+  }, [submitting, profile, profileError, deactivatedMessage]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -92,7 +93,7 @@ export default function PortalLoginPage() {
     }
   }
 
-  const displayError = error ?? (user ? profileError : null);
+  const displayError = deactivatedMessage ?? error ?? (user ? profileError : null);
   const formDisabled =
     submitting || !apiConfigured || apiStatus === "unreachable" || apiStatus === "not-configured";
 

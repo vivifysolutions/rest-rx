@@ -7,7 +7,7 @@ import { BrandShell } from "@/components/brand/BrandShell";
 import { canAccessBrandRoutes, canResubmitPartnerApplication } from "@/lib/user-types";
 
 export function BrandAreaGate({ children }: { children: ReactNode }) {
-  const { user, loading, profile, profileError, userType, hasPortalAccess, homeRoute } =
+  const { user, loading, profile, profileError, deactivatedMessage, userType, hasPortalAccess, homeRoute } =
     usePortalAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -63,7 +63,7 @@ export function BrandAreaGate({ children }: { children: ReactNode }) {
         <div className="admin-login-card">
           <h1 className="font-subheading">Couldn&apos;t load your account</h1>
           <p className="admin-error" style={{ marginTop: "0.75rem" }}>
-            {profileError ?? "Still connecting to Rest & Rx…"}
+            {deactivatedMessage ?? profileError ?? "Still connecting to Rest & Rx…"}
           </p>
         </div>
       </div>

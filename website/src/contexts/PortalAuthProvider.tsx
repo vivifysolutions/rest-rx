@@ -33,6 +33,8 @@ type PortalAuthContextValue = {
   token: string | null;
   loading: boolean;
   profileError: string | null;
+  /** Set (and survives sign-out) when /users/me returned 403 — the account was deactivated. */
+  deactivatedMessage: string | null;
   apiUrl: string;
   apiStatus: ApiStatus;
   apiConfigured: boolean;
@@ -66,6 +68,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [deactivatedMessage, setDeactivatedMessage] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<ApiStatus>("unknown");
 
   const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "").trim().replace(/\/$/, "");
@@ -137,6 +140,13 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
         if (err instanceof ApiError && err.status === 0) {
           setApiStatus("unreachable");
         }
+        if (err instanceof ApiError && err.status === 403) {
+          // Deactivated (or otherwise forbidden) account — end the session outright rather
+          // than leaving a signed-in-but-can't-load-anything Firebase user hanging around.
+          // Stored separately from profileError, which onAuthStateChanged(null) clears below.
+          setDeactivatedMessage(msg);
+          void firebaseSignOut(auth).catch((signOutErr) => logError("Sign-out after 403 failed", signOutErr));
+        }
         throw new Error(msg);
       }
     },
@@ -202,6 +212,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (email: string, password: string) => {
     log(`Firebase sign in attempt: ${email}`);
     setProfileError(null);
+    setDeactivatedMessage(null);
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
       log("Firebase sign in success — waiting for profile load");
@@ -216,6 +227,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
     setProfile(null);
     setProfileError(null);
+    setDeactivatedMessage(null);
     setToken(null);
   }, []);
 
@@ -226,6 +238,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
       token,
       loading,
       profileError,
+      deactivatedMessage,
       apiUrl,
       apiStatus,
       apiConfigured,
@@ -244,6 +257,7 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
       token,
       loading,
       profileError,
+      deactivatedMessage,
       apiUrl,
       apiStatus,
       apiConfigured,

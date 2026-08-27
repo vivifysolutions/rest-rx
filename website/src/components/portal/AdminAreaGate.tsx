@@ -14,7 +14,7 @@ const EXPERT_ALLOWED_PREFIX = "/admin/community";
 const FOUNDATION_ALLOWED_PREFIX = "/admin/resources";
 
 export function AdminAreaGate({ children }: { children: ReactNode }) {
-  const { user, loading, profile, profileError, userType, hasPortalAccess, homeRoute } =
+  const { user, loading, profile, profileError, deactivatedMessage, userType, hasPortalAccess, homeRoute } =
     usePortalAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -73,7 +73,7 @@ export function AdminAreaGate({ children }: { children: ReactNode }) {
         <div className="admin-login-card">
           <h1 className="font-subheading">Couldn&apos;t load your account</h1>
           <p className="admin-error" style={{ marginTop: "0.75rem" }}>
-            {profileError ?? "Still connecting to Rest & Rx…"}
+            {deactivatedMessage ?? profileError ?? "Still connecting to Rest & Rx…"}
           </p>
         </div>
       </div>

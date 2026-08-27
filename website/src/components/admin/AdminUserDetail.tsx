@@ -10,6 +10,7 @@ import {
   DetailSection,
 } from "@/components/admin/AdminDetailView";
 import { ApplicationProfileForm } from "@/components/admin/ApplicationProfileForm";
+import { ActiveBadge, ActiveToggleButton } from "@/components/admin/ActiveBadge";
 import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
 import { formatApplicationStatus } from "@/lib/admin-labels";
 import { displayUserName } from "@/lib/admin-user-display";
@@ -18,6 +19,7 @@ import {
   deleteUser,
   getUser,
   updateApplicationStatus,
+  updateUserActive,
   updateUserProfile,
   updateUserType,
   type UpdateUserProfilePayload,
@@ -92,6 +94,18 @@ export function AdminUserDetail({ userId, mode }: Props) {
       const token = await refreshToken();
       if (!token) return;
       setUser(await updateUserType(token, user.id, userType));
+    } finally {
+      setSavingMeta(false);
+    }
+  }
+
+  async function handleActiveChange(isActive: boolean) {
+    if (!user) return;
+    setSavingMeta(true);
+    try {
+      const token = await refreshToken();
+      if (!token) return;
+      setUser(await updateUserActive(token, user.id, isActive));
     } finally {
       setSavingMeta(false);
     }
@@ -245,6 +259,16 @@ export function AdminUserDetail({ userId, mode }: Props) {
               )}
             </>
           )}
+          {mode === "partner" && (
+            <>
+              <ActiveBadge isActive={user.isActive} />
+              <ActiveToggleButton
+                isActive={user.isActive}
+                onToggle={() => handleActiveChange(!user.isActive)}
+                disabled={savingMeta}
+              />
+            </>
+          )}
           <select
             value={user.userType}
             onChange={(e) => handleUserTypeChange(e.target.value as UserType)}
@@ -301,6 +325,9 @@ export function AdminUserDetail({ userId, mode }: Props) {
         }
       >
         <DetailRow label="Application" value={formatApplicationStatus(user.applicationStatus)} />
+        {mode === "partner" && (
+          <DetailRow label="Status" value={user.isActive ? "Active" : "Inactive"} />
+        )}
         {mode === "application" && (
           <DetailRow
             label="Submitted"
