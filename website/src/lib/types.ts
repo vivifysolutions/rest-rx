@@ -347,9 +347,13 @@ export type ContentReport = {
   };
 };
 
+export type SuggestionType = "event" | "retreat" | "general";
+export type SuggestionStatus = "pending" | "reviewed";
+
 export type Suggestion = {
   id: string;
-  category: string;
+  type: SuggestionType;
+  status: SuggestionStatus;
   message: string;
   createdAt: string;
   user: {

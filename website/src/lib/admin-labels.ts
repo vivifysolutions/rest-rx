@@ -30,6 +30,17 @@ export const CATEGORY_TYPE_LABELS = {
   AFFIRMATION: "Affirmations",
 } as const;
 
+export const SUGGESTION_TYPE_LABELS = {
+  event: "Event",
+  retreat: "Retreat",
+  general: "General",
+} as const;
+
+export const SUGGESTION_STATUS_LABELS = {
+  pending: "Needs review",
+  reviewed: "Reviewed",
+} as const;
+
 export function formatApplicationStatus(status: string): string {
   return APPLICATION_STATUS_LABELS[status as keyof typeof APPLICATION_STATUS_LABELS] ?? status;
 }
@@ -44,4 +55,20 @@ export function formatContentType(type: string): string {
 
 export function formatGroupStatus(status: string): string {
   return GROUP_STATUS_LABELS[status as keyof typeof GROUP_STATUS_LABELS] ?? status;
+}
+
+export function formatSuggestionType(type: string | null | undefined): string {
+  if (!type) return "Unknown";
+  return (
+    SUGGESTION_TYPE_LABELS[type as keyof typeof SUGGESTION_TYPE_LABELS] ??
+    type
+      .split(/[-_/]/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ")
+  );
+}
+
+export function formatSuggestionStatus(status: string | null | undefined): string {
+  if (!status) return "Unknown";
+  return SUGGESTION_STATUS_LABELS[status as keyof typeof SUGGESTION_STATUS_LABELS] ?? status;
 }
