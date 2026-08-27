@@ -1,6 +1,6 @@
 const ADMIN_METRICS_CHANGED = "restrx:admin-metrics-changed";
 
-/** Call after approving/rejecting applications or changing roles so nav/page totals refresh. */
+/** Call after approving/rejecting applications, reviewing reports/suggestions, or changing roles so nav totals refresh. */
 export function notifyAdminMetricsChanged(): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(ADMIN_METRICS_CHANGED));

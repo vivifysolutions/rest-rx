@@ -12,8 +12,8 @@ type NavItem = {
   href: string;
   label: string;
   exact?: boolean;
-  /** Key into pending application counts for sidebar badges. */
-  pendingKey?: "members" | "partners";
+  /** Key into pending counts for sidebar badges. */
+  pendingKey?: "members" | "partners" | "reports" | "suggestions";
 };
 
 const FULL_NAV: NavItem[] = [
@@ -30,8 +30,8 @@ const FULL_NAV: NavItem[] = [
   { href: "/admin/goals", label: "Goals" },
   { href: "/admin/micro-rx", label: "Micro RX" },
   { href: "/admin/community", label: "Community" },
-  { href: "/admin/reports", label: "Reports" },
-  { href: "/admin/suggestions", label: "Suggestions" },
+  { href: "/admin/reports", label: "Reports", pendingKey: "reports" },
+  { href: "/admin/suggestions", label: "Suggestions", pendingKey: "suggestions" },
   { href: "/admin/groups", label: "Groups" },
   { href: "/admin/categories", label: "Categories" },
 ];
@@ -42,10 +42,14 @@ const FOUNDATION_NAV: NavItem[] = [
   { href: "/admin/resources", label: "Resources", exact: true },
 ];
 
-function navLabel(
-  item: NavItem,
-  pending: { members: number; partners: number } | null,
-): string {
+type PendingCounts = {
+  members: number;
+  partners: number;
+  reports: number;
+  suggestions: number;
+};
+
+function navLabel(item: NavItem, pending: PendingCounts | null): string {
   if (!item.pendingKey || !pending) return item.label;
   const count = pending[item.pendingKey];
   if (count <= 0) return item.label;
@@ -55,7 +59,7 @@ function navLabel(
 export function AdminNav({ navMode = "admin" }: { navMode?: PortalNavMode }) {
   const pathname = usePathname();
   const { refreshToken } = usePortalAuth();
-  const [pending, setPending] = useState<{ members: number; partners: number } | null>(null);
+  const [pending, setPending] = useState<PendingCounts | null>(null);
 
   const loadPending = useCallback(async () => {
     if (navMode !== "admin") {
@@ -69,6 +73,8 @@ export function AdminNav({ navMode = "admin" }: { navMode?: PortalNavMode }) {
       setPending({
         members: metrics.pending.members,
         partners: metrics.pending.partners,
+        reports: metrics.pending.reports ?? 0,
+        suggestions: metrics.pending.suggestions ?? 0,
       });
     } catch {
       // Keep prior counts if refresh fails

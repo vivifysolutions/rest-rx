@@ -109,7 +109,22 @@ export default function AdminDiscountDetailPage() {
         <DetailRow label="Status">
           <PublishedBadge isPublished={item.isPublished ?? true} />
         </DetailRow>
-        <DetailRow label="Featured" value={item.isFeatured ? "Yes" : "No"} />
+        <DetailRow
+          label="Home"
+          value={
+            item.isFeaturedOnHome
+              ? `Featured · order ${item.featuredOnHomeOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
+        <DetailRow
+          label="Discover"
+          value={
+            item.isFeatured
+              ? `Featured · order ${item.featuredOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
         <DetailRow
           label="Expires"
           value={item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : "—"}

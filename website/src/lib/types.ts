@@ -2,7 +2,13 @@ import type { ApplicationRejectionIssue } from "./application-rejection";
 
 export type ApplicationStatus = "pending" | "approved" | "rejected";
 
-export type UserType = "member" | "admin" | "brand_partner" | "expert" | "ambassador" | "foundation";
+export type UserType =
+  | "member"
+  | "admin"
+  | "brand_partner"
+  | "expert"
+  | "ambassador"
+  | "foundation";
 
 export type ApiUser = {
   id: string;
@@ -53,7 +59,9 @@ export type Discount = {
   image: string | null;
   images: string[];
   isFeatured: boolean;
-  isFeaturedOnHome: boolean;
+  featuredOrder?: number | null;
+  isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number | null;
   isPublished: boolean;
   expiryDate: string | null;
   ownerId?: string | null;
@@ -98,7 +106,9 @@ export type CreateDiscountInput = {
   image?: string;
   images?: string[];
   isFeatured?: boolean;
+  featuredOrder?: number;
   isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number;
   isPublished?: boolean;
   expiryDate?: string;
   /** Admin: link discount to an approved brand partner application. Empty string clears. */

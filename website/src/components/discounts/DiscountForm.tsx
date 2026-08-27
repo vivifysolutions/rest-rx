@@ -10,14 +10,21 @@ import {
   BrandPartnerPicker,
   type BrandPartnerOption,
 } from "@/components/discounts/BrandPartnerPicker";
-import { DISCOUNT_TIER_OPTIONS, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
+import {
+  DISCOUNT_TIER_OPTIONS,
+  DISCOUNT_TIERS_ENABLED,
+} from "@/lib/reference-data";
 import {
   getDiscountBadgeLabel,
   OFFER_HIGHLIGHT_MAX_LENGTH,
   OFFER_SUMMARY_MAX_LENGTH,
 } from "@/lib/discountOffer";
 import type { LocationValue } from "@/lib/address";
-import { EMPTY_LOCATION, locationToApiPayload, parseLocationString } from "@/lib/address";
+import {
+  EMPTY_LOCATION,
+  locationToApiPayload,
+  parseLocationString,
+} from "@/lib/address";
 import { normalizeInstagramHandle } from "@/lib/social";
 import type { CreateDiscountInput } from "@/lib/types";
 
@@ -63,6 +70,8 @@ export type DiscountFormValues = {
   phone: string;
   images: string[];
   isFeatured: boolean;
+  featuredOrder: string;
+  featuredOnHomeOrder: string;
   isFeaturedOnHome: boolean;
   expiryDate: string;
   brandPartnerApplicationId: string;
@@ -86,14 +95,19 @@ export const EMPTY_DISCOUNT_FORM: DiscountFormValues = {
   phone: "",
   images: [],
   isFeatured: false,
+  featuredOrder: "",
   isFeaturedOnHome: false,
+  featuredOnHomeOrder: "",
   expiryDate: "",
   brandPartnerApplicationId: "",
 };
 
 type Props = {
   form: DiscountFormValues;
-  onChange: <K extends keyof DiscountFormValues>(key: K, value: DiscountFormValues[K]) => void;
+  onChange: <K extends keyof DiscountFormValues>(
+    key: K,
+    value: DiscountFormValues[K],
+  ) => void;
   categoryOptions: { value: string; label: string }[];
   showFeatured?: boolean;
   /** Admin: search and link an approved brand partner. */
@@ -157,6 +171,8 @@ export function DiscountForm({
 
     const images = form.images.map((url) => url.trim()).filter(Boolean);
     const locationPayload = locationToApiPayload(form.location);
+    const featuredOrderRaw = form.featuredOrder.trim();
+    const featuredOnHomeOrderRaw = form.featuredOnHomeOrder.trim();
 
     const body: CreateDiscountInput = {
       title: form.title.trim(),
@@ -176,8 +192,16 @@ export function DiscountForm({
       image: images[0],
       images,
       isFeatured: showFeatured ? form.isFeatured : undefined,
+      featuredOrder:
+        showFeatured && featuredOrderRaw ? Number(featuredOrderRaw) : undefined,
       isFeaturedOnHome: showFeatured ? form.isFeaturedOnHome : undefined,
-      expiryDate: form.expiryDate ? new Date(form.expiryDate).toISOString() : undefined,
+      featuredOnHomeOrder:
+        showFeatured && featuredOnHomeOrderRaw
+          ? Number(featuredOnHomeOrderRaw)
+          : undefined,
+      expiryDate: form.expiryDate
+        ? new Date(form.expiryDate).toISOString()
+        : undefined,
     };
 
     if (showPartnerPicker) {
@@ -191,22 +215,49 @@ export function DiscountForm({
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
       {showFeatured && (
-        <FeaturedToggle
-          isFeatured={form.isFeatured}
-          isFeaturedOnHome={form.isFeaturedOnHome}
-          onChangeFeatured={(next) => onChange("isFeatured", next)}
-          onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
-          sectionLabel="Discounts"
-        />
+        <>
+          <FeaturedToggle
+            isFeatured={form.isFeatured}
+            isFeaturedOnHome={form.isFeaturedOnHome}
+            onChangeFeatured={(next) => onChange("isFeatured", next)}
+            onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+            sectionLabel="Discounts"
+          />
+          <label>
+            <span className="admin-field-label">Home order</span>
+            <span className="admin-field-hint">
+              Lowest number shows first. Leave blank to sort last (unranked).
+            </span>
+            <input
+              type="number"
+              min={1}
+              value={form.featuredOnHomeOrder}
+              onChange={(e) => onChange("featuredOnHomeOrder", e.target.value)}
+            />
+          </label>
+          <label>
+            <span className="admin-field-label">Discover order</span>
+            <span className="admin-field-hint">
+              Lowest number shows first. Leave blank to sort last (unranked).
+            </span>
+            <input
+              type="number"
+              min={1}
+              value={form.featuredOrder}
+              onChange={(e) => onChange("featuredOrder", e.target.value)}
+            />
+          </label>
+        </>
       )}
 
       {showPartnerPicker && (
         <label>
           <span className="admin-field-label">Owner (partner account)</span>
           <span className="admin-field-hint">
-            Optional — link to an approved brand partner, expert, or foundation so the offer
-            appears under their application / portal account. Selecting a partner prefills empty
-            business contact fields when available.
+            Optional — link to an approved brand partner, expert, or foundation
+            so the offer appears under their application / portal account.
+            Selecting a partner prefills empty business contact fields when
+            available.
           </span>
           <BrandPartnerPicker
             value={form.brandPartnerApplicationId}
@@ -227,7 +278,9 @@ export function DiscountForm({
           </span>
           <input
             value={form.title}
-            onChange={(e) => onChange("title", e.target.value.replace(/\n/g, " "))}
+            onChange={(e) =>
+              onChange("title", e.target.value.replace(/\n/g, " "))
+            }
             required
             maxLength={80}
             placeholder="Brand or business name"
@@ -237,13 +290,17 @@ export function DiscountForm({
         <label>
           <span className="admin-field-label">Offer</span>
           <span className="admin-field-hint">
-            The deal members see under Offer details — promo code, % off, or freebie. Example:
-            &quot;Use code RESTRX for 15% off&quot; or &quot;First class free for healthcare workers&quot;.
+            The deal members see under Offer details — promo code, % off, or
+            freebie. Example: &quot;Use code RESTRX for 15% off&quot; or
+            &quot;First class free for healthcare workers&quot;.
           </span>
           <input
             value={form.offerSummary}
             onChange={(e) =>
-              onChange("offerSummary", e.target.value.slice(0, OFFER_SUMMARY_MAX_LENGTH))
+              onChange(
+                "offerSummary",
+                e.target.value.slice(0, OFFER_SUMMARY_MAX_LENGTH),
+              )
             }
             maxLength={OFFER_SUMMARY_MAX_LENGTH}
             placeholder="Use code RESTRX for 15% off"
@@ -280,13 +337,17 @@ export function DiscountForm({
         <label>
           <span className="admin-field-label">Badge highlight</span>
           <span className="admin-field-hint">
-            Short label for cards and the featured carousel ({OFFER_HIGHLIGHT_MAX_LENGTH} characters
-            max). Example: &quot;15% off&quot; or &quot;1st class free&quot;.
+            Short label for cards and the featured carousel (
+            {OFFER_HIGHLIGHT_MAX_LENGTH} characters max). Example: &quot;15%
+            off&quot; or &quot;1st class free&quot;.
           </span>
           <input
             value={form.offerHighlight}
             onChange={(e) =>
-              onChange("offerHighlight", e.target.value.slice(0, OFFER_HIGHLIGHT_MAX_LENGTH))
+              onChange(
+                "offerHighlight",
+                e.target.value.slice(0, OFFER_HIGHLIGHT_MAX_LENGTH),
+              )
             }
             maxLength={OFFER_HIGHLIGHT_MAX_LENGTH}
             placeholder="15% off"
@@ -300,7 +361,9 @@ export function DiscountForm({
           <div className="admin-form-row">
             <label>
               <span className="admin-field-label">Percentage off (0–100)</span>
-              <span className="admin-field-hint">Optional — use for classic % off offers.</span>
+              <span className="admin-field-hint">
+                Optional — use for classic % off offers.
+              </span>
               <input
                 type="number"
                 min={0}
@@ -315,7 +378,10 @@ export function DiscountForm({
                 name="tier"
                 value={form.tier}
                 onChange={(v) => onChange("tier", v)}
-                options={DISCOUNT_TIER_OPTIONS.map((t) => ({ value: t.value, label: t.label }))}
+                options={DISCOUNT_TIER_OPTIONS.map((t) => ({
+                  value: t.value,
+                  label: t.label,
+                }))}
                 placeholder="Select tier"
               />
             </label>
@@ -323,7 +389,9 @@ export function DiscountForm({
         ) : (
           <label>
             <span className="admin-field-label">Percentage off (0–100)</span>
-            <span className="admin-field-hint">Optional — use for classic % off offers.</span>
+            <span className="admin-field-hint">
+              Optional — use for classic % off offers.
+            </span>
             <input
               type="number"
               min={0}
@@ -337,7 +405,9 @@ export function DiscountForm({
         {badgePreview ? (
           <p className="admin-field-hint">
             Badge preview: <strong>{badgePreview}</strong>
-            {form.offerHighlight.trim() ? " (uses highlight)" : " (uses percentage)"}
+            {form.offerHighlight.trim()
+              ? " (uses highlight)"
+              : " (uses percentage)"}
           </p>
         ) : null}
 
@@ -361,6 +431,7 @@ export function DiscountForm({
             onChange={(e) => onChange("expiryDate", e.target.value)}
           />
         </label>
+
       </fieldset>
 
       <fieldset className="admin-form-fieldset">
@@ -369,9 +440,10 @@ export function DiscountForm({
         <label>
           <span className="admin-field-label">Redemption link</span>
           <span className="admin-field-hint">
-            URL opened when members tap Claim discount (booking page, promo link, or partner
-            checkout). Leave blank for in-person redemption — members will show a live Rest &amp; Rx
-            membership card instead (screenshots blocked).
+            URL opened when members tap Claim discount (booking page, promo
+            link, or partner checkout). Leave blank for in-person redemption —
+            members will show a live Rest &amp; Rx membership card instead
+            (screenshots blocked).
           </span>
           <input
             type="url"
@@ -383,7 +455,9 @@ export function DiscountForm({
 
         <label>
           <span className="admin-field-label">Business website</span>
-          <span className="admin-field-hint">Domain or full URL — opens in the app when tapped.</span>
+          <span className="admin-field-hint">
+            Domain or full URL — opens in the app when tapped.
+          </span>
           <input
             value={form.website}
             onChange={(e) => onChange("website", e.target.value)}
@@ -396,7 +470,8 @@ export function DiscountForm({
         <label>
           <span className="admin-field-label">Instagram username</span>
           <span className="admin-field-hint">
-            Username only (e.g. partner). The app builds the Instagram link for members.
+            Username only (e.g. partner). The app builds the Instagram link for
+            members.
           </span>
           <input
             value={form.instagram}

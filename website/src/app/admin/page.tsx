@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
           postCount = posts?.length ?? 0;
           pendingUsers = communityMetrics?.pending.members ?? 0;
           pendingPartners = communityMetrics?.pending.partners ?? 0;
-          pendingReports = reports?.length ?? 0;
+          pendingReports = communityMetrics?.pending.reports ?? reports?.length ?? 0;
           pendingSuggestions = communityMetrics?.pending.suggestions ?? 0;
         }
 

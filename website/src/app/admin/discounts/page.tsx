@@ -6,6 +6,7 @@ import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
+import { FeaturedDiscountLineup, type FeaturedSurface } from "@/components/admin/FeaturedDiscountLineup";
 import {
   DiscountForm,
   EMPTY_DISCOUNT_FORM,
@@ -20,21 +21,31 @@ import {
   getDiscounts,
   updateDiscount,
 } from "@/lib/api";
-import { compareBoolDesc, compareText, sortBy } from "@/lib/admin-sort";
+import { compareBoolDesc, compareNullableNumberAsc, compareText, sortBy } from "@/lib/admin-sort";
 import { getDiscountBadgeLabel } from "@/lib/discountOffer";
 import { toPartnerOwnerOptions } from "@/lib/partner-owner";
 import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference-data";
 import type { CreateDiscountInput, Discount } from "@/lib/types";
 import { labelApplicationTypeShort } from "@/lib/partner-application-options";
 
-type DiscountSort = "name" | "category" | "featured" | "status";
+type DiscountSort = "name" | "category" | "featured" | "homeOrder" | "discoverOrder" | "status";
 
 const SORT_OPTIONS: { value: DiscountSort; label: string }[] = [
   { value: "name", label: "Brand / business name" },
   { value: "category", label: "Category" },
   { value: "featured", label: "Featured first" },
+  { value: "homeOrder", label: "Home order" },
+  { value: "discoverOrder", label: "Discover order" },
   { value: "status", label: "Status" },
 ];
+
+function featuredPlacement(d: Discount) {
+  const parts = [
+    d.isFeaturedOnHome ? "Home" : null,
+    d.isFeatured ? "Discover" : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "—";
+}
 
 function partnerName(d: Discount): string {
   const app = d.brandPartnerApplication;
@@ -57,6 +68,7 @@ export default function AdminDiscountsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<DiscountFormValues>(EMPTY_DISCOUNT_FORM);
   const [sortByKey, setSortByKey] = useState<DiscountSort>("name");
+  const [moving, setMoving] = useState<{ surface: FeaturedSurface; id: string } | null>(null);
 
   const update = <K extends keyof DiscountFormValues>(k: K, v: DiscountFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -68,7 +80,22 @@ export default function AdminDiscountsPage() {
           case "category":
             return compareText(a.category, b.category) || compareText(a.title, b.title);
           case "featured":
-            return compareBoolDesc(a.isFeatured, b.isFeatured) || compareText(a.title, b.title);
+            return (
+              compareBoolDesc(Boolean(a.isFeaturedOnHome || a.isFeatured), Boolean(b.isFeaturedOnHome || b.isFeatured)) ||
+              compareText(a.title, b.title)
+            );
+          case "homeOrder":
+            return (
+              compareBoolDesc(a.isFeaturedOnHome, b.isFeaturedOnHome) ||
+              compareNullableNumberAsc(a.featuredOnHomeOrder, b.featuredOnHomeOrder) ||
+              compareText(a.title, b.title)
+            );
+          case "discoverOrder":
+            return (
+              compareBoolDesc(a.isFeatured, b.isFeatured) ||
+              compareNullableNumberAsc(a.featuredOrder, b.featuredOrder) ||
+              compareText(a.title, b.title)
+            );
           case "status": {
             const aPub = a.isPublished ?? true;
             const bPub = b.isPublished ?? true;
@@ -99,8 +126,8 @@ export default function AdminDiscountsPage() {
     }
   }, [refreshToken]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (opts?: { quiet?: boolean }) => {
+    if (!opts?.quiet) setLoading(true);
     setError(null);
     const token = await refreshToken();
     const [data, categoriesList] = await Promise.allSettled([
@@ -116,7 +143,7 @@ export default function AdminDiscountsPage() {
     if (categoriesList.status === "fulfilled") {
       setCategories(categoriesList.value.map((c) => ({ value: c.name, label: c.name })));
     }
-    setLoading(false);
+    if (!opts?.quiet) setLoading(false);
   }, [refreshToken]);
 
   useEffect(() => {
@@ -149,6 +176,33 @@ export default function AdminDiscountsPage() {
     await load();
   }
 
+  async function handleMoveLineup(
+    surface: FeaturedSurface,
+    orderedLiveIds: string[],
+    fromIndex: number,
+    direction: -1 | 1,
+  ) {
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= orderedLiveIds.length) return;
+    const next = [...orderedLiveIds];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    const field = surface === "home" ? "featuredOnHomeOrder" : "featuredOrder";
+    setMoving({ surface, id: moved });
+    setError(null);
+    try {
+      const token = await refreshToken();
+      await Promise.all(
+        next.map((id, index) => updateDiscount(id, { [field]: index + 1 }, token ?? undefined)),
+      );
+      await load({ quiet: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update featured order");
+    } finally {
+      setMoving(null);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Delete this discount?")) return;
     const token = await refreshToken();
@@ -161,6 +215,13 @@ export default function AdminDiscountsPage() {
       <ContentPageHeader
         title="Discounts"
         description="Member discounts and partner offers shown in the mobile app. Link offers to approved brand partners when creating on their behalf."
+      />
+
+      <FeaturedDiscountLineup
+        discounts={items}
+        loading={loading}
+        moving={moving}
+        onMove={handleMoveLineup}
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
@@ -199,6 +260,8 @@ export default function AdminDiscountsPage() {
                 {DISCOUNT_TIERS_ENABLED ? <th>Tier</th> : null}
                 <th>Status</th>
                 <th>Featured</th>
+                <th>Discover order</th>
+                <th>Home order</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -215,7 +278,9 @@ export default function AdminDiscountsPage() {
                   <td>
                     <PublishedBadge isPublished={d.isPublished ?? true} />
                   </td>
-                  <td>{d.isFeatured ? "Yes" : "—"}</td>
+                  <td>{featuredPlacement(d)}</td>
+                  <td>{d.featuredOrder ?? "—"}</td>
+                  <td>{d.featuredOnHomeOrder ?? "—"}</td>
                   <td>
                     <ContentRowActions
                       isPublished={d.isPublished ?? true}
