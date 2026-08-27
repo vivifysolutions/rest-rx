@@ -30,6 +30,17 @@ export function compareBoolDesc(a: boolean | null | undefined, b: boolean | null
   return Number(Boolean(b)) - Number(Boolean(a));
 }
 
+/** Null/undefined sorts last (matches Neon/Prisma `nulls: "last"`). */
+export function compareNullableNumberAsc(
+  a: number | null | undefined,
+  b: number | null | undefined,
+): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a - b;
+}
+
 export function sortBy<T>(items: T[], compare: (a: T, b: T) => number): T[] {
   return [...items].sort(compare);
 }
