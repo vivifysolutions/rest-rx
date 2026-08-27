@@ -20,6 +20,7 @@ import type {
   CreateGuidedGoalInput,
   Resource,
   Retreat,
+  Suggestion,
   Thread,
   ThreadDetail,
 } from "./types";
@@ -147,6 +148,7 @@ export type CommunityMetrics = {
   pending: {
     members: number;
     partners: number;
+    suggestions: number;
   };
   locations: {
     withAddress: number;
@@ -610,6 +612,25 @@ export async function getReports(
   status?: string,
 ): Promise<ContentReport[]> {
   return request<ContentReport[]>(`/reports${buildQuery({ status })}`, { token });
+}
+
+export async function getSuggestions(
+  token: string,
+  params?: { type?: string; status?: string },
+): Promise<Suggestion[]> {
+  return request<Suggestion[]>(`/suggestions${buildQuery(params)}`, { token });
+}
+
+export async function updateSuggestionStatus(
+  token: string,
+  id: string,
+  status: "pending" | "reviewed",
+): Promise<Suggestion> {
+  return request<Suggestion>(`/suggestions/${id}/status`, {
+    method: "PATCH",
+    token,
+    body: { status },
+  });
 }
 
 export async function updateReportStatus(

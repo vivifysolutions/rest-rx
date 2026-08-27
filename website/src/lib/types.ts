@@ -337,6 +337,25 @@ export type ContentReport = {
   };
 };
 
+export type SuggestionType = "event" | "retreat" | "general";
+export type SuggestionStatus = "pending" | "reviewed";
+
+export type Suggestion = {
+  id: string;
+  type: SuggestionType;
+  status: SuggestionStatus;
+  message: string;
+  createdAt: string;
+  user: {
+    id: string;
+    email: string | null;
+    displayName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    userType: UserType;
+  };
+};
+
 export type Group = {
   id: string;
   name: string;

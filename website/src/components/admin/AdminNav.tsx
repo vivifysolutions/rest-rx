@@ -31,6 +31,7 @@ const FULL_NAV: NavItem[] = [
   { href: "/admin/micro-rx", label: "Micro RX" },
   { href: "/admin/community", label: "Community" },
   { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/suggestions", label: "Suggestions" },
   { href: "/admin/groups", label: "Groups" },
   { href: "/admin/categories", label: "Categories" },
 ];
