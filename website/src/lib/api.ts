@@ -144,6 +144,7 @@ export type CommunityMetrics = {
   pending: {
     members: number;
     partners: number;
+    suggestions: number;
   };
   locations: {
     withAddress: number;
@@ -571,9 +572,21 @@ export async function getReports(
 
 export async function getSuggestions(
   token: string,
-  category?: string,
+  params?: { type?: string; status?: string },
 ): Promise<Suggestion[]> {
-  return request<Suggestion[]>(`/suggestions${buildQuery({ category })}`, { token });
+  return request<Suggestion[]>(`/suggestions${buildQuery(params)}`, { token });
+}
+
+export async function updateSuggestionStatus(
+  token: string,
+  id: string,
+  status: "pending" | "reviewed",
+): Promise<Suggestion> {
+  return request<Suggestion>(`/suggestions/${id}/status`, {
+    method: "PATCH",
+    token,
+    body: { status },
+  });
 }
 
 export async function updateReportStatus(
