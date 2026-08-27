@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
+import { partnerRejectionIssuesFor } from "@/lib/application-rejection";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import {
   ApiError,
@@ -54,7 +55,10 @@ export default function AdminBrandApplicationsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<{
+    id: string;
+    applicationType: PartnerApplicationType;
+  } | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [rejectError, setRejectError] = useState<string | null>(null);
 
@@ -102,15 +106,20 @@ export default function AdminBrandApplicationsPage() {
     }
   }
 
-  async function handleReject(reason: string) {
-    if (!rejectTargetId) return;
+  async function handleReject(payload: { reason: string; issue?: string }) {
+    if (!rejectTarget || !payload.issue) return;
     setRejecting(true);
     setRejectError(null);
     try {
       const token = await refreshToken();
       if (!token) return;
-      await rejectBrandPartnerApplication(token, rejectTargetId, reason);
-      setRejectTargetId(null);
+      await rejectBrandPartnerApplication(
+        token,
+        rejectTarget.id,
+        payload.reason,
+        payload.issue,
+      );
+      setRejectTarget(null);
       await load();
     } catch (e) {
       setRejectError(
@@ -260,9 +269,15 @@ export default function AdminBrandApplicationsPage() {
                         </button>
                         <button
                           type="button"
-                          className="admin-btn"
+                          className="admin-btn admin-btn-danger"
                           disabled={busyId === app.id}
-                          onClick={() => setRejectTargetId(app.id)}
+                          onClick={() => {
+                            setRejectError(null);
+                            setRejectTarget({
+                              id: app.id,
+                              applicationType: app.applicationType,
+                            });
+                          }}
                         >
                           Reject
                         </button>
@@ -277,10 +292,17 @@ export default function AdminBrandApplicationsPage() {
       </div>
 
       <RejectApplicationModal
-        open={rejectTargetId !== null}
+        open={rejectTarget !== null}
         saving={rejecting}
         error={rejectError}
-        onCancel={() => setRejectTargetId(null)}
+        includeIssueSelect
+        issueSelectAudience="website"
+        issueOptions={partnerRejectionIssuesFor(rejectTarget?.applicationType)}
+        onCancel={() => {
+          if (rejecting) return;
+          setRejectTarget(null);
+          setRejectError(null);
+        }}
         onSubmit={handleReject}
       />
     </>

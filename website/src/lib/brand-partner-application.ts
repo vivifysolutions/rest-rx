@@ -146,6 +146,8 @@ export type BrandPartnerApplication = {
   expertTopics: string[] | null;
   contentResourceTypes: string[] | null;
   message: string | null;
+  rejectionIssue?: string | null;
+  rejectionReason?: string | null;
   userId: string | null;
   user?: {
     id: string;
@@ -163,7 +165,7 @@ export type BrandPartnerApplication = {
     applicationStatus: string;
     applicationSubmittedAt: string | null;
   } | null;
-  discounts: Array<{
+  discounts?: Array<{
     id: string;
     title: string;
     description?: string | null;

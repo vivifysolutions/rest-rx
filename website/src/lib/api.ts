@@ -1,4 +1,5 @@
 import { buildQuery, ADMIN_QUERY } from "./buildQuery";
+import { notifyAdminMetricsChanged } from "@/lib/admin-metrics-events";
 import type { BrandPartnerApplication } from "@/lib/brand-partner-application";
 import { normalizeBrandPartnerApplication } from "@/lib/brand-partner-application";
 import type {
@@ -15,8 +16,11 @@ import type {
   ForumPost,
   ForumPostDetail,
   Group,
+  GuidedGoal,
+  CreateGuidedGoalInput,
   Resource,
   Retreat,
+  Suggestion,
   Thread,
   ThreadDetail,
 } from "./types";
@@ -139,10 +143,13 @@ export type CommunityMetrics = {
     ambassadors: number;
     foundations: number;
     partners: number;
+    totalApproved: number;
   };
   pending: {
     members: number;
     partners: number;
+    suggestions: number;
+    reports: number;
   };
   locations: {
     withAddress: number;
@@ -180,11 +187,13 @@ export async function updateUserType(
   userId: string,
   userType: string,
 ): Promise<ApiUser> {
-  return request<ApiUser>(`/users/${userId}/user-type`, {
+  const user = await request<ApiUser>(`/users/${userId}/user-type`, {
     method: "PATCH",
     token,
     body: { userType },
   });
+  notifyAdminMetricsChanged();
+  return user;
 }
 
 export async function updateUserActive(
@@ -204,12 +213,15 @@ export async function updateApplicationStatus(
   userId: string,
   applicationStatus: string,
   rejectionReason?: string,
+  rejectionIssue?: string,
 ): Promise<ApiUser> {
-  return request<ApiUser>(`/users/${userId}/application-status`, {
+  const user = await request<ApiUser>(`/users/${userId}/application-status`, {
     method: "PATCH",
     token,
-    body: { applicationStatus, rejectionReason },
+    body: { applicationStatus, rejectionReason, rejectionIssue },
   });
+  notifyAdminMetricsChanged();
+  return user;
 }
 
 export type UpdateUserProfilePayload = {
@@ -234,6 +246,11 @@ export async function updateUserProfile(
     token,
     body,
   });
+}
+
+export async function deleteUser(token: string, userId: string): Promise<void> {
+  await request<void>(`/users/${userId}`, { method: "DELETE", token });
+  notifyAdminMetricsChanged();
 }
 
 // -- Brand partner applications -----------------------------------------------
@@ -302,6 +319,7 @@ export async function approveBrandPartnerApplication(
     method: "PATCH",
     token,
   });
+  notifyAdminMetricsChanged();
   return normalizeBrandPartnerApplication(item);
 }
 
@@ -309,12 +327,14 @@ export async function rejectBrandPartnerApplication(
   token: string,
   id: string,
   rejectionReason: string,
+  rejectionIssue: string,
 ): Promise<BrandPartnerApplication> {
   const item = await request<BrandPartnerApplication>(`/brand-partner-applications/${id}/reject`, {
     method: "PATCH",
     token,
-    body: { rejectionReason },
+    body: { rejectionReason, rejectionIssue },
   });
+  notifyAdminMetricsChanged();
   return normalizeBrandPartnerApplication(item);
 }
 
@@ -607,16 +627,39 @@ export async function getReports(
   return request<ContentReport[]>(`/reports${buildQuery({ status })}`, { token });
 }
 
+export async function getSuggestions(
+  token: string,
+  params?: { type?: string; status?: string },
+): Promise<Suggestion[]> {
+  return request<Suggestion[]>(`/suggestions${buildQuery(params)}`, { token });
+}
+
+export async function updateSuggestionStatus(
+  token: string,
+  id: string,
+  status: "pending" | "reviewed",
+): Promise<Suggestion> {
+  const suggestion = await request<Suggestion>(`/suggestions/${id}/status`, {
+    method: "PATCH",
+    token,
+    body: { status },
+  });
+  notifyAdminMetricsChanged();
+  return suggestion;
+}
+
 export async function updateReportStatus(
   token: string,
   id: string,
   status: "pending" | "reviewed" | "dismissed",
 ): Promise<ContentReport> {
-  return request<ContentReport>(`/reports/${id}/status`, {
+  const report = await request<ContentReport>(`/reports/${id}/status`, {
     method: "PATCH",
     token,
     body: { status },
   });
+  notifyAdminMetricsChanged();
+  return report;
 }
 
 // -- Groups ------------------------------------------------------------------
@@ -682,4 +725,35 @@ export async function updateAffirmation(
 
 export async function deleteAffirmation(token: string, id: string): Promise<void> {
   await request<void>(`/affirmations/${id}`, { method: "DELETE", token });
+}
+
+// -- Guided goals (Rest & Rx challenges) -------------------------------------
+
+export async function getAdminGuidedGoals(
+  token: string,
+  params?: { search?: string },
+): Promise<{ items: GuidedGoal[]; total: number }> {
+  return request<{ items: GuidedGoal[]; total: number }>(
+    `/goals/admin${buildQuery(params)}`,
+    { token },
+  );
+}
+
+export async function createAdminGuidedGoal(
+  token: string,
+  body: CreateGuidedGoalInput,
+): Promise<GuidedGoal> {
+  return request<GuidedGoal>("/goals/admin", { method: "POST", token, body });
+}
+
+export async function updateAdminGuidedGoal(
+  token: string,
+  id: string,
+  body: Partial<CreateGuidedGoalInput>,
+): Promise<GuidedGoal> {
+  return request<GuidedGoal>(`/goals/admin/${id}`, { method: "PATCH", token, body });
+}
+
+export async function deleteAdminGuidedGoal(token: string, id: string): Promise<void> {
+  await request<void>(`/goals/admin/${id}`, { method: "DELETE", token });
 }

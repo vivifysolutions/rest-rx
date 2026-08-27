@@ -1,6 +1,14 @@
+import type { ApplicationRejectionIssue } from "./application-rejection";
+
 export type ApplicationStatus = "pending" | "approved" | "rejected";
 
-export type UserType = "member" | "admin" | "brand_partner" | "expert" | "ambassador" | "foundation";
+export type UserType =
+  | "member"
+  | "admin"
+  | "brand_partner"
+  | "expert"
+  | "ambassador"
+  | "foundation";
 
 export type ApiUser = {
   id: string;
@@ -15,6 +23,7 @@ export type ApiUser = {
   phone?: string | null;
   userType: UserType;
   applicationStatus: ApplicationStatus;
+  rejectionIssue?: ApplicationRejectionIssue | null;
   partnerApplicationStatus?: ApplicationStatus | null;
   isActive: boolean;
   identityPhotoUrl?: string | null;
@@ -51,6 +60,9 @@ export type Discount = {
   image: string | null;
   images: string[];
   isFeatured: boolean;
+  featuredOrder?: number | null;
+  isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number | null;
   isPublished: boolean;
   expiryDate: string | null;
   ownerId?: string | null;
@@ -95,6 +107,9 @@ export type CreateDiscountInput = {
   image?: string;
   images?: string[];
   isFeatured?: boolean;
+  featuredOrder?: number;
+  isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number;
   isPublished?: boolean;
   expiryDate?: string;
   /** Admin: link discount to an approved brand partner application. Empty string clears. */
@@ -111,10 +126,12 @@ export type Event = {
   longitude: number | null;
   category: string | null;
   image: string | null;
+  images?: string[];
   format: string | null;
   price: number | null;
   registrationUrl: string | null;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
@@ -147,10 +164,12 @@ export type CreateEventInput = {
   longitude?: number;
   category?: string;
   image?: string;
+  images?: string[];
   format?: string;
   price?: number;
   registrationUrl?: string;
   isFeatured?: boolean;
+  isFeaturedOnHome?: boolean;
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
@@ -159,10 +178,22 @@ export type CreateEventInput = {
 };
 
 /** Mirrors Prisma `Resource`. Uses `topic`/`subTopic` (not category). */
+export type ResourceSharedBy = {
+  id: string;
+  displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  userType?: UserType | null;
+  professionalRole?: string | null;
+  specialty?: string | null;
+  applicationStatus?: ApplicationStatus | null;
+};
+
 export type Resource = {
   id: string;
   title: string;
   description: string | null;
+  caption: string | null;
   citations: string | null;
   type: string;
   duration: string | null;
@@ -172,14 +203,18 @@ export type Resource = {
   images: string[];
   mediaUrl: string | null;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Member shown as “Shared by” in the app. */
+  sharedBy?: ResourceSharedBy | null;
 };
 
 export type CreateResourceInput = {
   title: string;
   description?: string;
+  caption?: string;
   citations?: string;
   type: string;
   duration?: string;
@@ -189,7 +224,10 @@ export type CreateResourceInput = {
   images?: string[];
   mediaUrl?: string;
   isFeatured?: boolean;
+  isFeaturedOnHome?: boolean;
   isPublished?: boolean;
+  /** User id of the expert/member who shared this resource. Empty string clears on update. */
+  updatedById?: string;
 };
 
 /** Mirrors Prisma `Retreat`. */
@@ -204,7 +242,9 @@ export type Retreat = {
   category: string | null;
   rating: number | null;
   image: string | null;
+  images?: string[];
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
@@ -224,7 +264,9 @@ export type CreateRetreatInput = {
   category?: string;
   rating?: number;
   image?: string;
+  images?: string[];
   isFeatured?: boolean;
+  isFeaturedOnHome?: boolean;
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
@@ -306,6 +348,25 @@ export type ContentReport = {
   };
 };
 
+export type SuggestionType = "event" | "retreat" | "general";
+export type SuggestionStatus = "pending" | "reviewed";
+
+export type Suggestion = {
+  id: string;
+  type: SuggestionType;
+  status: SuggestionStatus;
+  message: string;
+  createdAt: string;
+  user: {
+    id: string;
+    email: string | null;
+    displayName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    userType: UserType;
+  };
+};
+
 export type Group = {
   id: string;
   name: string;
@@ -345,4 +406,33 @@ export type AffirmationTopic = {
   slug: string;
   title: string;
   description: string;
+};
+
+/** Rest & Rx curated goal shown in "Guided for you". */
+export type GuidedGoal = {
+  id: string;
+  title: string;
+  description: string | null;
+  goalType: "habit" | "streak" | "milestone" | null;
+  /** Wellness topic name from `GET /topics`. */
+  category: string;
+  targetValue: number;
+  unit: string | null;
+  checkInIncrement: number;
+  cadence: "daily" | "weekly" | "monthly" | "yearly";
+  isGuided: boolean;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateGuidedGoalInput = {
+  title: string;
+  description?: string;
+  goalType?: "habit" | "streak" | "milestone";
+  category: string;
+  targetValue: number;
+  unit?: string;
+  checkInIncrement?: number;
+  cadence?: GuidedGoal["cadence"];
 };

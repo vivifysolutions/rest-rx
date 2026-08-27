@@ -30,8 +30,8 @@ const ROLE_STATS: {
 }[] = [
   { label: "Members", key: "members", href: "/admin/members" },
   { label: "Brand partners", key: "brandPartners", href: "/admin/partners" },
-  { label: "Experts", key: "experts", href: "/admin/partners" },
-  { label: "Ambassadors", key: "ambassadors", href: "/admin/partners" },
+  { label: "Experts", key: "experts", href: "/admin/members" },
+  { label: "Ambassadors", key: "ambassadors", href: "/admin/members" },
   { label: "Foundations", key: "foundations", href: "/admin/partners" },
 ];
 
@@ -52,6 +52,7 @@ export default function AdminDashboardPage() {
     pendingUsers: null,
     pendingPartners: null,
     pendingReports: null,
+    pendingSuggestions: null,
   });
   const [metrics, setMetrics] = useState<CommunityMetrics | null>(null);
   const [apiOk, setApiOk] = useState<boolean | null>(null);
@@ -91,6 +92,7 @@ export default function AdminDashboardPage() {
         let pendingUsers = 0;
         let pendingPartners = 0;
         let pendingReports = 0;
+        let pendingSuggestions = 0;
         let communityMetrics: CommunityMetrics | null = null;
 
         if (authToken) {
@@ -110,7 +112,8 @@ export default function AdminDashboardPage() {
           postCount = posts?.length ?? 0;
           pendingUsers = communityMetrics?.pending.members ?? 0;
           pendingPartners = communityMetrics?.pending.partners ?? 0;
-          pendingReports = reports?.length ?? 0;
+          pendingReports = communityMetrics?.pending.reports ?? reports?.length ?? 0;
+          pendingSuggestions = communityMetrics?.pending.suggestions ?? 0;
         }
 
         if (!cancelled) {
@@ -129,6 +132,7 @@ export default function AdminDashboardPage() {
             pendingUsers,
             pendingPartners,
             pendingReports,
+            pendingSuggestions,
           });
         }
       } catch (e) {
@@ -314,6 +318,7 @@ export default function AdminDashboardPage() {
             key: "pendingPartners",
             href: "/admin/brand-applications",
           },
+          { label: "Pending suggestions", key: "pendingSuggestions", href: "/admin/suggestions" },
           { label: "Flagged content", key: "pendingReports", href: "/admin/reports" },
           { label: "Threads", key: "threads", href: "/admin/community" },
           { label: "Feed posts", key: "posts", href: "/admin/community" },
@@ -341,6 +346,9 @@ export default function AdminDashboardPage() {
           </li>
           <li>
             <Link href="/admin/brand-applications">Review partner applications by type</Link>
+          </li>
+          <li>
+            <Link href="/admin/suggestions">Review user suggestions</Link>
           </li>
           <li>
             <Link href="/admin/members">Manage approved members</Link>

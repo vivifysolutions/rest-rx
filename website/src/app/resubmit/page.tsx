@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { getMyBrandPartnerApplication } from "@/lib/api";
+import { partnerResubmitPrompt } from "@/lib/application-rejection";
 import {
   fromBrandPartnerApplication,
+  type BrandPartnerApplication,
   type PartnerApplicationFormData,
 } from "@/lib/brand-partner-application";
 import BrandPartnerApplicationForm from "@/components/partner/BrandPartnerApplicationForm";
@@ -16,6 +18,7 @@ export default function ResubmitPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [initialData, setInitialData] = useState<PartnerApplicationFormData | null>(null);
+  const [application, setApplication] = useState<BrandPartnerApplication | null>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -31,6 +34,7 @@ export default function ResubmitPage() {
         const application = await getMyBrandPartnerApplication(token);
         if (cancelled) return;
         if (application && application.status === "rejected") {
+          setApplication(application);
           setInitialData(fromBrandPartnerApplication(application));
         }
       } finally {
@@ -74,10 +78,21 @@ export default function ResubmitPage() {
             ← Back to Home
           </Link>
           <h1 className="font-heading">Resubmit your application</h1>
-          <p>Fix what caused the rejection, then resubmit for review.</p>
+          <p>
+            {partnerResubmitPrompt(application?.rejectionIssue)}
+          </p>
+          {application?.rejectionReason ? (
+            <p style={{ color: "var(--text-muted)", lineHeight: 1.6 }}>
+              Reviewer note: {application.rejectionReason}
+            </p>
+          ) : null}
         </header>
         <Suspense fallback={<p>Loading application…</p>}>
-          <BrandPartnerApplicationForm mode="resubmit" initialData={initialData} />
+          <BrandPartnerApplicationForm
+            mode="resubmit"
+            initialData={initialData}
+            rejectionIssue={application?.rejectionIssue}
+          />
         </Suspense>
       </div>
     </div>
