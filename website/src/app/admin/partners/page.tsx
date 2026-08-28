@@ -166,7 +166,7 @@ export default function AdminPartnersPage() {
     <>
       <ContentPageHeader
         title="Partners"
-        description="Approved brand and foundation accounts. Healthcare members, ambassadors, and experts live under Members."
+        description="Approved brand and foundation accounts. Healthcare members and ambassadors live under Members; experts live under Experts."
       />
 
       {metrics ? (

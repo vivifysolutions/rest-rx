@@ -11,15 +11,30 @@ export const USER_TYPE_LABELS: Record<UserType, string> = {
 
 /**
  * Approved accounts listed under Admin → Members.
- * Ambassadors and experts appear here alongside healthcare members.
+ * Ambassadors appear here alongside healthcare members.
  */
-export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador", "expert"];
+export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador"];
+
+/**
+ * Approved expert accounts listed under Admin → Experts.
+ */
+export const EXPERT_DIRECTORY_TYPES: UserType[] = ["expert"];
 
 /**
  * Approved portal partner accounts listed under Admin → Partners.
- * Experts and ambassadors are listed under Members.
+ * Experts are listed under Experts; ambassadors are listed under Members.
  */
 export const PARTNER_DIRECTORY_TYPES: UserType[] = ["brand_partner", "foundation"];
+
+export function getApprovedDirectory(userType: UserType): { href: string; label: string } {
+  if (EXPERT_DIRECTORY_TYPES.includes(userType)) {
+    return { href: "/admin/experts", label: "Experts" };
+  }
+  if (PARTNER_DIRECTORY_TYPES.includes(userType)) {
+    return { href: "/admin/partners", label: "Partners" };
+  }
+  return { href: "/admin/members", label: "Members" };
+}
 
 /** Roles that use the web portal (not the consumer mobile app home). */
 export const PORTAL_USER_TYPES: UserType[] = [

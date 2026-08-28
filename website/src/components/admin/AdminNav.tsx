@@ -20,6 +20,7 @@ const FULL_NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/users", label: "Member applications", pendingKey: "members" },
   { href: "/admin/members", label: "Members" },
+  { href: "/admin/experts", label: "Experts" },
   { href: "/admin/brand-applications", label: "Partner applications", pendingKey: "partners" },
   { href: "/admin/partners", label: "Partners" },
   { href: "/admin/discounts", label: "Discounts" },

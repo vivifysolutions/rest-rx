@@ -494,7 +494,7 @@ export async function getEventById(id: string, token?: string): Promise<Event> {
 
 export async function getResources(
   token?: string,
-  params?: { type?: string; search?: string },
+  params?: { type?: string; search?: string; updatedById?: string },
 ): Promise<Resource[]> {
   return request<Resource[]>(
     `/resources${buildQuery({ ...(token ? ADMIN_QUERY : undefined), ...params })}`,
@@ -567,7 +567,7 @@ export async function getRetreatById(id: string, token?: string): Promise<Retrea
 
 export async function getThreads(
   token: string,
-  params?: { search?: string; page?: number; limit?: number },
+  params?: { search?: string; page?: number; limit?: number; authorId?: string },
 ): Promise<Thread[]> {
   const res = await request<{ data: Thread[] }>(`/threads${buildQuery(params)}`, {
     token,

@@ -26,36 +26,42 @@ import {
 } from "@/lib/api";
 import type { ApiUser, ApplicationStatus, UserType } from "@/lib/types";
 import {
+  EXPERT_DIRECTORY_TYPES,
   PARTNER_DIRECTORY_TYPES,
   USER_TYPE_LABELS,
+  getApprovedDirectory,
 } from "@/lib/user-types";
+import { ExpertAttachedContent } from "@/components/admin/ExpertAttachedContent";
+import { PartnerAttachedContent } from "@/components/admin/PartnerAttachedContent";
 
 const USER_TYPES: UserType[] = ["member", "admin", "brand_partner", "expert", "ambassador", "foundation"];
 
+type DetailMode = "application" | "member" | "partner" | "expert";
+
 type Props = {
   userId: string;
-  mode: "application" | "member" | "partner";
+  mode: DetailMode;
 };
 
 function isPartnerType(userType: UserType) {
   return PARTNER_DIRECTORY_TYPES.includes(userType);
 }
 
+function isExpertType(userType: UserType) {
+  return EXPERT_DIRECTORY_TYPES.includes(userType);
+}
+
+function directoryForMode(mode: DetailMode): { href: string; label: string } {
+  if (mode === "application") return { href: "/admin/users", label: "Member applications" };
+  if (mode === "partner") return { href: "/admin/partners", label: "Partners" };
+  if (mode === "expert") return { href: "/admin/experts", label: "Experts" };
+  return { href: "/admin/members", label: "Members" };
+}
+
 export function AdminUserDetail({ userId, mode }: Props) {
   const router = useRouter();
   const { refreshToken, profile } = usePortalAuth();
-  const backHref =
-    mode === "application"
-      ? "/admin/users"
-      : mode === "partner"
-        ? "/admin/partners"
-        : "/admin/members";
-  const backLabel =
-    mode === "application"
-      ? "Member applications"
-      : mode === "partner"
-        ? "Partners"
-        : "Members";
+  const { href: backHref, label: backLabel } = directoryForMode(mode);
 
   const [user, setUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -211,13 +217,14 @@ export function AdminUserDetail({ userId, mode }: Props) {
   const metaBusy = savingMeta || deleting;
   const wrongSection =
     (mode === "application" && isApproved) ||
-    (mode === "member" && (!isApproved || isPartnerType(user.userType))) ||
-    (mode === "partner" && (!isApproved || !isPartnerType(user.userType)));
+    (mode === "member" &&
+      (!isApproved || isPartnerType(user.userType) || isExpertType(user.userType))) ||
+    (mode === "partner" && (!isApproved || !isPartnerType(user.userType))) ||
+    (mode === "expert" && (!isApproved || !isExpertType(user.userType)));
 
-  const approvedDirectoryHref = isPartnerType(user.userType)
-    ? `/admin/partners/${user.id}`
-    : `/admin/members/${user.id}`;
-  const approvedDirectoryLabel = isPartnerType(user.userType) ? "Partners" : "Members";
+  const approvedDirectory = getApprovedDirectory(user.userType);
+  const approvedDirectoryHref = `${approvedDirectory.href}/${user.id}`;
+  const approvedDirectoryLabel = approvedDirectory.label;
 
   return (
     <>
@@ -259,7 +266,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
               )}
             </>
           )}
-          {mode === "partner" && (
+          {(mode === "partner" || mode === "expert") && (
             <>
               <ActiveBadge isActive={user.isActive} />
               <ActiveToggleButton
@@ -321,11 +328,13 @@ export function AdminUserDetail({ userId, mode }: Props) {
             ? "Application status"
             : mode === "partner"
               ? "Partner account"
-              : "Membership"
+              : mode === "expert"
+                ? "Expert account"
+                : "Membership"
         }
       >
         <DetailRow label="Application" value={formatApplicationStatus(user.applicationStatus)} />
-        {mode === "partner" && (
+        {(mode === "partner" || mode === "expert") && (
           <DetailRow label="Status" value={user.isActive ? "Active" : "Inactive"} />
         )}
         {mode === "application" && (
@@ -340,7 +349,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
         )}
         <DetailRow label="Role" value={USER_TYPE_LABELS[user.userType]} />
         <DetailRow label="Member since" value={new Date(user.createdAt).toLocaleString()} />
-        {(mode === "member" || mode === "partner") && (
+        {(mode === "member" || mode === "partner" || mode === "expert") && (
           <DetailRow
             label="Onboarding"
             value={
@@ -383,11 +392,13 @@ export function AdminUserDetail({ userId, mode }: Props) {
         <div className="admin-callout" style={{ marginTop: "0.5rem" }}>
           Review and edit the profile above, then approve or reject this application. Approved
           healthcare members and ambassadors move to <Link href="/admin/members">Members</Link>;
-          approved brand, expert, and foundation accounts move to{" "}
-          <Link href="/admin/partners">Partners</Link>.
+          approved experts move to <Link href="/admin/experts">Experts</Link>; approved brand and
+          foundation accounts move to <Link href="/admin/partners">Partners</Link>.
         </div>
       )}
     </AdminDetailLayout>
+    {mode === "expert" && <ExpertAttachedContent userId={user.id} />}
+    {mode === "partner" && <PartnerAttachedContent userId={user.id} />}
     <RejectApplicationModal
       open={rejectModalOpen}
       saving={rejecting}

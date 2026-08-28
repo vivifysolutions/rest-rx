@@ -30,7 +30,7 @@ const ROLE_STATS: {
 }[] = [
   { label: "Members", key: "members", href: "/admin/members" },
   { label: "Brand partners", key: "brandPartners", href: "/admin/partners" },
-  { label: "Experts", key: "experts", href: "/admin/members" },
+  { label: "Experts", key: "experts", href: "/admin/experts" },
   { label: "Ambassadors", key: "ambassadors", href: "/admin/members" },
   { label: "Foundations", key: "foundations", href: "/admin/partners" },
 ];
@@ -352,6 +352,9 @@ export default function AdminDashboardPage() {
           </li>
           <li>
             <Link href="/admin/members">Manage approved members</Link>
+          </li>
+          <li>
+            <Link href="/admin/experts">Manage approved experts</Link>
           </li>
           <li>
             <Link href="/admin/partners">Manage approved partners</Link>

@@ -371,6 +371,12 @@ export default function AdminBrandApplicationDetailPage() {
               <Link href="/admin/members">Members</Link> after approval. Set account type to Member
               first if you are denying ambassador access.
             </>
+          ) : app.applicationType === "expert" ? (
+            <>
+              Approve to unlock portal access. Experts use the web portal for community content and
+              appear under <Link href="/admin/experts">Experts</Link> after approval. Set account
+              type to Member if you want to deny the role they applied for.
+            </>
           ) : app.applicationType === "foundation" ? (
             <>
               Approve to unlock portal access for resource uploads. Non-profit and foundation partners
