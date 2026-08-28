@@ -7,6 +7,7 @@ import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import { FeaturedDiscountLineup, type FeaturedSurface } from "@/components/admin/FeaturedDiscountLineup";
+import { featuredPlacementLabel } from "@/components/admin/FeaturedLineup";
 import {
   DiscountForm,
   EMPTY_DISCOUNT_FORM,
@@ -38,14 +39,6 @@ const SORT_OPTIONS: { value: DiscountSort; label: string }[] = [
   { value: "discoverOrder", label: "Discover order" },
   { value: "status", label: "Status" },
 ];
-
-function featuredPlacement(d: Discount) {
-  const parts = [
-    d.isFeaturedOnHome ? "Home" : null,
-    d.isFeatured ? "Discover" : null,
-  ].filter(Boolean);
-  return parts.length ? parts.join(" · ") : "—";
-}
 
 function partnerName(d: Discount): string {
   const app = d.brandPartnerApplication;
@@ -278,7 +271,7 @@ export default function AdminDiscountsPage() {
                   <td>
                     <PublishedBadge isPublished={d.isPublished ?? true} />
                   </td>
-                  <td>{featuredPlacement(d)}</td>
+                  <td>{featuredPlacementLabel(d)}</td>
                   <td>{d.featuredOrder ?? "—"}</td>
                   <td>{d.featuredOnHomeOrder ?? "—"}</td>
                   <td>

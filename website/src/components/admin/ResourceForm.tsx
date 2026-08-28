@@ -7,7 +7,7 @@ import {
   ExpertUserPicker,
   type ExpertOwnerOption,
 } from "@/components/admin/ExpertUserPicker";
-import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
+import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { MediaUpload } from "@/components/admin/MediaUpload";
@@ -63,6 +63,8 @@ export type ResourceFormValues = {
   mediaUrl: string;
   isFeatured: boolean;
   isFeaturedOnHome: boolean;
+  featuredOrder: string;
+  featuredOnHomeOrder: string;
   updatedById: string;
 };
 
@@ -80,6 +82,8 @@ export const EMPTY_RESOURCE_FORM: ResourceFormValues = {
   mediaUrl: "",
   isFeatured: false,
   isFeaturedOnHome: false,
+  featuredOrder: "",
+  featuredOnHomeOrder: "",
   updatedById: "",
 };
 
@@ -116,6 +120,8 @@ export function formValuesToResourceBody(
     mediaUrl: form.mediaUrl.trim() || undefined,
     isFeatured: form.isFeatured,
     isFeaturedOnHome: form.isFeaturedOnHome,
+    featuredOrder: parseFeaturedOrderInput(form.featuredOrder),
+    featuredOnHomeOrder: parseFeaturedOrderInput(form.featuredOnHomeOrder),
   };
   if (options?.includeExpert) {
     // Empty string clears on update; omit on create so API can default to admin.
@@ -151,6 +157,12 @@ export function ResourceForm({
         onChangeFeatured={(next) => onChange("isFeatured", next)}
         onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
         sectionLabel="Resources"
+      />
+      <FeaturedOrderFields
+        featuredOrder={form.featuredOrder}
+        featuredOnHomeOrder={form.featuredOnHomeOrder}
+        onChangeFeaturedOrder={(v) => onChange("featuredOrder", v)}
+        onChangeFeaturedOnHomeOrder={(v) => onChange("featuredOnHomeOrder", v)}
       />
 
       {showExpertPicker && (

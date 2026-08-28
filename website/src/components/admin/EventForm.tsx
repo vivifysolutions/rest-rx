@@ -3,7 +3,7 @@
 import { FormEvent } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
-import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
+import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
 import { LocationField } from "@/components/admin/LocationField";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import {
@@ -42,6 +42,8 @@ export type EventFormValues = {
   endDate: string;
   isFeatured: boolean;
   isFeaturedOnHome: boolean;
+  featuredOrder: string;
+  featuredOnHomeOrder: string;
   brandPartnerApplicationId: string;
 };
 
@@ -75,6 +77,8 @@ export function formValuesToEventBody(
     images,
     isFeatured: form.isFeatured,
     isFeaturedOnHome: form.isFeaturedOnHome,
+    featuredOrder: parseFeaturedOrderInput(form.featuredOrder),
+    featuredOnHomeOrder: parseFeaturedOrderInput(form.featuredOnHomeOrder),
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
   };
@@ -108,6 +112,12 @@ export function EventForm({
         onChangeFeatured={(next) => onChange("isFeatured", next)}
         onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
         sectionLabel="Events"
+      />
+      <FeaturedOrderFields
+        featuredOrder={form.featuredOrder}
+        featuredOnHomeOrder={form.featuredOnHomeOrder}
+        onChangeFeaturedOrder={(v) => onChange("featuredOrder", v)}
+        onChangeFeaturedOnHomeOrder={(v) => onChange("featuredOnHomeOrder", v)}
       />
 
       {showPartnerPicker && (

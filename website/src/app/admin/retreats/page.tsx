@@ -5,6 +5,7 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { RetreatForm, type RetreatFormValues } from "@/components/admin/RetreatForm";
+import { FeaturedLineup, featuredPlacementLabel, type FeaturedSurface } from "@/components/admin/FeaturedLineup";
 import {
   createRetreat,
   deleteRetreat,
@@ -30,6 +31,8 @@ const EMPTY_FORM: RetreatFormValues = {
   bookingUrl: "",
   isFeatured: false,
   isFeaturedOnHome: false,
+  featuredOrder: "",
+  featuredOnHomeOrder: "",
 };
 
 export default function AdminRetreatsPage() {
@@ -41,12 +44,13 @@ export default function AdminRetreatsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<RetreatFormValues>(EMPTY_FORM);
+  const [moving, setMoving] = useState<{ surface: FeaturedSurface; id: string } | null>(null);
 
   const update = <K extends keyof RetreatFormValues>(k: K, v: RetreatFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (opts?: { quiet?: boolean }) => {
+    if (!opts?.quiet) setLoading(true);
     setError(null);
     const token = await refreshToken();
     const [data, topicsList, sns] = await Promise.allSettled([
@@ -64,7 +68,7 @@ export default function AdminRetreatsPage() {
       setTopics(topicsList.value.map((topic) => topic.name));
     }
     if (sns.status === "fulfilled") setSeasons(sns.value);
-    setLoading(false);
+    if (!opts?.quiet) setLoading(false);
   }, [refreshToken]);
 
   useEffect(() => {
@@ -92,6 +96,33 @@ export default function AdminRetreatsPage() {
     await load();
   }
 
+  async function handleMoveLineup(
+    surface: FeaturedSurface,
+    orderedLiveIds: string[],
+    fromIndex: number,
+    direction: -1 | 1,
+  ) {
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= orderedLiveIds.length) return;
+    const next = [...orderedLiveIds];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    const field = surface === "home" ? "featuredOnHomeOrder" : "featuredOrder";
+    setMoving({ surface, id: moved });
+    setError(null);
+    try {
+      const token = await refreshToken();
+      await Promise.all(
+        next.map((id, index) => updateRetreat(id, { [field]: index + 1 }, token ?? undefined)),
+      );
+      await load({ quiet: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update featured order");
+    } finally {
+      setMoving(null);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Delete this retreat?")) return;
     const token = await refreshToken();
@@ -104,6 +135,17 @@ export default function AdminRetreatsPage() {
       <ContentPageHeader
         title="Retreats"
         description="Retreat listings for Discover. Create and publish retreats for the app."
+      />
+
+      <FeaturedLineup
+        items={items}
+        loading={loading}
+        moving={moving}
+        onMove={handleMoveLineup}
+        sectionLabel="Retreats"
+        detailHref={(r) => `/admin/retreats/${r.id}`}
+        editHref={(r) => `/admin/retreats/${r.id}/edit`}
+        getMeta={(r) => [r.category, r.location].filter(Boolean).join(" · ") || null}
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
@@ -136,6 +178,8 @@ export default function AdminRetreatsPage() {
                 <th>Rating</th>
                 <th>Status</th>
                 <th>Featured</th>
+                <th>Discover order</th>
+                <th>Home order</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -155,7 +199,9 @@ export default function AdminRetreatsPage() {
                   <td>
                     <PublishedBadge isPublished={r.isPublished ?? true} />
                   </td>
-                  <td>{r.isFeatured ? "Yes" : "—"}</td>
+                  <td>{featuredPlacementLabel(r)}</td>
+                  <td>{r.featuredOrder ?? "—"}</td>
+                  <td>{r.featuredOnHomeOrder ?? "—"}</td>
                   <td>
                     <ContentRowActions
                       isPublished={r.isPublished ?? true}

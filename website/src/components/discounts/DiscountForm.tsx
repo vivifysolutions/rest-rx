@@ -2,7 +2,11 @@
 
 import { FormEvent } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
-import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
+import {
+  FeaturedOrderFields,
+  FeaturedToggle,
+  parseFeaturedOrderInput,
+} from "@/components/admin/FeaturedToggle";
 import { LocationField } from "@/components/admin/LocationField";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { ReferenceSelect } from "@/components/admin/ReferenceSelect";
@@ -171,9 +175,6 @@ export function DiscountForm({
 
     const images = form.images.map((url) => url.trim()).filter(Boolean);
     const locationPayload = locationToApiPayload(form.location);
-    const featuredOrderRaw = form.featuredOrder.trim();
-    const featuredOnHomeOrderRaw = form.featuredOnHomeOrder.trim();
-
     const body: CreateDiscountInput = {
       title: form.title.trim(),
       description: form.description.trim() || undefined,
@@ -192,13 +193,13 @@ export function DiscountForm({
       image: images[0],
       images,
       isFeatured: showFeatured ? form.isFeatured : undefined,
-      featuredOrder:
-        showFeatured && featuredOrderRaw ? Number(featuredOrderRaw) : undefined,
+      featuredOrder: showFeatured
+        ? parseFeaturedOrderInput(form.featuredOrder)
+        : undefined,
       isFeaturedOnHome: showFeatured ? form.isFeaturedOnHome : undefined,
-      featuredOnHomeOrder:
-        showFeatured && featuredOnHomeOrderRaw
-          ? Number(featuredOnHomeOrderRaw)
-          : undefined,
+      featuredOnHomeOrder: showFeatured
+        ? parseFeaturedOrderInput(form.featuredOnHomeOrder)
+        : undefined,
       expiryDate: form.expiryDate
         ? new Date(form.expiryDate).toISOString()
         : undefined,
@@ -223,30 +224,12 @@ export function DiscountForm({
             onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
             sectionLabel="Discounts"
           />
-          <label>
-            <span className="admin-field-label">Home order</span>
-            <span className="admin-field-hint">
-              Lowest number shows first. Leave blank to sort last (unranked).
-            </span>
-            <input
-              type="number"
-              min={1}
-              value={form.featuredOnHomeOrder}
-              onChange={(e) => onChange("featuredOnHomeOrder", e.target.value)}
-            />
-          </label>
-          <label>
-            <span className="admin-field-label">Discover order</span>
-            <span className="admin-field-hint">
-              Lowest number shows first. Leave blank to sort last (unranked).
-            </span>
-            <input
-              type="number"
-              min={1}
-              value={form.featuredOrder}
-              onChange={(e) => onChange("featuredOrder", e.target.value)}
-            />
-          </label>
+          <FeaturedOrderFields
+            featuredOrder={form.featuredOrder}
+            featuredOnHomeOrder={form.featuredOnHomeOrder}
+            onChangeFeaturedOrder={(v) => onChange("featuredOrder", v)}
+            onChangeFeaturedOnHomeOrder={(v) => onChange("featuredOnHomeOrder", v)}
+          />
         </>
       )}
 

@@ -100,7 +100,22 @@ export default function AdminEventDetailPage() {
         <DetailRow label="Status">
           <PublishedBadge isPublished={item.isPublished ?? true} />
         </DetailRow>
-        <DetailRow label="Featured" value={item.isFeatured ? "Yes" : "No"} />
+        <DetailRow
+          label="Home"
+          value={
+            item.isFeaturedOnHome
+              ? `Featured · order ${item.featuredOnHomeOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
+        <DetailRow
+          label="Discover"
+          value={
+            item.isFeatured
+              ? `Featured · order ${item.featuredOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
         <DetailRow
           label="Start"
           value={item.startDate ? new Date(item.startDate).toLocaleString() : "—"}

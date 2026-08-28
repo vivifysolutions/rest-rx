@@ -131,7 +131,9 @@ export type Event = {
   price: number | null;
   registrationUrl: string | null;
   isFeatured: boolean;
+  featuredOrder?: number | null;
   isFeaturedOnHome: boolean;
+  featuredOnHomeOrder?: number | null;
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
@@ -169,7 +171,9 @@ export type CreateEventInput = {
   price?: number;
   registrationUrl?: string;
   isFeatured?: boolean;
+  featuredOrder?: number;
   isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number;
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
@@ -203,7 +207,9 @@ export type Resource = {
   images: string[];
   mediaUrl: string | null;
   isFeatured: boolean;
+  featuredOrder?: number | null;
   isFeaturedOnHome: boolean;
+  featuredOnHomeOrder?: number | null;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
@@ -224,7 +230,9 @@ export type CreateResourceInput = {
   images?: string[];
   mediaUrl?: string;
   isFeatured?: boolean;
+  featuredOrder?: number;
   isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number;
   isPublished?: boolean;
   /** User id of the expert/member who shared this resource. Empty string clears on update. */
   updatedById?: string;
@@ -244,7 +252,9 @@ export type Retreat = {
   image: string | null;
   images?: string[];
   isFeatured: boolean;
+  featuredOrder?: number | null;
   isFeaturedOnHome: boolean;
+  featuredOnHomeOrder?: number | null;
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
@@ -266,7 +276,9 @@ export type CreateRetreatInput = {
   image?: string;
   images?: string[];
   isFeatured?: boolean;
+  featuredOrder?: number;
   isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number;
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
