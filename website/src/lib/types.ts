@@ -306,6 +306,7 @@ export type Thread = {
   title: string;
   content: string;
   topic?: string | null;
+  subTopic?: string | null;
   isPinned: boolean;
   isLocked: boolean;
   createdAt: string;

@@ -140,6 +140,7 @@ export default function AdminThreadDetailPage() {
     >
       <DetailSection title="Overview">
         <DetailRow label="Topic" value={thread.topic ?? "—"} />
+        <DetailRow label="Subtopic" value={thread.subTopic ?? "—"} />
         <DetailRow label="Author" value={authorLabel(thread.author)} />
         <DetailRow label="Status">
           {thread.isLocked && <span className="admin-badge">Locked</span>}{" "}
