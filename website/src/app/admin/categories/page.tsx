@@ -1,16 +1,26 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { getCategories, type Category, type CategoryType } from "@/lib/api";
 import { CATEGORY_TYPE_LABELS } from "@/lib/admin-labels";
+import { compareText, sortBy } from "@/lib/admin-sort";
 
 const CATEGORY_TYPES: CategoryType[] = ["EVENT", "DISCOUNT", "ONBOARDING", "AFFIRMATION"];
+
+type CategorySort = "name" | "type";
+
+const SORT_OPTIONS: { value: CategorySort; label: string }[] = [
+  { value: "name", label: "Name" },
+  { value: "type", label: "Used for" },
+];
 
 export default function AdminCategoriesPage() {
   const [items, setItems] = useState<Category[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<CategoryType | "ALL">("ALL");
+  const [sortByKey, setSortByKey] = useState<CategorySort>("name");
 
   useEffect(() => {
     getCategories()
@@ -20,9 +30,20 @@ export default function AdminCategoriesPage() {
 
   const filtered = useMemo(() => {
     if (!items) return null;
-    if (typeFilter === "ALL") return items;
-    return items.filter((item) => item.type === typeFilter);
-  }, [items, typeFilter]);
+    const list = typeFilter === "ALL" ? items : items.filter((item) => item.type === typeFilter);
+    return sortBy(list, (a, b) => {
+      switch (sortByKey) {
+        case "type":
+          return (
+            compareText(CATEGORY_TYPE_LABELS[a.type], CATEGORY_TYPE_LABELS[b.type]) ||
+            compareText(a.name, b.name)
+          );
+        case "name":
+        default:
+          return compareText(a.name, b.name);
+      }
+    });
+  }, [items, typeFilter, sortByKey]);
 
   return (
     <>
@@ -48,6 +69,7 @@ export default function AdminCategoriesPage() {
             ))}
           </select>
         </label>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
       </div>
 
       <div className="admin-card admin-table-wrap">

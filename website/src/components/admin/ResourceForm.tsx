@@ -2,10 +2,16 @@
 
 import { FormEvent } from "react";
 import { ComboInput } from "@/components/admin/ComboInput";
-import { ArticleBodyField } from "@/components/admin/ArticleBodyField";
+import { ArticleBodyField, MarkdownBodyField } from "@/components/admin/ArticleBodyField";
+import {
+  ExpertUserPicker,
+  type ExpertOwnerOption,
+} from "@/components/admin/ExpertUserPicker";
+import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { MediaUpload } from "@/components/admin/MediaUpload";
+import { AdminFormSubmit, SAVE_CHANGES_LABEL } from "@/components/admin/AdminFormActions";
 import {
   isArticleType,
   isAudioType,
@@ -15,9 +21,39 @@ import {
 } from "@/components/admin/resourceTypes";
 import type { CreateResourceInput } from "@/lib/types";
 
+const CAPTION_PLACEHOLDER = `Optional caption under the media. Markdown is supported:
+
+**Bold** or *italic* emphasis
+- Short bullet if needed`;
+
+const TRANSCRIPT_PLACEHOLDER = `Optional transcript shown when members tap Transcribe. Markdown is supported:
+
+## Intro
+Spoken words with **emphasis** where helpful.
+
+- Speaker notes or section breaks`;
+
+const MICRO_RX_PLACEHOLDER = `Full Micro RX prompt shown in the app. Markdown is supported:
+
+Take **three slow breaths**.
+
+1. Notice how you feel
+2. Soften your shoulders
+3. Name one thing you're grateful for
+
+> Keep it short enough to finish in a break.`;
+
+const CITATIONS_PLACEHOLDER = `Source citations shown under the caption. Markdown is supported:
+
+- Author, *Title*, Year
+- Or a numbered list
+1. First source
+2. Second source`;
+
 export type ResourceFormValues = {
   title: string;
   description: string;
+  caption: string;
   citations: string;
   type: string;
   duration: string;
@@ -27,11 +63,16 @@ export type ResourceFormValues = {
   images: string[];
   mediaUrl: string;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
+  featuredOrder: string;
+  featuredOnHomeOrder: string;
+  updatedById: string;
 };
 
 export const EMPTY_RESOURCE_FORM: ResourceFormValues = {
   title: "",
   description: "",
+  caption: "",
   citations: "",
   type: "",
   duration: "",
@@ -41,6 +82,10 @@ export const EMPTY_RESOURCE_FORM: ResourceFormValues = {
   images: [],
   mediaUrl: "",
   isFeatured: false,
+  isFeaturedOnHome: false,
+  featuredOrder: "",
+  featuredOnHomeOrder: "",
+  updatedById: "",
 };
 
 type Props = {
@@ -49,17 +94,24 @@ type Props = {
   topics: string[];
   subTopics: string[];
   types: string[];
+  experts?: ExpertOwnerOption[];
+  expertsLoading?: boolean;
+  showExpertPicker?: boolean;
   submitLabel?: string;
   onSubmit: (body: CreateResourceInput) => Promise<void>;
 };
 
-export function formValuesToResourceBody(form: ResourceFormValues): CreateResourceInput {
+export function formValuesToResourceBody(
+  form: ResourceFormValues,
+  options?: { includeExpert?: boolean },
+): CreateResourceInput {
   const quickRx = isQuickRxType(form.type);
   const images = quickRx ? form.images.map((url) => url.trim()).filter(Boolean) : [];
-  return {
+  const body: CreateResourceInput = {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
-    citations: quickRx ? form.citations.trim() : undefined,
+    caption: form.caption.trim() || undefined,
+    citations: quickRx ? form.citations.trim() || undefined : undefined,
     type: form.type.trim(),
     duration: form.duration.trim() || undefined,
     topic: form.topic.trim() || undefined,
@@ -68,7 +120,15 @@ export function formValuesToResourceBody(form: ResourceFormValues): CreateResour
     images: quickRx ? images : [],
     mediaUrl: form.mediaUrl.trim() || undefined,
     isFeatured: form.isFeatured,
+    isFeaturedOnHome: form.isFeaturedOnHome,
+    featuredOrder: parseFeaturedOrderInput(form.featuredOrder),
+    featuredOnHomeOrder: parseFeaturedOrderInput(form.featuredOnHomeOrder),
   };
+  if (options?.includeExpert) {
+    // Empty string clears on update; omit on create so API can default to admin.
+    body.updatedById = form.updatedById.trim();
+  }
+  return body;
 }
 
 export function ResourceForm({
@@ -77,16 +137,54 @@ export function ResourceForm({
   topics,
   subTopics,
   types,
+  experts = [],
+  expertsLoading = false,
+  showExpertPicker = false,
   submitLabel = "Save resource",
   onSubmit,
 }: Props) {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    await onSubmit(formValuesToResourceBody(form));
+    await onSubmit(
+      formValuesToResourceBody(form, { includeExpert: showExpertPicker }),
+    );
   }
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {submitLabel === SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
+      <FeaturedToggle
+        isFeatured={form.isFeatured}
+        isFeaturedOnHome={form.isFeaturedOnHome}
+        onChangeFeatured={(next) => onChange("isFeatured", next)}
+        onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+        sectionLabel="Resources"
+      />
+      <FeaturedOrderFields
+        featuredOrder={form.featuredOrder}
+        featuredOnHomeOrder={form.featuredOnHomeOrder}
+        onChangeFeaturedOrder={(v) => onChange("featuredOrder", v)}
+        onChangeFeaturedOnHomeOrder={(v) => onChange("featuredOnHomeOrder", v)}
+      />
+
+      {showExpertPicker && (
+        <label>
+          Shared by (expert)
+          <span className="admin-field-hint">
+            Optional — assign an approved expert so their profile shows on this
+            resource in the app.
+          </span>
+          <ExpertUserPicker
+            value={form.updatedById}
+            experts={experts}
+            loading={expertsLoading}
+            onChange={(id) => onChange("updatedById", id)}
+          />
+        </label>
+      )}
+
       <label>
         Title *
         <input
@@ -96,50 +194,46 @@ export function ResourceForm({
         />
       </label>
 
-      {!isArticleType(form.type) && !isMicroRxType(form.type) && (
-        <label>
-          {isAudioType(form.type)
-            ? "Transcript / description"
-            : isQuickRxType(form.type)
-              ? "Caption"
-              : "Description"}
-          <textarea
-            value={form.description}
-            onChange={(e) => onChange("description", e.target.value)}
-            placeholder={
-              isAudioType(form.type)
-                ? "Optional transcript shown when members tap Transcribe"
-                : isQuickRxType(form.type)
-                  ? "Short caption shown under the slides"
-                  : "Optional short summary"
-            }
-          />
-        </label>
-      )}
+      <MarkdownBodyField
+        label="Caption"
+        value={form.caption}
+        onChange={(v) => onChange("caption", v)}
+        rows={3}
+        placeholder={CAPTION_PLACEHOLDER}
+        hint="Short text under the media or hero — Markdown formatting renders in the app. Available for every resource type."
+      />
 
       {isQuickRxType(form.type) && (
-        <label>
-          Citations
-          <textarea
-            value={form.citations}
-            onChange={(e) => onChange("citations", e.target.value)}
-            rows={4}
-            placeholder="Source citations shown under the caption (one per line)"
-          />
-        </label>
+        <MarkdownBodyField
+          label="Citations"
+          value={form.citations}
+          onChange={(v) => onChange("citations", v)}
+          rows={4}
+          placeholder={CITATIONS_PLACEHOLDER}
+          hint="Sources under the caption — lists and emphasis render in the app."
+        />
+      )}
+
+      {isAudioType(form.type) && (
+        <MarkdownBodyField
+          label="Transcript"
+          value={form.description}
+          onChange={(v) => onChange("description", v)}
+          placeholder={TRANSCRIPT_PLACEHOLDER}
+          hint="Shown when members tap Transcribe — Markdown formatting is supported."
+        />
       )}
 
       {isMicroRxType(form.type) && (
-        <label>
-          Prompt *
-          <textarea
-            value={form.description}
-            onChange={(e) => onChange("description", e.target.value)}
-            required
-            rows={4}
-            placeholder="Full Micro RX prompt shown in the app"
-          />
-        </label>
+        <MarkdownBodyField
+          label="Prompt"
+          value={form.description}
+          onChange={(v) => onChange("description", v)}
+          required
+          rows={6}
+          placeholder={MICRO_RX_PLACEHOLDER}
+          hint="Full Micro RX prompt — Markdown formatting renders in the app."
+        />
       )}
 
       <div className="admin-form-row">
@@ -237,18 +331,9 @@ export function ResourceForm({
         />
       )}
 
-      <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-        <input
-          type="checkbox"
-          checked={form.isFeatured}
-          onChange={(e) => onChange("isFeatured", e.target.checked)}
-        />
-        Featured on Discover home
-      </label>
-
-      <button type="submit" className="admin-btn admin-btn-primary">
-        {submitLabel}
-      </button>
+      {submitLabel !== SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
     </form>
   );
 }

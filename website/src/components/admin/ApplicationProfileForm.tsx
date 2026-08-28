@@ -6,6 +6,12 @@ import {
   DetailVerificationPhoto,
 } from "@/components/admin/AdminDetailView";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import {
+  AdminFormActions,
+  formHasUnsavedChanges,
+  SAVE_CHANGES_LABEL,
+  serializeFormState,
+} from "@/components/admin/AdminFormActions";
 import type { ApiUser } from "@/lib/types";
 import {
   getNpiRequirement,
@@ -37,6 +43,7 @@ function toFormState(user: ApiUser) {
 export function ApplicationProfileForm({ user, saving, saveError, onSave }: Props) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(() => toFormState(user));
+  const [baseline, setBaseline] = useState(() => serializeFormState(toFormState(user)));
 
   useEffect(() => {
     if (!editing) {
@@ -52,6 +59,13 @@ export function ApplicationProfileForm({ user, saving, saveError, onSave }: Prop
 
   function setField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function beginEdit() {
+    const next = toFormState(user);
+    setForm(next);
+    setBaseline(serializeFormState(next));
+    setEditing(true);
   }
 
   function handleCancel() {
@@ -96,7 +110,7 @@ export function ApplicationProfileForm({ user, saving, saveError, onSave }: Prop
           <button
             type="button"
             className="admin-btn admin-btn-primary"
-            onClick={() => setEditing(true)}
+            onClick={beginEdit}
           >
             Edit profile
           </button>
@@ -125,6 +139,22 @@ export function ApplicationProfileForm({ user, saving, saveError, onSave }: Prop
         </dl>
       ) : (
         <form className="admin-form" onSubmit={handleSubmit}>
+          <AdminFormActions
+            label={saving ? "Saving…" : SAVE_CHANGES_LABEL}
+            disabled={saving || !formHasUnsavedChanges(form, baseline)}
+            showDisabledHint={!saving}
+            sticky
+            extra={
+              <button
+                type="button"
+                className="admin-btn"
+                onClick={handleCancel}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+            }
+          />
           <p className="admin-callout" style={{ marginBottom: "0.75rem" }}>
             Email is managed by Firebase sign-in and cannot be changed here.
           </p>
@@ -242,20 +272,6 @@ export function ApplicationProfileForm({ user, saving, saveError, onSave }: Prop
           </div>
 
           {saveError && <p className="admin-error">{saveError}</p>}
-
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            <button type="submit" className="admin-btn admin-btn-primary" disabled={saving}>
-              {saving ? "Saving…" : "Save changes"}
-            </button>
-            <button
-              type="button"
-              className="admin-btn"
-              onClick={handleCancel}
-              disabled={saving}
-            >
-              Cancel
-            </button>
-          </div>
         </form>
       )}
     </section>

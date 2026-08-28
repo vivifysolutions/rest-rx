@@ -10,20 +10,31 @@ export const USER_TYPE_LABELS: Record<UserType, string> = {
 };
 
 /**
- * Approved mobile-app accounts listed under Admin → Members.
- * Ambassadors are community members who share on behalf of Rest & Rx.
+ * Approved accounts listed under Admin → Members.
+ * Ambassadors appear here alongside healthcare members.
  */
 export const MEMBER_DIRECTORY_TYPES: UserType[] = ["member", "ambassador"];
 
 /**
- * Approved portal partner accounts listed under Admin → Partners.
- * Ambassadors are not partners — they appear under Members.
+ * Approved expert accounts listed under Admin → Experts.
  */
-export const PARTNER_DIRECTORY_TYPES: UserType[] = [
-  "brand_partner",
-  "expert",
-  "foundation",
-];
+export const EXPERT_DIRECTORY_TYPES: UserType[] = ["expert"];
+
+/**
+ * Approved portal partner accounts listed under Admin → Partners.
+ * Experts are listed under Experts; ambassadors are listed under Members.
+ */
+export const PARTNER_DIRECTORY_TYPES: UserType[] = ["brand_partner", "foundation"];
+
+export function getApprovedDirectory(userType: UserType): { href: string; label: string } {
+  if (EXPERT_DIRECTORY_TYPES.includes(userType)) {
+    return { href: "/admin/experts", label: "Experts" };
+  }
+  if (PARTNER_DIRECTORY_TYPES.includes(userType)) {
+    return { href: "/admin/partners", label: "Partners" };
+  }
+  return { href: "/admin/members", label: "Members" };
+}
 
 /** Roles that use the web portal (not the consumer mobile app home). */
 export const PORTAL_USER_TYPES: UserType[] = [
@@ -42,6 +53,20 @@ export function hasPortalAccess(
   if (!userType || !PORTAL_USER_TYPES.includes(userType)) return false;
   if (userType === "admin") return true;
   return partnerApplicationStatus === "approved";
+}
+
+/**
+ * True for a rejected partner applicant (brand, expert, ambassador, foundation).
+ * They fix and resubmit on the website /resubmit form rather than the mobile signup flow.
+ */
+export function canResubmitPartnerApplication(
+  userType: UserType | undefined | null,
+  partnerApplicationStatus?: PartnerApplicationStatus | null,
+): boolean {
+  if (!userType) return false;
+  return (
+    ["brand_partner", "expert", "ambassador", "foundation"] as UserType[]
+  ).includes(userType) && partnerApplicationStatus === "rejected";
 }
 
 export function getHomeRouteForUserType(userType: UserType): string {

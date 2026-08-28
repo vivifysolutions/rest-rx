@@ -146,6 +146,8 @@ export type BrandPartnerApplication = {
   expertTopics: string[] | null;
   contentResourceTypes: string[] | null;
   message: string | null;
+  rejectionIssue?: string | null;
+  rejectionReason?: string | null;
   userId: string | null;
   user?: {
     id: string;
@@ -163,7 +165,7 @@ export type BrandPartnerApplication = {
     applicationStatus: string;
     applicationSubmittedAt: string | null;
   } | null;
-  discounts: Array<{
+  discounts?: Array<{
     id: string;
     title: string;
     description?: string | null;
@@ -206,6 +208,80 @@ export function parseAdditionalUrls(value: string | null | undefined): string[] 
 export function serializeAdditionalUrls(urls: string[]): string | undefined {
   const trimmed = urls.map((url) => url.trim()).filter(Boolean);
   return trimmed.length > 0 ? trimmed.join("\n") : undefined;
+}
+
+/**
+ * Reverse of `toPartnerApplicationPayload` — seeds the form with a previous
+ * (typically rejected) application so the applicant can fix and resubmit
+ * instead of starting from a blank form. Password fields are left blank;
+ * `ensureApplicantSignedIn` skips re-authentication when already signed in
+ * as the applicant's email.
+ */
+export function fromBrandPartnerApplication(
+  app: BrandPartnerApplication,
+): PartnerApplicationFormData {
+  const additionalUrls = parseAdditionalUrls(app.otherSocialMedia);
+  const isExpert = app.applicationType === "expert";
+  const isAmbassador = app.applicationType === "ambassador";
+  const isFoundation = app.applicationType === "foundation";
+
+  return {
+    applicant: {
+      fullName: isFoundation ? "" : app.fullName,
+      email: app.email,
+      phone: app.phone ?? "",
+      password: "",
+      confirmPassword: "",
+    },
+    business: {
+      companyName: isFoundation ? "" : app.companyName,
+      website: app.website ?? "",
+      instagram: app.instagram ?? "",
+      tiktok: app.tiktok ?? "",
+      linkedin: app.linkedin ?? "",
+      address: app.address ?? "",
+      additionalUrls: additionalUrls.length ? additionalUrls : [""],
+    },
+    applicationType: app.applicationType,
+    wellnessAlignment: !isExpert && !isAmbassador ? app.wellnessAlignment ?? "" : "",
+    brandPartner: {
+      businessCategory: app.businessCategory ?? "",
+      partnershipInterests: app.partnershipInterests ?? [],
+      geographicScope: app.geographicScope ?? "",
+      offeringTypes: app.deliveryTypes ?? [],
+    },
+    expert: {
+      bio: isExpert ? app.wellnessAlignment ?? "" : "",
+      expertTopics: app.expertTopics ?? [],
+      contentResourceTypes: app.contentResourceTypes ?? [],
+    },
+    ambassador: {
+      bio: isAmbassador ? app.wellnessAlignment ?? "" : "",
+    },
+    foundation: {
+      organizationName: isFoundation ? app.companyName : "",
+      representativeName: isFoundation ? app.fullName : "",
+      representativeTitle: app.representativeTitle ?? "",
+      phone: isFoundation ? app.phone ?? "" : "",
+      website: isFoundation ? app.website ?? "" : "",
+      instagram: isFoundation ? app.instagram ?? "" : "",
+      tiktok: isFoundation ? app.tiktok ?? "" : "",
+      linkedin: isFoundation ? app.linkedin ?? "" : "",
+      additionalUrls: isFoundation && additionalUrls.length ? additionalUrls : [""],
+      topics: isFoundation ? app.expertTopics ?? [] : [],
+      contentResourceTypes: isFoundation ? app.contentResourceTypes ?? [] : [],
+      additionalInfo: isFoundation ? app.message ?? "" : "",
+    },
+    professional: {
+      firstName: app.user?.firstName ?? "",
+      lastName: app.user?.lastName ?? "",
+      professionalRole: app.user?.professionalRole ?? "",
+      specialty: app.user?.specialty ?? "",
+      npiNumber: app.user?.npiNumber ?? "",
+      workCredentialPhotoUrl: app.user?.workCredentialPhotoUrl ?? "",
+      identityPhotoUrl: app.user?.identityPhotoUrl ?? "",
+    },
+  };
 }
 
 export function toPartnerApplicationPayload(form: PartnerApplicationFormData) {

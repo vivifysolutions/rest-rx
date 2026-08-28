@@ -72,8 +72,8 @@ export default function AdminResourceDetailPage() {
 
   return (
     <AdminDetailLayout
-      backHref={microRx ? "/admin/micro-rx" : "/admin/resources"}
-      backLabel={microRx ? "Micro RX" : "Resources"}
+      backHref={microRx ? "/admin/resources?type=Micro%20Rx" : "/admin/resources"}
+      backLabel="Resources"
       title={item.title}
       actions={
         <>
@@ -94,7 +94,35 @@ export default function AdminResourceDetailPage() {
         <DetailRow label="Status">
           <PublishedBadge isPublished={item.isPublished ?? true} />
         </DetailRow>
-        <DetailRow label="Featured" value={item.isFeatured ? "Yes" : "No"} />
+        <DetailRow
+          label="Home"
+          value={
+            item.isFeaturedOnHome
+              ? `Featured · order ${item.featuredOnHomeOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
+        <DetailRow
+          label="Discover"
+          value={
+            item.isFeatured
+              ? `Featured · order ${item.featuredOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
+        <DetailRow
+          label="Shared by"
+          value={
+            item.sharedBy
+              ? item.sharedBy.displayName?.trim() ||
+                [item.sharedBy.firstName, item.sharedBy.lastName]
+                  .filter(Boolean)
+                  .join(" ")
+                  .trim() ||
+                "—"
+              : "—"
+          }
+        />
         <DetailRow label="Duration" value={item.duration ?? "—"} />
         <DetailRow label="Topic" value={item.topic ?? "—"} />
         <DetailRow
@@ -105,8 +133,24 @@ export default function AdminResourceDetailPage() {
         <DetailRow label="Updated" value={new Date(item.updatedAt).toLocaleString()} />
       </DetailSection>
 
-      {(microRx || (!isArticleType(item.type) && item.description)) && (
-        <DetailSection title={microRx ? "Prompt" : isAudioType(item.type) ? "Transcript / description" : quickRx ? "Caption" : "Description"}>
+      {item.caption && (
+        <DetailSection title="Caption">
+          <DetailRow label="Content">
+            <div className="admin-detail-markdown">{item.caption}</div>
+          </DetailRow>
+        </DetailSection>
+      )}
+
+      {microRx && item.description && (
+        <DetailSection title="Prompt">
+          <DetailRow label="Content">
+            <div className="admin-detail-markdown">{item.description}</div>
+          </DetailRow>
+        </DetailSection>
+      )}
+
+      {isAudioType(item.type) && item.description && (
+        <DetailSection title="Transcript">
           <DetailRow label="Content">
             <div className="admin-detail-markdown">{item.description}</div>
           </DetailRow>

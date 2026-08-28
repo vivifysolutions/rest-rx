@@ -18,11 +18,15 @@ function retreatToForm(item: Retreat): RetreatFormValues {
     season: item.season ?? "",
     location: item.location ?? "",
     rating: item.rating != null ? String(item.rating) : "",
-    image: item.image ?? "",
+    images: item.images?.length ? item.images : item.image ? [item.image] : [],
     startDate: item.startDate ? item.startDate.slice(0, 10) : "",
     endDate: item.endDate ? item.endDate.slice(0, 10) : "",
     bookingUrl: item.bookingUrl ?? "",
     isFeatured: item.isFeatured,
+    isFeaturedOnHome: item.isFeaturedOnHome ?? false,
+    featuredOrder: item.featuredOrder != null ? String(item.featuredOrder) : "",
+    featuredOnHomeOrder:
+      item.featuredOnHomeOrder != null ? String(item.featuredOnHomeOrder) : "",
   };
 }
 
@@ -38,11 +42,14 @@ export default function AdminRetreatEditPage() {
     season: "",
     location: "",
     rating: "",
-    image: "",
+    images: [],
     startDate: "",
     endDate: "",
     bookingUrl: "",
     isFeatured: false,
+    isFeaturedOnHome: false,
+    featuredOrder: "",
+    featuredOnHomeOrder: "",
   });
   const [topics, setTopics] = useState<string[]>([]);
   const [seasons, setSeasons] = useState<string[]>([]);

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
+import { canResubmitPartnerApplication } from "@/lib/user-types";
 
 function ConnectionStatus() {
   const { apiStatus, pingApi } = usePortalAuth();
@@ -43,6 +44,7 @@ export default function PortalLoginPage() {
     user,
     profile,
     profileError,
+    deactivatedMessage,
     apiConfigured,
     apiStatus,
     hasPortalAccess,
@@ -62,7 +64,11 @@ export default function PortalLoginPage() {
     if (loading) return;
     if (!user || !profile) return;
     if (!hasPortalAccess) {
-      router.replace("/portal/unauthorized");
+      if (canResubmitPartnerApplication(profile.userType, profile.partnerApplicationStatus)) {
+        router.replace("/resubmit");
+      } else {
+        router.replace("/portal/unauthorized");
+      }
     } else {
       router.replace(homeRoute);
     }
@@ -70,10 +76,10 @@ export default function PortalLoginPage() {
 
   useEffect(() => {
     if (!submitting) return;
-    if (profile || profileError) {
+    if (profile || profileError || deactivatedMessage) {
       setSubmitting(false);
     }
-  }, [submitting, profile, profileError]);
+  }, [submitting, profile, profileError, deactivatedMessage]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -87,7 +93,7 @@ export default function PortalLoginPage() {
     }
   }
 
-  const displayError = error ?? (user ? profileError : null);
+  const displayError = deactivatedMessage ?? error ?? (user ? profileError : null);
   const formDisabled =
     submitting || !apiConfigured || apiStatus === "unreachable" || apiStatus === "not-configured";
 

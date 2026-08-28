@@ -1,9 +1,12 @@
 "use client";
 
 import { FormEvent } from "react";
+import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
+import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
 import { LocationField } from "@/components/admin/LocationField";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
+import { AdminFormSubmit, SAVE_CHANGES_LABEL } from "@/components/admin/AdminFormActions";
 import {
   BrandPartnerPicker,
   type BrandPartnerOption,
@@ -17,6 +20,16 @@ import {
 } from "@/lib/address";
 import type { CreateEventInput } from "@/lib/types";
 
+const EVENT_ABOUT_PLACEHOLDER = `What this event is about. Markdown is supported:
+
+## What to expect
+**Bold** details and *emphasis*
+
+- Who it's for
+- What members will walk away with
+
+> Optional callout for dress code, materials, or notes`;
+
 export type EventFormValues = {
   title: string;
   description: string;
@@ -25,10 +38,13 @@ export type EventFormValues = {
   location: LocationValue;
   price: string;
   registrationUrl: string;
-  image: string;
+  images: string[];
   startDate: string;
   endDate: string;
   isFeatured: boolean;
+  isFeaturedOnHome: boolean;
+  featuredOrder: string;
+  featuredOnHomeOrder: string;
   brandPartnerApplicationId: string;
 };
 
@@ -49,6 +65,7 @@ export function formValuesToEventBody(
   options?: { includePartner?: boolean },
 ): CreateEventInput {
   const locationPayload = locationToApiPayload(form.location);
+  const images = form.images.map((url) => url.trim()).filter(Boolean);
   const body: CreateEventInput = {
     title: form.title.trim(),
     description: form.description.trim() || undefined,
@@ -57,8 +74,12 @@ export function formValuesToEventBody(
     ...locationPayload,
     price: form.price ? Number(form.price) : undefined,
     registrationUrl: form.registrationUrl.trim() || undefined,
-    image: form.image.trim() || undefined,
+    image: images[0],
+    images,
     isFeatured: form.isFeatured,
+    isFeaturedOnHome: form.isFeaturedOnHome,
+    featuredOrder: parseFeaturedOrderInput(form.featuredOrder),
+    featuredOnHomeOrder: parseFeaturedOrderInput(form.featuredOnHomeOrder),
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
   };
@@ -86,6 +107,23 @@ export function EventForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {submitLabel === SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
+      <FeaturedToggle
+        isFeatured={form.isFeatured}
+        isFeaturedOnHome={form.isFeaturedOnHome}
+        onChangeFeatured={(next) => onChange("isFeatured", next)}
+        onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
+        sectionLabel="Events"
+      />
+      <FeaturedOrderFields
+        featuredOrder={form.featuredOrder}
+        featuredOnHomeOrder={form.featuredOnHomeOrder}
+        onChangeFeaturedOrder={(v) => onChange("featuredOrder", v)}
+        onChangeFeaturedOnHomeOrder={(v) => onChange("featuredOnHomeOrder", v)}
+      />
+
       {showPartnerPicker && (
         <label>
           Owner (partner account)
@@ -105,10 +143,13 @@ export function EventForm({
         Title *
         <input value={form.title} onChange={(e) => onChange("title", e.target.value)} required />
       </label>
-      <label>
-        Description
-        <textarea value={form.description} onChange={(e) => onChange("description", e.target.value)} />
-      </label>
+      <MarkdownBodyField
+        label="About"
+        value={form.description}
+        onChange={(v) => onChange("description", v)}
+        placeholder={EVENT_ABOUT_PLACEHOLDER}
+        hint="Longer event copy shown on the detail screen — Markdown formatting renders in the app."
+      />
 
       <div className="admin-form-row">
         <label>
@@ -193,25 +234,22 @@ export function EventForm({
         </label>
       </div>
 
-      <ImageUpload
-        folder="events"
-        value={form.image}
-        onChange={(url) => onChange("image", url)}
-        guide="event"
-      />
-
-      <label style={{ flexDirection: "row", alignItems: "center", gap: "0.5rem" }}>
-        <input
-          type="checkbox"
-          checked={form.isFeatured}
-          onChange={(e) => onChange("isFeatured", e.target.checked)}
+      <fieldset className="admin-form-fieldset">
+        <legend>Photos</legend>
+        <MultipleImageUpload
+          folder="events"
+          values={form.images}
+          onChange={(urls) => onChange("images", urls)}
+          label="Event photos"
+          maxImages={10}
+          guide="event"
+          hint="Upload multiple images. The first photo is the cover on browse cards; members can swipe through all photos on the detail screen."
         />
-        Featured on Discover home
-      </label>
+      </fieldset>
 
-      <button type="submit" className="admin-btn admin-btn-primary">
-        {submitLabel}
-      </button>
+      {submitLabel !== SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
     </form>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
-import { USER_TYPE_LABELS } from "@/lib/user-types";
+import { USER_TYPE_LABELS, canResubmitPartnerApplication } from "@/lib/user-types";
 
 export default function PortalUnauthorizedPage() {
   const { user, loading, profile, signOut } = usePortalAuth();
@@ -16,8 +16,12 @@ export default function PortalUnauthorizedPage() {
     if (loading) return;
     if (!user) {
       router.replace("/portal/login");
+      return;
     }
-  }, [loading, user, router]);
+    if (profile && canResubmitPartnerApplication(profile.userType, profile.partnerApplicationStatus)) {
+      router.replace("/resubmit");
+    }
+  }, [loading, user, profile, router]);
 
   async function handleSignOut() {
     await signOut();

@@ -10,7 +10,10 @@ import {
   DetailSection,
   DetailVerificationPhoto,
 } from "@/components/admin/AdminDetailView";
+import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
+import { labelRejectionIssue, partnerRejectionIssuesFor } from "@/lib/application-rejection";
 import {
+  ApiError,
   approveBrandPartnerApplication,
   getBrandPartnerApplication,
   rejectBrandPartnerApplication,
@@ -59,6 +62,9 @@ export default function AdminBrandApplicationDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [savingType, setSavingType] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectError, setRejectError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,17 +98,23 @@ export default function AdminBrandApplicationDetailPage() {
     }
   }
 
-  async function handleReject() {
-    if (!app) return;
-    setBusy(true);
+  async function handleReject(payload: { reason: string; issue?: string }) {
+    if (!app || !payload.issue) return;
+    setRejecting(true);
+    setRejectError(null);
     try {
       const token = await refreshToken();
       if (!token) return;
-      setApp(await rejectBrandPartnerApplication(token, app.id));
+      setApp(
+        await rejectBrandPartnerApplication(token, app.id, payload.reason, payload.issue),
+      );
+      setRejectModalOpen(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Reject failed");
+      setRejectError(
+        e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Failed to reject application",
+      );
     } finally {
-      setBusy(false);
+      setRejecting(false);
     }
   }
 
@@ -134,6 +146,7 @@ export default function AdminBrandApplicationDetailPage() {
   const currentType = (app.user?.userType as UserType | undefined) ?? undefined;
 
   return (
+    <>
     <AdminDetailLayout
       backHref="/admin/brand-applications"
       backLabel="Partner applications"
@@ -149,7 +162,12 @@ export default function AdminBrandApplicationDetailPage() {
             >
               Approve
             </button>
-            <button type="button" className="admin-btn" disabled={busy} onClick={handleReject}>
+            <button
+              type="button"
+              className="admin-btn admin-btn-danger"
+              disabled={busy}
+              onClick={() => setRejectModalOpen(true)}
+            >
               Reject
             </button>
           </>
@@ -159,6 +177,14 @@ export default function AdminBrandApplicationDetailPage() {
       <DetailSection title="Application">
         <DetailRow label="Type" value={labelApplicationType(app.applicationType)} />
         <DetailRow label="Status" value={statusLabel(app.status)} />
+        {app.status === "rejected" ? (
+          <>
+            <DetailRow label="Rejection issue" value={labelRejectionIssue(app.rejectionIssue)} />
+            {app.rejectionReason ? (
+              <DetailRow label="Reviewer note" value={app.rejectionReason} />
+            ) : null}
+          </>
+        ) : null}
         <DetailRow label="Contact" value={`${app.fullName} (${app.email})`} />
         {app.representativeTitle && (
           <DetailRow label="Representative title" value={app.representativeTitle} />
@@ -345,6 +371,12 @@ export default function AdminBrandApplicationDetailPage() {
               <Link href="/admin/members">Members</Link> after approval. Set account type to Member
               first if you are denying ambassador access.
             </>
+          ) : app.applicationType === "expert" ? (
+            <>
+              Approve to unlock portal access. Experts use the web portal for community content and
+              appear under <Link href="/admin/experts">Experts</Link> after approval. Set account
+              type to Member if you want to deny the role they applied for.
+            </>
           ) : app.applicationType === "foundation" ? (
             <>
               Approve to unlock portal access for resource uploads. Non-profit and foundation partners
@@ -363,5 +395,20 @@ export default function AdminBrandApplicationDetailPage() {
 
       {error && <p className="admin-error">{error}</p>}
     </AdminDetailLayout>
+    <RejectApplicationModal
+      open={rejectModalOpen}
+      saving={rejecting}
+      error={rejectError}
+      includeIssueSelect
+      issueSelectAudience="website"
+      issueOptions={partnerRejectionIssuesFor(app.applicationType)}
+      onCancel={() => {
+        if (rejecting) return;
+        setRejectModalOpen(false);
+        setRejectError(null);
+      }}
+      onSubmit={handleReject}
+    />
+    </>
   );
 }

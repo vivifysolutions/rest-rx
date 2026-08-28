@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import {
   AdminDetailLayout,
-  DetailImage,
+  DetailImageGrid,
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
@@ -83,7 +83,22 @@ export default function AdminRetreatDetailPage() {
         <DetailRow label="Status">
           <PublishedBadge isPublished={item.isPublished ?? true} />
         </DetailRow>
-        <DetailRow label="Featured" value={item.isFeatured ? "Yes" : "No"} />
+        <DetailRow
+          label="Home"
+          value={
+            item.isFeaturedOnHome
+              ? `Featured · order ${item.featuredOnHomeOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
+        <DetailRow
+          label="Discover"
+          value={
+            item.isFeatured
+              ? `Featured · order ${item.featuredOrder ?? "unranked"}`
+              : "Not featured"
+          }
+        />
         <DetailRow
           label="Start"
           value={item.startDate ? new Date(item.startDate).toLocaleDateString() : "—"}
@@ -114,9 +129,16 @@ export default function AdminRetreatDetailPage() {
         <DetailRow label="URL" value={item.bookingUrl ?? "—"} />
       </DetailSection>
 
-      <DetailSection title="Image">
-        <DetailRow label="Preview">
-          {item.image ? <DetailImage src={item.image} alt={item.title} /> : "—"}
+      <DetailSection title="Photos">
+        <DetailRow label="Gallery">
+          {item.images?.length || item.image ? (
+            <DetailImageGrid
+              urls={item.images?.length ? item.images : item.image ? [item.image] : []}
+              label="Retreat photos"
+            />
+          ) : (
+            "—"
+          )}
         </DetailRow>
       </DetailSection>
     </AdminDetailLayout>

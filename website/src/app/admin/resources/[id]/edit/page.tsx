@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminDetailLayout } from "@/components/admin/AdminDetailView";
+import type { ExpertOwnerOption } from "@/components/admin/ExpertUserPicker";
 import {
   EMPTY_RESOURCE_FORM,
   ResourceForm,
@@ -16,6 +17,7 @@ import {
   getResourceSubTopics,
   getResourceTopics,
   getResourceTypes,
+  listUsers,
   updateResource,
 } from "@/lib/api";
 import type { Resource } from "@/lib/types";
@@ -26,6 +28,11 @@ function resourceToForm(item: Resource): ResourceFormValues {
   return {
     title: item.title,
     description: item.description ?? "",
+    caption:
+      item.caption ??
+      (isQuickRxType(item.type) || item.type.toLowerCase() === "video"
+        ? item.description ?? ""
+        : ""),
     citations: item.citations ?? "",
     type: item.type,
     duration: item.duration ?? "",
@@ -35,6 +42,11 @@ function resourceToForm(item: Resource): ResourceFormValues {
     images,
     mediaUrl: item.mediaUrl ?? "",
     isFeatured: item.isFeatured,
+    isFeaturedOnHome: item.isFeaturedOnHome ?? false,
+    featuredOrder: item.featuredOrder != null ? String(item.featuredOrder) : "",
+    featuredOnHomeOrder:
+      item.featuredOnHomeOrder != null ? String(item.featuredOnHomeOrder) : "",
+    updatedById: item.sharedBy?.id ?? "",
   };
 }
 
@@ -46,6 +58,8 @@ export default function AdminResourceEditPage() {
   const [topics, setTopics] = useState<string[]>([]);
   const [subTopics, setSubTopics] = useState<string[]>([]);
   const [types, setTypes] = useState<string[]>([]);
+  const [experts, setExperts] = useState<ExpertOwnerOption[]>([]);
+  const [expertsLoading, setExpertsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -55,20 +69,47 @@ export default function AdminResourceEditPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setExpertsLoading(true);
     setError(null);
     try {
       const token = await refreshToken();
-      const [item, topicsList, typesList] = await Promise.all([
+      const [item, topicsList, typesList, expertsList] = await Promise.all([
         getResourceById(id, token ?? undefined),
         getResourceTopics(),
         getResourceTypes(),
+        token
+          ? listUsers(token, {
+              userTypes: ["expert"],
+              applicationStatus: "approved",
+            })
+          : Promise.resolve([]),
       ]);
       setForm(resourceToForm(item));
       setTopics(topicsList.map((t) => t.name));
       setTypes(typesList);
+
+      // Keep current sharedBy in the picker even if they're no longer in the filtered list
+      const expertOptions: ExpertOwnerOption[] = [...expertsList];
+      if (
+        item.sharedBy &&
+        !expertOptions.some((u) => u.id === item.sharedBy!.id)
+      ) {
+        expertOptions.unshift({
+          id: item.sharedBy.id,
+          displayName: item.sharedBy.displayName ?? null,
+          firstName: item.sharedBy.firstName ?? null,
+          lastName: item.sharedBy.lastName ?? null,
+          email: null,
+          userType: item.sharedBy.userType ?? "expert",
+          professionalRole: item.sharedBy.professionalRole ?? null,
+          specialty: item.sharedBy.specialty ?? null,
+        });
+      }
+      setExperts(expertOptions);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load resource");
     } finally {
+      setExpertsLoading(false);
       setLoading(false);
     }
   }, [id, refreshToken]);
@@ -130,6 +171,9 @@ export default function AdminResourceEditPage() {
           topics={topics}
           subTopics={subTopics}
           types={types}
+          experts={experts}
+          expertsLoading={expertsLoading}
+          showExpertPicker
           submitLabel="Save changes"
           onSubmit={handleSubmit}
         />

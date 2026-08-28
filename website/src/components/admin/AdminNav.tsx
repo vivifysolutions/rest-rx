@@ -2,24 +2,36 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { getCommunityMetrics } from "@/lib/api";
+import { subscribeAdminMetricsChanged } from "@/lib/admin-metrics-events";
 import type { PortalNavMode } from "@/lib/user-types";
 
-type NavItem = { href: string; label: string; exact?: boolean };
+type NavItem = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  /** Key into pending counts for sidebar badges. */
+  pendingKey?: "members" | "partners" | "reports" | "suggestions";
+};
 
 const FULL_NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", exact: true },
-  { href: "/admin/users", label: "Member applications" },
+  { href: "/admin/users", label: "Member applications", pendingKey: "members" },
   { href: "/admin/members", label: "Members" },
+  { href: "/admin/experts", label: "Experts" },
+  { href: "/admin/brand-applications", label: "Partner applications", pendingKey: "partners" },
   { href: "/admin/partners", label: "Partners" },
-  { href: "/admin/brand-applications", label: "Partner applications" },
   { href: "/admin/discounts", label: "Discounts" },
   { href: "/admin/events", label: "Events" },
   { href: "/admin/resources", label: "Resources" },
   { href: "/admin/retreats", label: "Retreats" },
   { href: "/admin/affirmations", label: "Affirmations" },
-  { href: "/admin/micro-rx", label: "Micro RX" },
+  { href: "/admin/goals", label: "Goals" },
   { href: "/admin/community", label: "Community" },
-  { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/reports", label: "Reports", pendingKey: "reports" },
+  { href: "/admin/suggestions", label: "Suggestions", pendingKey: "suggestions" },
   { href: "/admin/groups", label: "Groups" },
   { href: "/admin/categories", label: "Categories" },
 ];
@@ -30,14 +42,62 @@ const FOUNDATION_NAV: NavItem[] = [
   { href: "/admin/resources", label: "Resources", exact: true },
 ];
 
+type PendingCounts = {
+  members: number;
+  partners: number;
+  reports: number;
+  suggestions: number;
+};
+
+function navLabel(item: NavItem, pending: PendingCounts | null): string {
+  if (!item.pendingKey || !pending) return item.label;
+  const count = pending[item.pendingKey];
+  if (count <= 0) return item.label;
+  return `${item.label} (${count})`;
+}
+
 export function AdminNav({ navMode = "admin" }: { navMode?: PortalNavMode }) {
   const pathname = usePathname();
+  const { refreshToken } = usePortalAuth();
+  const [pending, setPending] = useState<PendingCounts | null>(null);
+
+  const loadPending = useCallback(async () => {
+    if (navMode !== "admin") {
+      setPending(null);
+      return;
+    }
+    try {
+      const token = await refreshToken();
+      if (!token) return;
+      const metrics = await getCommunityMetrics(token);
+      setPending({
+        members: metrics.pending.members,
+        partners: metrics.pending.partners,
+        reports: metrics.pending.reports ?? 0,
+        suggestions: metrics.pending.suggestions ?? 0,
+      });
+    } catch {
+      // Keep prior counts if refresh fails
+    }
+  }, [navMode, refreshToken]);
+
+  useEffect(() => {
+    void loadPending();
+  }, [loadPending, pathname]);
+
+  useEffect(() => {
+    return subscribeAdminMetricsChanged(() => {
+      void loadPending();
+    });
+  }, [loadPending]);
+
   const navItems =
     navMode === "expert" ? EXPERT_NAV : navMode === "foundation" ? FOUNDATION_NAV : FULL_NAV;
 
   return (
     <nav className="admin-nav" aria-label="Portal navigation">
-      {navItems.map(({ href, label, exact }) => {
+      {navItems.map((item) => {
+        const { href, exact } = item;
         const active = exact ? pathname === href : pathname.startsWith(href);
         return (
           <Link
@@ -45,7 +105,7 @@ export function AdminNav({ navMode = "admin" }: { navMode?: PortalNavMode }) {
             href={href}
             className={active ? "admin-nav-link active" : "admin-nav-link"}
           >
-            {label}
+            {navLabel(item, pending)}
           </Link>
         );
       })}
