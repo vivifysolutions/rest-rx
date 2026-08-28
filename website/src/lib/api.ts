@@ -93,6 +93,23 @@ export async function healthCheck(): Promise<{ status: string }> {
   return request<{ status: string }>("/health");
 }
 
+type PaginatedList<T> = { data: T[]; meta: { total: number } };
+
+/** Count via page=1&limit=1 so the admin home does not download full catalogs. */
+export async function getAdminListTotal(
+  path: "/discounts" | "/resources" | "/events" | "/retreats",
+  token?: string,
+): Promise<number> {
+  const result = await request<PaginatedList<unknown> | unknown[]>(
+    `${path}${buildQuery({ ...(token ? ADMIN_QUERY : undefined), page: 1, limit: 1 })}`,
+    { token },
+  );
+  if (Array.isArray(result)) return result.length;
+  if (typeof result?.meta?.total === "number") return result.meta.total;
+  if (Array.isArray(result?.data)) return result.data.length;
+  return 0;
+}
+
 export async function getMe(token: string): Promise<ApiUser> {
   return request<ApiUser>("/users/me", { token });
 }

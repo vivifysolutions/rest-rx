@@ -5,13 +5,10 @@ import Link from "next/link";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ImageUploadGuideReference } from "@/components/admin/ImageUploadGuideReference";
 import {
+  getAdminListTotal,
   getCommunityMetrics,
-  getDiscounts,
-  getEvents,
   getForumPosts,
   getReports,
-  getResources,
-  getRetreats,
   getThreads,
   healthCheck,
   type CommunityMetrics,
@@ -69,10 +66,10 @@ export default function AdminDashboardPage() {
 
         const authToken = (await refreshToken()) ?? token;
         const [discountsRes, resourcesRes, eventsRes, retreatsRes] = await Promise.allSettled([
-          getDiscounts(authToken ?? undefined),
-          getResources(authToken ?? undefined),
-          getEvents(authToken ?? undefined),
-          getRetreats(authToken ?? undefined),
+          getAdminListTotal("/discounts", authToken ?? undefined),
+          getAdminListTotal("/resources", authToken ?? undefined),
+          getAdminListTotal("/events", authToken ?? undefined),
+          getAdminListTotal("/retreats", authToken ?? undefined),
         ]);
 
         const failures: string[] = [];
@@ -123,10 +120,10 @@ export default function AdminDashboardPage() {
           }
           setMetrics(communityMetrics);
           setStats({
-            discounts: discounts?.length ?? null,
-            resources: resources?.length ?? null,
-            events: events?.length ?? null,
-            retreats: retreats?.length ?? null,
+            discounts: discounts,
+            resources: resources,
+            events: events,
+            retreats: retreats,
             threads: threadCount,
             posts: postCount,
             pendingUsers,
