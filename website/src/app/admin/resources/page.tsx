@@ -272,19 +272,21 @@ function AdminResourcesContent() {
         description="Wellness content for the app — audio, video, articles, Quick Rx, and Micro RX."
       />
 
-      <FeaturedLineup
-        items={items}
-        loading={loading}
-        moving={moving}
-        onMove={handleMoveLineup}
-        sectionLabel="Resources"
-        detailHref={(r) => `/admin/resources/${r.id}`}
-        editHref={(r) => `/admin/resources/${r.id}/edit`}
-        getMeta={(r) => [r.type, r.topic].filter(Boolean).join(" · ") || null}
-      />
+      {!isMicroTab && (
+        <FeaturedLineup
+          items={items}
+          loading={loading}
+          moving={moving}
+          onMove={handleMoveLineup}
+          sectionLabel="Resources"
+          detailHref={(r) => `/admin/resources/${r.id}`}
+          editHref={(r) => `/admin/resources/${r.id}/edit`}
+          getMeta={(r) => [r.type, r.topic].filter(Boolean).join(" · ") || null}
+        />
+      )}
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
-        <span className="admin-filter-label">Type</span>
+        <span className="admin-filter-label">Resource type</span>
         <button
           type="button"
           className={`admin-btn ${activeTab === ALL_TAB ? "admin-btn-primary" : ""}`}

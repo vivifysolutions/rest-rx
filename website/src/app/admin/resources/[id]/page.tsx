@@ -73,7 +73,7 @@ export default function AdminResourceDetailPage() {
   return (
     <AdminDetailLayout
       backHref={microRx ? "/admin/resources?type=Micro%20Rx" : "/admin/resources"}
-      backLabel={microRx ? "Micro RX" : "Resources"}
+      backLabel="Resources"
       title={item.title}
       actions={
         <>

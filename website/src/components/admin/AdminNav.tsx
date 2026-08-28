@@ -29,7 +29,6 @@ const FULL_NAV: NavItem[] = [
   { href: "/admin/retreats", label: "Retreats" },
   { href: "/admin/affirmations", label: "Affirmations" },
   { href: "/admin/goals", label: "Goals" },
-  { href: "/admin/micro-rx", label: "Micro RX" },
   { href: "/admin/community", label: "Community" },
   { href: "/admin/reports", label: "Reports", pendingKey: "reports" },
   { href: "/admin/suggestions", label: "Suggestions", pendingKey: "suggestions" },
