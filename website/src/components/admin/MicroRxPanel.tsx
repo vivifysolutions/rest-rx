@@ -3,6 +3,12 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
+import {
+  AdminFormActions,
+  formHasUnsavedChanges,
+  SAVE_CHANGES_LABEL,
+  serializeFormState,
+} from "@/components/admin/AdminFormActions";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import {
   createResource,
@@ -80,6 +86,7 @@ export function MicroRxPanel() {
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editBaseline, setEditBaseline] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortByKey, setSortByKey] = useState<MicroRxSort>("order");
 
@@ -139,6 +146,7 @@ export function MicroRxPanel() {
         await updateResource(editingId, body, token);
         setSuccess("Micro RX updated.");
         setEditingId(null);
+        setEditBaseline(null);
       } else {
         await createResource(body, token);
         setSuccess("Micro RX created.");
@@ -164,15 +172,29 @@ export function MicroRxPanel() {
     await deleteResource(id, token);
     if (editingId === id) {
       setEditingId(null);
+      setEditBaseline(null);
       setForm(EMPTY_FORM);
     }
     await load();
   }
 
   function startEdit(item: Resource) {
+    const next = resourceToForm(item);
     setEditingId(item.id);
-    setForm(resourceToForm(item));
+    setForm(next);
+    setEditBaseline(serializeFormState(next));
   }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditBaseline(null);
+    setForm(EMPTY_FORM);
+  }
+
+  const canSaveChanges =
+    editingId != null &&
+    editBaseline != null &&
+    formHasUnsavedChanges(form, editBaseline);
 
   return (
     <>
@@ -181,6 +203,23 @@ export function MicroRxPanel() {
           {editingId ? "Edit Micro RX" : "Add Micro RX"}
         </h2>
         <form className="admin-form" onSubmit={handleSubmit}>
+          {editingId ? (
+            <AdminFormActions
+              label={SAVE_CHANGES_LABEL}
+              disabled={!canSaveChanges}
+              sticky
+              extra={
+                <button
+                  type="button"
+                  className="admin-btn"
+                  style={{ background: "#e8eef3", color: "var(--downriver)" }}
+                  onClick={cancelEdit}
+                >
+                  Cancel edit
+                </button>
+              }
+            />
+          ) : null}
           <label>
             Prompt *
             <textarea
@@ -237,20 +276,9 @@ export function MicroRxPanel() {
               />
             </label>
           </div>
-          <button type="submit" className="admin-btn admin-btn-primary">
-            {editingId ? "Save changes" : "Create Micro RX"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              className="admin-btn"
-              style={{ background: "#e8eef3", color: "var(--downriver)" }}
-              onClick={() => {
-                setEditingId(null);
-                setForm(EMPTY_FORM);
-              }}
-            >
-              Cancel edit
+          {!editingId && (
+            <button type="submit" className="admin-btn admin-btn-primary">
+              Create Micro RX
             </button>
           )}
         </form>
@@ -259,17 +287,17 @@ export function MicroRxPanel() {
       </div>
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
-        <label style={{ fontSize: "0.85rem" }}>
-          Search{" "}
+        <label>
+          Search
           <input
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter prompts…"
-            style={{ marginLeft: "0.5rem", padding: "0.4rem 0.6rem" }}
           />
         </label>
         <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
-        <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)" }}>
+        <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)", alignSelf: "center" }}>
           {filteredSorted.length} of {items.length} prompts
         </p>
       </div>

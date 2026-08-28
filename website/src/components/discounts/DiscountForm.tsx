@@ -10,6 +10,7 @@ import {
 import { LocationField } from "@/components/admin/LocationField";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { ReferenceSelect } from "@/components/admin/ReferenceSelect";
+import { AdminFormSubmit, SAVE_CHANGES_LABEL } from "@/components/admin/AdminFormActions";
 import {
   BrandPartnerPicker,
   type BrandPartnerOption,
@@ -215,6 +216,9 @@ export function DiscountForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {!hideSubmit && submitLabel === SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
       {showFeatured && (
         <>
           <FeaturedToggle
@@ -498,10 +502,8 @@ export function DiscountForm({
         />
       </fieldset>
 
-      {!hideSubmit && (
-        <button type="submit" className="admin-btn admin-btn-primary">
-          {submitLabel}
-        </button>
+      {!hideSubmit && submitLabel !== SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
       )}
     </form>
   );

@@ -6,6 +6,12 @@ import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import {
+  AdminFormActions,
+  formHasUnsavedChanges,
+  SAVE_CHANGES_LABEL,
+  serializeFormState,
+} from "@/components/admin/AdminFormActions";
+import {
   createAffirmation,
   deleteAffirmation,
   getAffirmations,
@@ -45,6 +51,7 @@ export default function AdminAffirmationsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editBaseline, setEditBaseline] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortByKey, setSortByKey] = useState<AffirmationSort>("topic");
 
@@ -104,6 +111,7 @@ export default function AdminAffirmationsPage() {
         await updateAffirmation(token, editingId, body);
         setSuccess("Affirmation updated.");
         setEditingId(null);
+        setEditBaseline(null);
       } else {
         await createAffirmation(token, body);
         setSuccess("Affirmation created.");
@@ -122,19 +130,33 @@ export default function AdminAffirmationsPage() {
     await deleteAffirmation(token, id);
     if (editingId === id) {
       setEditingId(null);
+      setEditBaseline(null);
       setForm(EMPTY_FORM);
     }
     await load();
   }
 
   function startEdit(item: Affirmation) {
-    setEditingId(item.id);
-    setForm({
+    const next = {
       topicSlug: item.topicSlug,
       body: item.body,
       faithBased: item.faithBased,
-    });
+    };
+    setEditingId(item.id);
+    setForm(next);
+    setEditBaseline(serializeFormState(next));
   }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditBaseline(null);
+    setForm(EMPTY_FORM);
+  }
+
+  const canSaveChanges =
+    editingId != null &&
+    editBaseline != null &&
+    formHasUnsavedChanges(form, editBaseline);
 
   return (
     <>
@@ -148,6 +170,23 @@ export default function AdminAffirmationsPage() {
           {editingId ? "Edit affirmation" : "Add affirmation"}
         </h2>
         <form className="admin-form" onSubmit={handleSubmit}>
+          {editingId ? (
+            <AdminFormActions
+              label={SAVE_CHANGES_LABEL}
+              disabled={!canSaveChanges}
+              sticky
+              extra={
+                <button
+                  type="button"
+                  className="admin-btn"
+                  style={{ background: "#e8eef3", color: "var(--downriver)" }}
+                  onClick={cancelEdit}
+                >
+                  Cancel edit
+                </button>
+              }
+            />
+          ) : null}
           <label>
             Topic *
             <select
@@ -180,20 +219,9 @@ export default function AdminAffirmationsPage() {
             />
             Faith-based affirmation
           </label>
-          <button type="submit" className="admin-btn admin-btn-primary">
-            {editingId ? "Save changes" : "Create affirmation"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              className="admin-btn"
-              style={{ background: "#e8eef3", color: "var(--downriver)" }}
-              onClick={() => {
-                setEditingId(null);
-                setForm(EMPTY_FORM);
-              }}
-            >
-              Cancel edit
+          {!editingId && (
+            <button type="submit" className="admin-btn admin-btn-primary">
+              Create affirmation
             </button>
           )}
         </form>
@@ -202,13 +230,13 @@ export default function AdminAffirmationsPage() {
       </div>
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
-        <label style={{ fontSize: "0.85rem" }}>
-          Search{" "}
+        <label>
+          Search
           <input
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter affirmations…"
-            style={{ marginLeft: "0.5rem", padding: "0.4rem 0.6rem" }}
           />
         </label>
         <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />

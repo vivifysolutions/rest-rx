@@ -11,6 +11,7 @@ import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import { MediaUpload } from "@/components/admin/MediaUpload";
+import { AdminFormSubmit, SAVE_CHANGES_LABEL } from "@/components/admin/AdminFormActions";
 import {
   isArticleType,
   isAudioType,
@@ -151,6 +152,9 @@ export function ResourceForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {submitLabel === SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
       <FeaturedToggle
         isFeatured={form.isFeatured}
         isFeaturedOnHome={form.isFeaturedOnHome}
@@ -327,9 +331,9 @@ export function ResourceForm({
         />
       )}
 
-      <button type="submit" className="admin-btn admin-btn-primary">
-        {submitLabel}
-      </button>
+      {submitLabel !== SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
     </form>
   );
 }

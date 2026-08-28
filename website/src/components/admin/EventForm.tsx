@@ -6,6 +6,7 @@ import { ComboInput } from "@/components/admin/ComboInput";
 import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
 import { LocationField } from "@/components/admin/LocationField";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
+import { AdminFormSubmit, SAVE_CHANGES_LABEL } from "@/components/admin/AdminFormActions";
 import {
   BrandPartnerPicker,
   type BrandPartnerOption,
@@ -106,6 +107,9 @@ export function EventForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {submitLabel === SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
       <FeaturedToggle
         isFeatured={form.isFeatured}
         isFeaturedOnHome={form.isFeaturedOnHome}
@@ -243,9 +247,9 @@ export function EventForm({
         />
       </fieldset>
 
-      <button type="submit" className="admin-btn admin-btn-primary">
-        {submitLabel}
-      </button>
+      {submitLabel !== SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
     </form>
   );
 }
