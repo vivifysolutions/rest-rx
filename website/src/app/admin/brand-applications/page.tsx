@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { RejectApplicationModal } from "@/components/admin/RejectApplicationModal";
 import { partnerRejectionIssuesFor } from "@/lib/application-rejection";
@@ -19,6 +20,7 @@ import {
   PARTNER_APPLICATION_TYPE_FILTERS,
   type PartnerApplicationType,
 } from "@/lib/partner-application-options";
+import { compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
 
 function statusLabel(status: BrandPartnerApplication["status"]): string {
   switch (status) {
@@ -46,6 +48,15 @@ function typeBadgeClass(type: PartnerApplicationType): string {
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
 type TypeFilter = PartnerApplicationType | "all";
+type ApplicationSort = "company" | "contact" | "type" | "status" | "submitted";
+
+const SORT_OPTIONS: { value: ApplicationSort; label: string }[] = [
+  { value: "company", label: "Company / org" },
+  { value: "contact", label: "Contact" },
+  { value: "type", label: "Type" },
+  { value: "status", label: "Status" },
+  { value: "submitted", label: "Submitted (newest)" },
+];
 
 export default function AdminBrandApplicationsPage() {
   const { refreshToken } = usePortalAuth();
@@ -55,6 +66,7 @@ export default function AdminBrandApplicationsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [sortByKey, setSortByKey] = useState<ApplicationSort>("submitted");
   const [rejectTarget, setRejectTarget] = useState<{
     id: string;
     applicationType: PartnerApplicationType;
@@ -91,6 +103,29 @@ export default function AdminBrandApplicationsPage() {
     }
     return counts;
   }, [items]);
+
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "contact":
+            return compareText(a.fullName, b.fullName) || compareText(a.companyName, b.companyName);
+          case "type":
+            return (
+              compareText(labelApplicationType(a.applicationType), labelApplicationType(b.applicationType)) ||
+              compareText(a.companyName, b.companyName)
+            );
+          case "status":
+            return compareText(a.status, b.status) || compareText(a.companyName, b.companyName);
+          case "submitted":
+            return compareDateDesc(a.createdAt, b.createdAt) || compareText(a.companyName, b.companyName);
+          case "company":
+          default:
+            return compareText(a.companyName, b.companyName);
+        }
+      }),
+    [items, sortByKey],
+  );
 
   async function handleApprove(id: string) {
     setBusyId(id);
@@ -184,6 +219,7 @@ export default function AdminBrandApplicationsPage() {
             ) : null}
           </button>
         ))}
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
       </div>
 
       {error && <p className="admin-error admin-card">{error}</p>}
@@ -209,7 +245,7 @@ export default function AdminBrandApplicationsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((app) => (
+              {sorted.map((app) => (
                 <tr key={app.id}>
                   <td>
                     <Link

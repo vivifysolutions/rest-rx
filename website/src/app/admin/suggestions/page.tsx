@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { getSuggestions, updateSuggestionStatus } from "@/lib/api";
 import {
@@ -9,6 +10,7 @@ import {
   formatSuggestionType,
   SUGGESTION_TYPE_LABELS,
 } from "@/lib/admin-labels";
+import { compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
 import type { Suggestion } from "@/lib/types";
 
 function submitterLabel(suggestion: Suggestion) {
@@ -18,6 +20,16 @@ function submitterLabel(suggestion: Suggestion) {
   return u.displayName || name || u.email || "Unknown";
 }
 
+type SuggestionSort = "type" | "message" | "submitter" | "status" | "date";
+
+const SORT_OPTIONS: { value: SuggestionSort; label: string }[] = [
+  { value: "date", label: "Date (newest)" },
+  { value: "type", label: "Type" },
+  { value: "message", label: "Message" },
+  { value: "submitter", label: "Submitted by" },
+  { value: "status", label: "Status" },
+];
+
 export default function AdminSuggestionsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Suggestion[]>([]);
@@ -26,6 +38,7 @@ export default function AdminSuggestionsPage() {
   const [type, setType] = useState<string>("");
   const [status, setStatus] = useState<string>("pending");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [sortByKey, setSortByKey] = useState<SuggestionSort>("date");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,6 +61,26 @@ export default function AdminSuggestionsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "type":
+            return compareText(formatSuggestionType(a.type), formatSuggestionType(b.type)) || compareDateDesc(a.createdAt, b.createdAt);
+          case "message":
+            return compareText(a.message, b.message);
+          case "submitter":
+            return compareText(submitterLabel(a), submitterLabel(b)) || compareDateDesc(a.createdAt, b.createdAt);
+          case "status":
+            return compareText(a.status, b.status) || compareDateDesc(a.createdAt, b.createdAt);
+          case "date":
+          default:
+            return compareDateDesc(a.createdAt, b.createdAt);
+        }
+      }),
+    [items, sortByKey],
+  );
 
   async function handleStatus(id: string, next: "pending" | "reviewed") {
     const token = await refreshToken();
@@ -90,6 +123,7 @@ export default function AdminSuggestionsPage() {
             ))}
           </select>
         </label>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
       </div>
 
       {error && <p className="admin-error admin-card">{error}</p>}
@@ -114,7 +148,7 @@ export default function AdminSuggestionsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((s) => (
+              {sorted.map((s) => (
                 <tr key={s.id}>
                   <td>
                     <span className="admin-badge admin-badge-muted">{formatSuggestionType(s.type)}</span>

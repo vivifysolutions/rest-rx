@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { ReferenceSelect } from "@/components/admin/ReferenceSelect";
 import {
@@ -11,6 +12,7 @@ import {
   getTopics,
   updateAdminGuidedGoal,
 } from "@/lib/api";
+import { compareText, sortBy } from "@/lib/admin-sort";
 import type { CreateGuidedGoalInput, GuidedGoal } from "@/lib/types";
 
 const CADENCES: Array<{ value: GuidedGoal["cadence"]; label: string }> = [
@@ -40,6 +42,14 @@ function cadenceLabel(value: GuidedGoal["cadence"]): string {
   return CADENCES.find((c) => c.value === value)?.label ?? value;
 }
 
+type GoalSort = "title" | "category" | "members";
+
+const SORT_OPTIONS: { value: GoalSort; label: string }[] = [
+  { value: "title", label: "Title" },
+  { value: "category", label: "Category" },
+  { value: "members", label: "Members (most first)" },
+];
+
 export default function AdminGoalsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<GuidedGoal[]>([]);
@@ -50,6 +60,7 @@ export default function AdminGoalsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [sortByKey, setSortByKey] = useState<GoalSort>("title");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -156,6 +167,22 @@ export default function AdminGoalsPage() {
   }
 
   const categoryOptions = topics.map((name) => ({ value: name, label: name }));
+
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "category":
+            return compareText(a.category, b.category) || compareText(a.title, b.title);
+          case "members":
+            return (b.memberCount ?? 0) - (a.memberCount ?? 0) || compareText(a.title, b.title);
+          case "title":
+          default:
+            return compareText(a.title, b.title);
+        }
+      }),
+    [items, sortByKey],
+  );
 
   return (
     <>
@@ -270,7 +297,7 @@ export default function AdminGoalsPage() {
         {error && <p className="admin-error">{error}</p>}
       </div>
 
-      <div className="admin-card" style={{ marginBottom: "1rem" }}>
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
         <label style={{ fontSize: "0.85rem" }}>
           Search{" "}
           <input
@@ -280,6 +307,7 @@ export default function AdminGoalsPage() {
             style={{ marginLeft: "0.5rem", padding: "0.4rem 0.6rem" }}
           />
         </label>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
       </div>
 
       <div className="admin-card admin-table-wrap">
@@ -299,7 +327,7 @@ export default function AdminGoalsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((g) => (
+              {sorted.map((g) => (
                 <tr key={g.id}>
                   <td>
                     <strong>{g.title}</strong>

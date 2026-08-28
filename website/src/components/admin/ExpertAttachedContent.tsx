@@ -127,9 +127,7 @@ export function ExpertAttachedContent({ userId }: { userId: string }) {
                         {thread.title}
                       </AdminTitleLink>
                     </td>
-                    <td>
-                      {[thread.topic, thread.subTopic].filter(Boolean).join(" · ") || "—"}
-                    </td>
+                    <td>{thread.topic || "—"}</td>
                     <td>{thread.postCount}</td>
                     <td>
                       {thread.isLocked && <span className="admin-badge">Locked</span>}{" "}

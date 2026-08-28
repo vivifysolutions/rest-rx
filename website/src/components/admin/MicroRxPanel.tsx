@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import {
   createResource,
@@ -9,6 +10,7 @@ import {
   getResources,
   updateResource,
 } from "@/lib/api";
+import { compareText, sortBy } from "@/lib/admin-sort";
 import type { CreateResourceInput, Resource } from "@/lib/types";
 
 export const MICRO_RX_TYPE = "Micro Rx";
@@ -22,6 +24,15 @@ const EMPTY_FORM = {
   subTopic: "",
   duration: "1 min",
 };
+
+type MicroRxSort = "order" | "title" | "topic" | "status";
+
+const SORT_OPTIONS: { value: MicroRxSort; label: string }[] = [
+  { value: "order", label: "Sort order" },
+  { value: "title", label: "Headline" },
+  { value: "topic", label: "Topic" },
+  { value: "status", label: "Status" },
+];
 
 function makeTitleFromPrompt(prompt: string): string {
   const body = prompt.trim();
@@ -70,6 +81,7 @@ export function MicroRxPanel() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [sortByKey, setSortByKey] = useState<MicroRxSort>("order");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,9 +89,7 @@ export function MicroRxPanel() {
     try {
       const token = await refreshToken();
       const data = await getResources(token ?? undefined, { type: MICRO_RX_TYPE });
-      setItems(
-        [...data].sort((a, b) => (a.subTopic ?? "").localeCompare(b.subTopic ?? "")),
-      );
+      setItems(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load Micro RX");
     } finally {
@@ -91,14 +101,31 @@ export function MicroRxPanel() {
     load();
   }, [load]);
 
-  const filtered = useMemo(() => {
+  const filteredSorted = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) => {
-      const haystack = `${item.title} ${item.description ?? ""} ${item.caption ?? ""} ${item.topic ?? ""}`.toLowerCase();
-      return haystack.includes(q);
+    const filtered = !q
+      ? items
+      : items.filter((item) => {
+          const haystack = `${item.title} ${item.description ?? ""} ${item.caption ?? ""} ${item.topic ?? ""}`.toLowerCase();
+          return haystack.includes(q);
+        });
+    return sortBy(filtered, (a, b) => {
+      switch (sortByKey) {
+        case "title":
+          return compareText(a.title, b.title);
+        case "topic":
+          return compareText(a.topic, b.topic) || compareText(a.title, b.title);
+        case "status": {
+          const aPub = a.isPublished ?? true;
+          const bPub = b.isPublished ?? true;
+          return Number(bPub) - Number(aPub) || compareText(a.title, b.title);
+        }
+        case "order":
+        default:
+          return compareText(a.subTopic, b.subTopic) || compareText(a.title, b.title);
+      }
     });
-  }, [items, search]);
+  }, [items, search, sortByKey]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -231,7 +258,7 @@ export function MicroRxPanel() {
         {error && <p className="admin-error">{error}</p>}
       </div>
 
-      <div className="admin-card" style={{ marginBottom: "1rem" }}>
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
         <label style={{ fontSize: "0.85rem" }}>
           Search{" "}
           <input
@@ -241,8 +268,9 @@ export function MicroRxPanel() {
             style={{ marginLeft: "0.5rem", padding: "0.4rem 0.6rem" }}
           />
         </label>
-        <p style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-          {filtered.length} of {items.length} prompts
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
+        <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)" }}>
+          {filteredSorted.length} of {items.length} prompts
         </p>
       </div>
 
@@ -262,7 +290,7 @@ export function MicroRxPanel() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item) => (
+              {filteredSorted.map((item) => (
                 <tr key={item.id}>
                   <td>{item.subTopic ?? "—"}</td>
                   <td>{item.title}</td>

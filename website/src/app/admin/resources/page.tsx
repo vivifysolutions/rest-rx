@@ -12,7 +12,7 @@ import {
   type ResourceFormValues,
 } from "@/components/admin/ResourceForm";
 import { MicroRxPanel, MICRO_RX_TYPE } from "@/components/admin/MicroRxPanel";
-import { isMicroRxType } from "@/components/admin/resourceTypes";
+import { isMicroRxType, resourceHasMedia } from "@/components/admin/resourceTypes";
 import {
   createResource,
   deleteResource,
@@ -373,7 +373,7 @@ function AdminResourcesContent() {
                       <td>{r.topic ?? "—"}</td>
                       <td>{r.subTopic ?? "—"}</td>
                       <td>{r.duration ?? "—"}</td>
-                      <td>{r.mediaUrl ? "Yes" : "—"}</td>
+                      <td>{resourceHasMedia(r) ? "Yes" : "No"}</td>
                       <td>
                         <PublishedBadge isPublished={r.isPublished ?? true} />
                       </td>

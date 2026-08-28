@@ -112,7 +112,7 @@ export default function BrandDiscountsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Title</th>
+                <th>Brand or business name</th>
                 <th>Badge</th>
                 <th>Category</th>
                 {DISCOUNT_TIERS_ENABLED ? <th>Tier</th> : null}

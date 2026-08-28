@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { RetreatForm, type RetreatFormValues } from "@/components/admin/RetreatForm";
 import { FeaturedLineup, featuredPlacementLabel, type FeaturedSurface } from "@/components/admin/FeaturedLineup";
@@ -14,6 +15,7 @@ import {
   getTopics,
   updateRetreat,
 } from "@/lib/api";
+import { compareBoolDesc, compareDateAsc, compareText, sortBy } from "@/lib/admin-sort";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import type { Retreat } from "@/lib/types";
 
@@ -35,6 +37,17 @@ const EMPTY_FORM: RetreatFormValues = {
   featuredOnHomeOrder: "",
 };
 
+type RetreatSort = "title" | "category" | "season" | "start" | "status" | "featured";
+
+const SORT_OPTIONS: { value: RetreatSort; label: string }[] = [
+  { value: "title", label: "Title" },
+  { value: "category", label: "Category" },
+  { value: "season", label: "Season" },
+  { value: "start", label: "Start date" },
+  { value: "featured", label: "Featured first" },
+  { value: "status", label: "Status" },
+];
+
 export default function AdminRetreatsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Retreat[]>([]);
@@ -44,10 +57,41 @@ export default function AdminRetreatsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<RetreatFormValues>(EMPTY_FORM);
+  const [sortByKey, setSortByKey] = useState<RetreatSort>("title");
   const [moving, setMoving] = useState<{ surface: FeaturedSurface; id: string } | null>(null);
 
   const update = <K extends keyof RetreatFormValues>(k: K, v: RetreatFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
+
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "category":
+            return compareText(a.category, b.category) || compareText(a.title, b.title);
+          case "season":
+            return compareText(a.season, b.season) || compareText(a.title, b.title);
+          case "start":
+            return compareDateAsc(a.startDate, b.startDate) || compareText(a.title, b.title);
+          case "status": {
+            const aPub = a.isPublished ?? true;
+            const bPub = b.isPublished ?? true;
+            return Number(bPub) - Number(aPub) || compareText(a.title, b.title);
+          }
+          case "featured":
+            return (
+              compareBoolDesc(
+                Boolean(a.isFeaturedOnHome || a.isFeatured),
+                Boolean(b.isFeaturedOnHome || b.isFeatured),
+              ) || compareText(a.title, b.title)
+            );
+          case "title":
+          default:
+            return compareText(a.title, b.title);
+        }
+      }),
+    [items, sortByKey],
+  );
 
   const load = useCallback(async (opts?: { quiet?: boolean }) => {
     if (!opts?.quiet) setLoading(true);
@@ -162,6 +206,10 @@ export default function AdminRetreatsPage() {
         {error && <p className="admin-error">{error}</p>}
       </div>
 
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
+      </div>
+
       <div className="admin-card admin-table-wrap">
         <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>All retreats</h2>
         {loading ? (
@@ -184,7 +232,7 @@ export default function AdminRetreatsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((r) => (
+              {sorted.map((r) => (
                 <tr key={r.id}>
                   <td>
                     <AdminTitleLink href={`/admin/retreats/${r.id}`}>{r.title}</AdminTitleLink>

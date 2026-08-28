@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import {
@@ -11,6 +12,7 @@ import {
   getAffirmationTopics,
   updateAffirmation,
 } from "@/lib/api";
+import { compareText, sortBy } from "@/lib/admin-sort";
 import type { Affirmation, AffirmationTopic } from "@/lib/types";
 
 const AFFIRMATION_PLACEHOLDER = `I am grounded, capable, and **at peace**.
@@ -26,6 +28,14 @@ const EMPTY_FORM = {
   faithBased: false,
 };
 
+type AffirmationSort = "topic" | "preview" | "type";
+
+const SORT_OPTIONS: { value: AffirmationSort; label: string }[] = [
+  { value: "topic", label: "Topic" },
+  { value: "preview", label: "Preview" },
+  { value: "type", label: "Type" },
+];
+
 export default function AdminAffirmationsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Affirmation[]>([]);
@@ -36,6 +46,7 @@ export default function AdminAffirmationsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [sortByKey, setSortByKey] = useState<AffirmationSort>("topic");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,6 +68,25 @@ export default function AdminAffirmationsPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "preview":
+            return compareText(a.body, b.body) || compareText(a.topicTitle, b.topicTitle);
+          case "type":
+            return (
+              compareText(a.faithBased ? "Faith-based" : "General", b.faithBased ? "Faith-based" : "General") ||
+              compareText(a.topicTitle, b.topicTitle)
+            );
+          case "topic":
+          default:
+            return compareText(a.topicTitle, b.topicTitle) || compareText(a.body, b.body);
+        }
+      }),
+    [items, sortByKey],
+  );
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -171,7 +201,7 @@ export default function AdminAffirmationsPage() {
         {error && <p className="admin-error">{error}</p>}
       </div>
 
-      <div className="admin-card" style={{ marginBottom: "1rem" }}>
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
         <label style={{ fontSize: "0.85rem" }}>
           Search{" "}
           <input
@@ -181,6 +211,7 @@ export default function AdminAffirmationsPage() {
             style={{ marginLeft: "0.5rem", padding: "0.4rem 0.6rem" }}
           />
         </label>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
       </div>
 
       <div className="admin-card admin-table-wrap">
@@ -197,7 +228,7 @@ export default function AdminAffirmationsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((a) => (
+              {sorted.map((a) => (
                 <tr key={a.id}>
                   <td>{a.topicTitle}</td>
                   <td>{a.body.slice(0, 80)}{a.body.length > 80 ? "…" : ""}</td>

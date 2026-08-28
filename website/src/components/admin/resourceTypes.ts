@@ -21,3 +21,16 @@ export function isAudioType(type: string): boolean {
 export function isVideoType(type: string): boolean {
   return normalizeResourceType(type) === "video";
 }
+
+/** True when the resource has the media admins expect for that type (slides for Quick Rx, file for audio/video). */
+export function resourceHasMedia(resource: {
+  type: string;
+  mediaUrl?: string | null;
+  image?: string | null;
+  images?: string[] | null;
+}): boolean {
+  if (isQuickRxType(resource.type)) {
+    return Boolean(resource.images?.length || resource.image);
+  }
+  return Boolean(resource.mediaUrl);
+}
