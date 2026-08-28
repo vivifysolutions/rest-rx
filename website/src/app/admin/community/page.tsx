@@ -127,6 +127,7 @@ export default function AdminCommunityPage() {
               <tr>
                 <th>Title</th>
                 <th>Topic</th>
+                <th>Subtopic</th>
                 <th>Author</th>
                 <th>Posts</th>
                 <th>Status</th>
@@ -143,6 +144,7 @@ export default function AdminCommunityPage() {
                     </AdminTitleLink>
                   </td>
                   <td>{t.topic ?? "—"}</td>
+                  <td>{t.subTopic ?? "—"}</td>
                   <td>{authorLabel(t.author)}</td>
                   <td>{t.postCount}</td>
                   <td>
