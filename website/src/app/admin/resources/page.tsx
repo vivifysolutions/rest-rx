@@ -12,7 +12,7 @@ import {
   type ResourceFormValues,
 } from "@/components/admin/ResourceForm";
 import { MicroRxPanel, MICRO_RX_TYPE } from "@/components/admin/MicroRxPanel";
-import { isMicroRxType } from "@/components/admin/resourceTypes";
+import { isMicroRxType, resourceHasMedia } from "@/components/admin/resourceTypes";
 import {
   createResource,
   deleteResource,
@@ -272,19 +272,21 @@ function AdminResourcesContent() {
         description="Wellness content for the app — audio, video, articles, Quick Rx, and Micro RX."
       />
 
-      <FeaturedLineup
-        items={items}
-        loading={loading}
-        moving={moving}
-        onMove={handleMoveLineup}
-        sectionLabel="Resources"
-        detailHref={(r) => `/admin/resources/${r.id}`}
-        editHref={(r) => `/admin/resources/${r.id}/edit`}
-        getMeta={(r) => [r.type, r.topic].filter(Boolean).join(" · ") || null}
-      />
+      {!isMicroTab && (
+        <FeaturedLineup
+          items={items}
+          loading={loading}
+          moving={moving}
+          onMove={handleMoveLineup}
+          sectionLabel="Resources"
+          detailHref={(r) => `/admin/resources/${r.id}`}
+          editHref={(r) => `/admin/resources/${r.id}/edit`}
+          getMeta={(r) => [r.type, r.topic].filter(Boolean).join(" · ") || null}
+        />
+      )}
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
-        <span className="admin-filter-label">Type</span>
+        <span className="admin-filter-label">Resource type</span>
         <button
           type="button"
           className={`admin-btn ${activeTab === ALL_TAB ? "admin-btn-primary" : ""}`}
@@ -371,7 +373,7 @@ function AdminResourcesContent() {
                       <td>{r.topic ?? "—"}</td>
                       <td>{r.subTopic ?? "—"}</td>
                       <td>{r.duration ?? "—"}</td>
-                      <td>{r.mediaUrl ? "Yes" : "—"}</td>
+                      <td>{resourceHasMedia(r) ? "Yes" : "No"}</td>
                       <td>
                         <PublishedBadge isPublished={r.isPublished ?? true} />
                       </td>

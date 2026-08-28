@@ -169,6 +169,29 @@
   max-width: min(720px, 100%);
 }
 
+.admin-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.admin-form-actions--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  margin: -0.25rem 0 0.15rem;
+  padding: 0.7rem 0 0.85rem;
+  background: white;
+  border-bottom: 1px solid #e8eef3;
+}
+
+.admin-form-actions-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted, #5a6c7d);
+}
+
 .admin-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -324,7 +347,9 @@
 
 .admin-form input:not([type="checkbox"]):not([type="radio"]),
 .admin-form select,
-.admin-form textarea {
+.admin-form textarea,
+.admin-filter-bar input:not([type="checkbox"]):not([type="radio"]),
+.admin-filter-bar select {
   padding: 0.5rem 0.75rem;
   border: 1px solid #d0dae4;
   border-radius: 8px;
@@ -336,13 +361,16 @@
 
 .admin-form input:not([type="checkbox"]):not([type="radio"]):focus,
 .admin-form select:focus,
-.admin-form textarea:focus {
+.admin-form textarea:focus,
+.admin-filter-bar input:not([type="checkbox"]):not([type="radio"]):focus,
+.admin-filter-bar select:focus {
   outline: none;
   border-color: var(--astral);
   box-shadow: 0 0 0 3px rgba(40, 113, 163, 0.15);
 }
 
-.admin-form select {
+.admin-form select,
+.admin-filter-bar select {
   cursor: pointer;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235a6c7d' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
@@ -963,10 +991,17 @@
 .admin-filter-bar label {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  align-items: stretch;
+  gap: 0.5rem;
+  min-width: 12rem;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--downriver);
+}
+
+.admin-filter-bar input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .admin-callout {

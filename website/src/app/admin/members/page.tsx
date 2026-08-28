@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
@@ -16,6 +17,7 @@ import type { ApiUser } from "@/lib/types";
 import {
   MEMBER_DIRECTORY_TYPES,
   USER_TYPE_LABELS,
+  getApprovedDirectory,
   type UserType,
 } from "@/lib/user-types";
 
@@ -66,11 +68,14 @@ function roleBadgeClass(userType: UserType): string {
 
 export default function AdminMembersPage() {
   const { refreshToken } = usePortalAuth();
+  const searchParams = useSearchParams();
   const [items, setItems] = useState<ApiUser[]>([]);
   const [metrics, setMetrics] = useState<CommunityMetrics["counts"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("directory");
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    searchParams.get("view") === "all" ? "all" : "directory",
+  );
   const [filterType, setFilterType] = useState<string>("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -152,9 +157,7 @@ export default function AdminMembersPage() {
   const typeFilterOptions =
     viewMode === "all" ? ALL_APPROVED_TYPES : MEMBER_DIRECTORY_TYPES;
 
-  const directoryTotal = metrics
-    ? metrics.members + metrics.ambassadors + metrics.experts
-    : null;
+  const directoryTotal = metrics ? metrics.members + metrics.ambassadors : null;
 
   async function handleUserTypeChange(userId: string, userType: UserType) {
     setSavingId(userId);
@@ -184,7 +187,7 @@ export default function AdminMembersPage() {
         description={
           viewMode === "all"
             ? "Every approved account on Rest & Rx — members, partners, and admins."
-            : "Approved healthcare members, ambassadors, and experts. Brand and foundation accounts live under Partners."
+            : "Approved healthcare members and ambassadors. Experts have their own section; brand and foundation accounts live under Partners."
         }
       />
 
@@ -228,13 +231,6 @@ export default function AdminMembersPage() {
             onClick={() => setFilterType(filterType === "ambassador" ? "" : "ambassador")}
           >
             Ambassadors <span className="admin-filter-count">{metrics.ambassadors}</span>
-          </button>
-          <button
-            type="button"
-            className={`admin-btn ${filterType === "expert" ? "admin-btn-primary" : ""}`}
-            onClick={() => setFilterType(filterType === "expert" ? "" : "expert")}
-          >
-            Experts <span className="admin-filter-count">{metrics.experts}</span>
           </button>
           <span style={{ alignSelf: "center", fontSize: "0.85rem", color: "var(--text-muted)" }}>
             Directory total: <strong>{directoryTotal}</strong>
@@ -306,11 +302,9 @@ export default function AdminMembersPage() {
                       ? metrics.totalApproved
                       : filterType === "member"
                         ? metrics.members
-                        : filterType === "ambassador"
-                          ? metrics.ambassadors
-                          : filterType === "expert"
-                            ? metrics.experts
-                            : directoryTotal
+                      : filterType === "ambassador"
+                        ? metrics.ambassadors
+                        : directoryTotal
                   }`
                 : ""}{" "}
               users
@@ -330,7 +324,7 @@ export default function AdminMembersPage() {
                 {sorted.map((u) => (
                   <tr key={u.id}>
                     <td>
-                      <AdminTitleLink href={`/admin/members/${u.id}`}>
+                      <AdminTitleLink href={`${getApprovedDirectory(u.userType).href}/${u.id}`}>
                         {displayUserName(u)}
                       </AdminTitleLink>
                     </td>

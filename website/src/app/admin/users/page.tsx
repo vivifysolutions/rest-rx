@@ -1,14 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { listUsers } from "@/lib/api";
 import { displayUserName, verificationSummary } from "@/lib/admin-user-display";
+import { compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
 import { formatApplicationStatus } from "@/lib/admin-labels";
 import type { ApiUser } from "@/lib/types";
 import { USER_TYPE_LABELS } from "@/lib/user-types";
+
+type ApplicationSort = "name" | "professional" | "status" | "submitted";
+
+const SORT_OPTIONS: { value: ApplicationSort; label: string }[] = [
+  { value: "name", label: "Name (A–Z)" },
+  { value: "professional", label: "Professional info" },
+  { value: "status", label: "Status" },
+  { value: "submitted", label: "Submitted (newest)" },
+];
 
 export default function AdminApplicationsPage() {
   const { refreshToken } = usePortalAuth();
@@ -16,6 +27,7 @@ export default function AdminApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("pending");
+  const [sortByKey, setSortByKey] = useState<ApplicationSort>("submitted");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -41,6 +53,35 @@ export default function AdminApplicationsPage() {
     load();
   }, [load]);
 
+  const sorted = useMemo(
+    () =>
+      sortBy(items, (a, b) => {
+        switch (sortByKey) {
+          case "professional":
+            return (
+              compareText(
+                [a.professionalRole, a.specialty].filter(Boolean).join(" · "),
+                [b.professionalRole, b.specialty].filter(Boolean).join(" · "),
+              ) || compareText(displayUserName(a), displayUserName(b))
+            );
+          case "status":
+            return (
+              compareText(a.applicationStatus, b.applicationStatus) ||
+              compareText(displayUserName(a), displayUserName(b))
+            );
+          case "submitted":
+            return (
+              compareDateDesc(a.applicationSubmittedAt, b.applicationSubmittedAt) ||
+              compareText(displayUserName(a), displayUserName(b))
+            );
+          case "name":
+          default:
+            return compareText(displayUserName(a), displayUserName(b));
+        }
+      }),
+    [items, sortByKey],
+  );
+
   return (
     <>
       <ContentPageHeader
@@ -57,6 +98,7 @@ export default function AdminApplicationsPage() {
             <option value="">All in review (pending + rejected)</option>
           </select>
         </label>
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
       </div>
 
       {error && <p className="admin-error admin-card">{error}</p>}
@@ -80,7 +122,7 @@ export default function AdminApplicationsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((u) => (
+              {sorted.map((u) => (
                 <tr key={u.id}>
                   <td>
                     <AdminTitleLink href={`/admin/users/${u.id}`}>

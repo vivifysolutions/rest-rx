@@ -5,6 +5,7 @@ import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
+import { AdminFormSubmit, SAVE_CHANGES_LABEL } from "@/components/admin/AdminFormActions";
 import type { CreateRetreatInput } from "@/lib/types";
 
 export const RETREAT_LOCATIONS = ["Domestic", "International"] as const;
@@ -94,6 +95,9 @@ export function RetreatForm({
 
   return (
     <form className="admin-form" onSubmit={handleSubmit}>
+      {submitLabel === SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
       <FeaturedToggle
         isFeatured={form.isFeatured}
         isFeaturedOnHome={form.isFeaturedOnHome}
@@ -212,9 +216,9 @@ export function RetreatForm({
         </label>
       </div>
 
-      <button type="submit" className="admin-btn admin-btn-primary">
-        {submitLabel}
-      </button>
+      {submitLabel !== SAVE_CHANGES_LABEL && (
+        <AdminFormSubmit label={submitLabel} form={form} />
+      )}
     </form>
   );
 }

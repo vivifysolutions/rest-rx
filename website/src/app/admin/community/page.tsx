@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import {
   deletePost,
@@ -11,7 +12,24 @@ import {
   getThreads,
   moderateThread,
 } from "@/lib/api";
+import { compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
 import type { ForumPost, Thread } from "@/lib/types";
+
+type CommunitySort = "title" | "topic" | "author" | "created";
+
+const THREAD_SORT_OPTIONS: { value: CommunitySort; label: string }[] = [
+  { value: "title", label: "Title" },
+  { value: "topic", label: "Topic" },
+  { value: "author", label: "Author" },
+  { value: "created", label: "Created (newest)" },
+];
+
+const POST_SORT_OPTIONS: { value: CommunitySort; label: string }[] = [
+  { value: "title", label: "Preview" },
+  { value: "topic", label: "Topic" },
+  { value: "author", label: "Author" },
+  { value: "created", label: "Created (newest)" },
+];
 
 function authorLabel(author: {
   displayName?: string | null;
@@ -30,6 +48,7 @@ export default function AdminCommunityPage() {
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortByKey, setSortByKey] = useState<CommunitySort>("created");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,6 +101,50 @@ export default function AdminCommunityPage() {
     await load();
   }
 
+  const sortedThreads = useMemo(
+    () =>
+      sortBy(threads, (a, b) => {
+        switch (sortByKey) {
+          case "topic":
+            return compareText(a.topic, b.topic) || compareText(a.title, b.title);
+          case "author":
+            return (
+              compareText(authorLabel(a.author), authorLabel(b.author)) ||
+              compareText(a.title, b.title)
+            );
+          case "created":
+            return compareDateDesc(a.createdAt, b.createdAt) || compareText(a.title, b.title);
+          case "title":
+          default:
+            return compareText(a.title, b.title);
+        }
+      }),
+    [threads, sortByKey],
+  );
+
+  const sortedPosts = useMemo(
+    () =>
+      sortBy(posts, (a, b) => {
+        const aTitle = a.title || a.content;
+        const bTitle = b.title || b.content;
+        switch (sortByKey) {
+          case "topic":
+            return compareText(a.topic, b.topic) || compareText(aTitle, bTitle);
+          case "author":
+            return (
+              compareText(authorLabel(a.author), authorLabel(b.author)) ||
+              compareText(aTitle, bTitle)
+            );
+          case "created":
+            return compareDateDesc(a.createdAt, b.createdAt) || compareText(aTitle, bTitle);
+          case "title":
+          default:
+            return compareText(aTitle, bTitle);
+        }
+      }),
+    [posts, sortByKey],
+  );
+
   async function handleDeletePost(id: string) {
     if (!confirm("Delete this post?")) return;
     const token = await refreshToken();
@@ -118,6 +181,14 @@ export default function AdminCommunityPage() {
 
       {error && <p className="admin-error admin-card">{error}</p>}
 
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+        <AdminSortSelect
+          value={sortByKey}
+          onChange={setSortByKey}
+          options={tab === "threads" ? THREAD_SORT_OPTIONS : POST_SORT_OPTIONS}
+        />
+      </div>
+
       <div className="admin-card admin-table-wrap">
         {loading ? (
           <p>Loading…</p>
@@ -136,7 +207,7 @@ export default function AdminCommunityPage() {
               </tr>
             </thead>
             <tbody>
-              {threads.map((t) => (
+              {sortedThreads.map((t) => (
                 <tr key={t.id}>
                   <td>
                     <AdminTitleLink href={`/admin/community/${t.id}`}>
@@ -200,7 +271,7 @@ export default function AdminCommunityPage() {
               </tr>
             </thead>
             <tbody>
-              {posts.map((p) => {
+              {sortedPosts.map((p) => {
                 const preview = p.title || p.content.slice(0, 80);
                 const full = p.title || p.content;
                 return (

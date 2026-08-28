@@ -2,6 +2,13 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
+import {
+  AdminFormActions,
+  formHasUnsavedChanges,
+  SAVE_CHANGES_LABEL,
+  serializeFormState,
+} from "@/components/admin/AdminFormActions";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import {
   createResource,
@@ -9,6 +16,7 @@ import {
   getResources,
   updateResource,
 } from "@/lib/api";
+import { compareText, sortBy } from "@/lib/admin-sort";
 import type { CreateResourceInput, Resource } from "@/lib/types";
 
 export const MICRO_RX_TYPE = "Micro Rx";
@@ -22,6 +30,15 @@ const EMPTY_FORM = {
   subTopic: "",
   duration: "1 min",
 };
+
+type MicroRxSort = "order" | "title" | "topic" | "status";
+
+const SORT_OPTIONS: { value: MicroRxSort; label: string }[] = [
+  { value: "order", label: "Sort order" },
+  { value: "title", label: "Headline" },
+  { value: "topic", label: "Topic" },
+  { value: "status", label: "Status" },
+];
 
 function makeTitleFromPrompt(prompt: string): string {
   const body = prompt.trim();
@@ -69,7 +86,9 @@ export function MicroRxPanel() {
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editBaseline, setEditBaseline] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [sortByKey, setSortByKey] = useState<MicroRxSort>("order");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -77,9 +96,7 @@ export function MicroRxPanel() {
     try {
       const token = await refreshToken();
       const data = await getResources(token ?? undefined, { type: MICRO_RX_TYPE });
-      setItems(
-        [...data].sort((a, b) => (a.subTopic ?? "").localeCompare(b.subTopic ?? "")),
-      );
+      setItems(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load Micro RX");
     } finally {
@@ -91,14 +108,31 @@ export function MicroRxPanel() {
     load();
   }, [load]);
 
-  const filtered = useMemo(() => {
+  const filteredSorted = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((item) => {
-      const haystack = `${item.title} ${item.description ?? ""} ${item.caption ?? ""} ${item.topic ?? ""}`.toLowerCase();
-      return haystack.includes(q);
+    const filtered = !q
+      ? items
+      : items.filter((item) => {
+          const haystack = `${item.title} ${item.description ?? ""} ${item.caption ?? ""} ${item.topic ?? ""}`.toLowerCase();
+          return haystack.includes(q);
+        });
+    return sortBy(filtered, (a, b) => {
+      switch (sortByKey) {
+        case "title":
+          return compareText(a.title, b.title);
+        case "topic":
+          return compareText(a.topic, b.topic) || compareText(a.title, b.title);
+        case "status": {
+          const aPub = a.isPublished ?? true;
+          const bPub = b.isPublished ?? true;
+          return Number(bPub) - Number(aPub) || compareText(a.title, b.title);
+        }
+        case "order":
+        default:
+          return compareText(a.subTopic, b.subTopic) || compareText(a.title, b.title);
+      }
     });
-  }, [items, search]);
+  }, [items, search, sortByKey]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -112,6 +146,7 @@ export function MicroRxPanel() {
         await updateResource(editingId, body, token);
         setSuccess("Micro RX updated.");
         setEditingId(null);
+        setEditBaseline(null);
       } else {
         await createResource(body, token);
         setSuccess("Micro RX created.");
@@ -137,15 +172,29 @@ export function MicroRxPanel() {
     await deleteResource(id, token);
     if (editingId === id) {
       setEditingId(null);
+      setEditBaseline(null);
       setForm(EMPTY_FORM);
     }
     await load();
   }
 
   function startEdit(item: Resource) {
+    const next = resourceToForm(item);
     setEditingId(item.id);
-    setForm(resourceToForm(item));
+    setForm(next);
+    setEditBaseline(serializeFormState(next));
   }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditBaseline(null);
+    setForm(EMPTY_FORM);
+  }
+
+  const canSaveChanges =
+    editingId != null &&
+    editBaseline != null &&
+    formHasUnsavedChanges(form, editBaseline);
 
   return (
     <>
@@ -154,6 +203,23 @@ export function MicroRxPanel() {
           {editingId ? "Edit Micro RX" : "Add Micro RX"}
         </h2>
         <form className="admin-form" onSubmit={handleSubmit}>
+          {editingId ? (
+            <AdminFormActions
+              label={SAVE_CHANGES_LABEL}
+              disabled={!canSaveChanges}
+              sticky
+              extra={
+                <button
+                  type="button"
+                  className="admin-btn"
+                  style={{ background: "#e8eef3", color: "var(--downriver)" }}
+                  onClick={cancelEdit}
+                >
+                  Cancel edit
+                </button>
+              }
+            />
+          ) : null}
           <label>
             Prompt *
             <textarea
@@ -210,20 +276,9 @@ export function MicroRxPanel() {
               />
             </label>
           </div>
-          <button type="submit" className="admin-btn admin-btn-primary">
-            {editingId ? "Save changes" : "Create Micro RX"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              className="admin-btn"
-              style={{ background: "#e8eef3", color: "var(--downriver)" }}
-              onClick={() => {
-                setEditingId(null);
-                setForm(EMPTY_FORM);
-              }}
-            >
-              Cancel edit
+          {!editingId && (
+            <button type="submit" className="admin-btn admin-btn-primary">
+              Create Micro RX
             </button>
           )}
         </form>
@@ -231,18 +286,19 @@ export function MicroRxPanel() {
         {error && <p className="admin-error">{error}</p>}
       </div>
 
-      <div className="admin-card" style={{ marginBottom: "1rem" }}>
-        <label style={{ fontSize: "0.85rem" }}>
-          Search{" "}
+      <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+        <label>
+          Search
           <input
+            type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter prompts…"
-            style={{ marginLeft: "0.5rem", padding: "0.4rem 0.6rem" }}
           />
         </label>
-        <p style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-          {filtered.length} of {items.length} prompts
+        <AdminSortSelect value={sortByKey} onChange={setSortByKey} options={SORT_OPTIONS} />
+        <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)", alignSelf: "center" }}>
+          {filteredSorted.length} of {items.length} prompts
         </p>
       </div>
 
@@ -262,7 +318,7 @@ export function MicroRxPanel() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item) => (
+              {filteredSorted.map((item) => (
                 <tr key={item.id}>
                   <td>{item.subTopic ?? "—"}</td>
                   <td>{item.title}</td>

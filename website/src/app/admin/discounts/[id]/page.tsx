@@ -79,6 +79,7 @@ export default function AdminDiscountDetailPage() {
       }
     >
       <DetailSection title="Overview">
+        <DetailRow label="Brand or business name" value={item.title} />
         <DetailRow
           label="Owner"
           value={

@@ -246,7 +246,7 @@ export default function AdminDiscountsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Brand / business</th>
+                <th>Brand or business name</th>
                 <th>Partner</th>
                 <th>Badge</th>
                 <th>Category</th>
