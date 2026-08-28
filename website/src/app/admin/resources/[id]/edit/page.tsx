@@ -43,6 +43,9 @@ function resourceToForm(item: Resource): ResourceFormValues {
     mediaUrl: item.mediaUrl ?? "",
     isFeatured: item.isFeatured,
     isFeaturedOnHome: item.isFeaturedOnHome ?? false,
+    featuredOrder: item.featuredOrder != null ? String(item.featuredOrder) : "",
+    featuredOnHomeOrder:
+      item.featuredOnHomeOrder != null ? String(item.featuredOnHomeOrder) : "",
     updatedById: item.sharedBy?.id ?? "",
   };
 }

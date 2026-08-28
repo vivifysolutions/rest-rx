@@ -24,6 +24,9 @@ function retreatToForm(item: Retreat): RetreatFormValues {
     bookingUrl: item.bookingUrl ?? "",
     isFeatured: item.isFeatured,
     isFeaturedOnHome: item.isFeaturedOnHome ?? false,
+    featuredOrder: item.featuredOrder != null ? String(item.featuredOrder) : "",
+    featuredOnHomeOrder:
+      item.featuredOnHomeOrder != null ? String(item.featuredOnHomeOrder) : "",
   };
 }
 
@@ -45,6 +48,8 @@ export default function AdminRetreatEditPage() {
     bookingUrl: "",
     isFeatured: false,
     isFeaturedOnHome: false,
+    featuredOrder: "",
+    featuredOnHomeOrder: "",
   });
   const [topics, setTopics] = useState<string[]>([]);
   const [seasons, setSeasons] = useState<string[]>([]);

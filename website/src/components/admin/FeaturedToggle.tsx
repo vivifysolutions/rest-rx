@@ -80,3 +80,51 @@ export function FeaturedToggle({
     </div>
   );
 }
+
+export function parseFeaturedOrderInput(raw: string): number | undefined {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+export function FeaturedOrderFields({
+  featuredOrder,
+  featuredOnHomeOrder,
+  onChangeFeaturedOrder,
+  onChangeFeaturedOnHomeOrder,
+}: {
+  featuredOrder: string;
+  featuredOnHomeOrder: string;
+  onChangeFeaturedOrder: (next: string) => void;
+  onChangeFeaturedOnHomeOrder: (next: string) => void;
+}) {
+  return (
+    <>
+      <label>
+        <span className="admin-field-label">Home order</span>
+        <span className="admin-field-hint">
+          Lowest number shows first. Leave blank to sort last (unranked).
+        </span>
+        <input
+          type="number"
+          min={1}
+          value={featuredOnHomeOrder}
+          onChange={(e) => onChangeFeaturedOnHomeOrder(e.target.value)}
+        />
+      </label>
+      <label>
+        <span className="admin-field-label">Discover order</span>
+        <span className="admin-field-hint">
+          Lowest number shows first. Leave blank to sort last (unranked).
+        </span>
+        <input
+          type="number"
+          min={1}
+          value={featuredOrder}
+          onChange={(e) => onChangeFeaturedOrder(e.target.value)}
+        />
+      </label>
+    </>
+  );
+}

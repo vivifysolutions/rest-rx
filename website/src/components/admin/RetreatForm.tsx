@@ -3,7 +3,7 @@
 import { FormEvent } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
-import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
+import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
 import { MultipleImageUpload } from "@/components/admin/MultipleImageUpload";
 import type { CreateRetreatInput } from "@/lib/types";
 
@@ -44,6 +44,8 @@ export type RetreatFormValues = {
   bookingUrl: string;
   isFeatured: boolean;
   isFeaturedOnHome: boolean;
+  featuredOrder: string;
+  featuredOnHomeOrder: string;
 };
 
 type Props = {
@@ -70,6 +72,8 @@ export function formValuesToRetreatBody(form: RetreatFormValues): CreateRetreatI
     bookingUrl: form.bookingUrl.trim() || undefined,
     isFeatured: form.isFeatured,
     isFeaturedOnHome: form.isFeaturedOnHome,
+    featuredOrder: parseFeaturedOrderInput(form.featuredOrder),
+    featuredOnHomeOrder: parseFeaturedOrderInput(form.featuredOnHomeOrder),
     startDate: form.startDate ? new Date(form.startDate).toISOString() : undefined,
     endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
   };
@@ -96,6 +100,12 @@ export function RetreatForm({
         onChangeFeatured={(next) => onChange("isFeatured", next)}
         onChangeFeaturedOnHome={(next) => onChange("isFeaturedOnHome", next)}
         sectionLabel="Retreats"
+      />
+      <FeaturedOrderFields
+        featuredOrder={form.featuredOrder}
+        featuredOnHomeOrder={form.featuredOnHomeOrder}
+        onChangeFeaturedOrder={(v) => onChange("featuredOrder", v)}
+        onChangeFeaturedOnHomeOrder={(v) => onChange("featuredOnHomeOrder", v)}
       />
 
       <label>

@@ -23,12 +23,13 @@ import {
   listUsers,
   updateResource,
 } from "@/lib/api";
-import { compareText, sortBy } from "@/lib/admin-sort";
+import { compareBoolDesc, compareNullableNumberAsc, compareText, sortBy } from "@/lib/admin-sort";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
+import { FeaturedLineup, featuredPlacementLabel, type FeaturedSurface } from "@/components/admin/FeaturedLineup";
 import type { ExpertOwnerOption } from "@/components/admin/ExpertUserPicker";
 import type { Resource } from "@/lib/types";
 
-type ResourceSort = "title" | "type" | "topic" | "subcategory" | "duration";
+type ResourceSort = "title" | "type" | "topic" | "subcategory" | "duration" | "featured" | "homeOrder" | "discoverOrder";
 
 const SORT_OPTIONS: { value: ResourceSort; label: string }[] = [
   { value: "title", label: "Title" },
@@ -36,6 +37,9 @@ const SORT_OPTIONS: { value: ResourceSort; label: string }[] = [
   { value: "topic", label: "Topic" },
   { value: "subcategory", label: "Subcategory" },
   { value: "duration", label: "Duration" },
+  { value: "featured", label: "Featured first" },
+  { value: "homeOrder", label: "Home order" },
+  { value: "discoverOrder", label: "Discover order" },
 ];
 
 const ALL_TAB = "all";
@@ -58,6 +62,7 @@ function AdminResourcesContent() {
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<ResourceFormValues>(EMPTY_RESOURCE_FORM);
   const [sortByKey, setSortByKey] = useState<ResourceSort>("title");
+  const [moving, setMoving] = useState<{ surface: FeaturedSurface; id: string } | null>(null);
 
   const activeTab = typeParam?.trim() || ALL_TAB;
   const isMicroTab = isMicroRxType(activeTab);
@@ -76,9 +81,11 @@ function AdminResourcesContent() {
     [pathname, router, searchParams],
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setExpertsLoading(true);
+  const load = useCallback(async (opts?: { quiet?: boolean }) => {
+    if (!opts?.quiet) {
+      setLoading(true);
+      setExpertsLoading(true);
+    }
     setError(null);
     const token = await refreshToken();
     const [data, topicsList, typesList, expertsList] = await Promise.allSettled([
@@ -109,8 +116,10 @@ function AdminResourcesContent() {
     if (expertsList.status === "fulfilled") {
       setExperts(expertsList.value);
     }
-    setExpertsLoading(false);
-    setLoading(false);
+    if (!opts?.quiet) {
+      setExpertsLoading(false);
+      setLoading(false);
+    }
   }, [refreshToken]);
 
   useEffect(() => {
@@ -169,6 +178,23 @@ function AdminResourcesContent() {
           return compareText(a.subTopic, b.subTopic) || compareText(a.title, b.title);
         case "duration":
           return compareText(a.duration, b.duration) || compareText(a.title, b.title);
+        case "featured":
+          return (
+            compareBoolDesc(Boolean(a.isFeaturedOnHome || a.isFeatured), Boolean(b.isFeaturedOnHome || b.isFeatured)) ||
+            compareText(a.title, b.title)
+          );
+        case "homeOrder":
+          return (
+            compareBoolDesc(a.isFeaturedOnHome, b.isFeaturedOnHome) ||
+            compareNullableNumberAsc(a.featuredOnHomeOrder, b.featuredOnHomeOrder) ||
+            compareText(a.title, b.title)
+          );
+        case "discoverOrder":
+          return (
+            compareBoolDesc(a.isFeatured, b.isFeatured) ||
+            compareNullableNumberAsc(a.featuredOrder, b.featuredOrder) ||
+            compareText(a.title, b.title)
+          );
         case "title":
         default:
           return compareText(a.title, b.title);
@@ -200,6 +226,33 @@ function AdminResourcesContent() {
     await load();
   }
 
+  async function handleMoveLineup(
+    surface: FeaturedSurface,
+    orderedLiveIds: string[],
+    fromIndex: number,
+    direction: -1 | 1,
+  ) {
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= orderedLiveIds.length) return;
+    const next = [...orderedLiveIds];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    const field = surface === "home" ? "featuredOnHomeOrder" : "featuredOrder";
+    setMoving({ surface, id: moved });
+    setError(null);
+    try {
+      const token = await refreshToken();
+      await Promise.all(
+        next.map((id, index) => updateResource(id, { [field]: index + 1 }, token ?? undefined)),
+      );
+      await load({ quiet: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update featured order");
+    } finally {
+      setMoving(null);
+    }
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Delete this resource?")) return;
     const token = await refreshToken();
@@ -217,6 +270,17 @@ function AdminResourcesContent() {
       <ContentPageHeader
         title="Resources"
         description="Wellness content for the app — audio, video, articles, Quick Rx, and Micro RX."
+      />
+
+      <FeaturedLineup
+        items={items}
+        loading={loading}
+        moving={moving}
+        onMove={handleMoveLineup}
+        sectionLabel="Resources"
+        detailHref={(r) => `/admin/resources/${r.id}`}
+        editHref={(r) => `/admin/resources/${r.id}/edit`}
+        getMeta={(r) => [r.type, r.topic].filter(Boolean).join(" · ") || null}
       />
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
@@ -292,6 +356,8 @@ function AdminResourcesContent() {
                     <th>Media</th>
                     <th>Status</th>
                     <th>Featured</th>
+                    <th>Discover order</th>
+                    <th>Home order</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -309,7 +375,9 @@ function AdminResourcesContent() {
                       <td>
                         <PublishedBadge isPublished={r.isPublished ?? true} />
                       </td>
-                      <td>{r.isFeatured ? "Yes" : "—"}</td>
+                      <td>{featuredPlacementLabel(r)}</td>
+                      <td>{r.featuredOrder ?? "—"}</td>
+                      <td>{r.featuredOnHomeOrder ?? "—"}</td>
                       <td>
                         <ContentRowActions
                           isPublished={r.isPublished ?? true}
