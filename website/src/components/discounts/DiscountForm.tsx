@@ -27,11 +27,12 @@ import {
 import type { LocationValue } from "@/lib/address";
 import {
   EMPTY_LOCATION,
+  locationFromListing,
   locationToApiPayload,
   parseLocationString,
 } from "@/lib/address";
 import { normalizeInstagramHandle } from "@/lib/social";
-import type { CreateDiscountInput } from "@/lib/types";
+import type { CreateDiscountInput, Discount } from "@/lib/types";
 
 import { DEFAULT_DISCOUNT_TERMS } from "@/lib/discountTerms";
 
@@ -106,6 +107,34 @@ export const EMPTY_DISCOUNT_FORM: DiscountFormValues = {
   expiryDate: "",
   brandPartnerApplicationId: "",
 };
+
+/** Maps an existing Discount into edit-form values — shared by the admin and brand edit pages. */
+export function discountToForm(d: Discount): DiscountFormValues {
+  return {
+    title: d.title,
+    description: d.description ?? "",
+    offerSummary: d.offerSummary ?? "",
+    offerHighlight: d.offerHighlight ?? "",
+    percentage: d.percentage != null ? String(d.percentage) : "",
+    redemptionInstructions: d.redemptionInstructions ?? "",
+    terms: d.terms ?? "",
+    category: d.category,
+    location: locationFromListing(d),
+    tier: d.tier ?? "",
+    claimLink: d.claimLink ?? "",
+    website: d.website ?? "",
+    instagram: d.instagram ?? "",
+    phone: d.phone ?? "",
+    images: d.images?.length ? d.images : d.image ? [d.image] : [],
+    isFeatured: d.isFeatured,
+    featuredOrder: d.featuredOrder != null ? String(d.featuredOrder) : "",
+    isFeaturedOnHome: d.isFeaturedOnHome ?? false,
+    featuredOnHomeOrder:
+      d.featuredOnHomeOrder != null ? String(d.featuredOnHomeOrder) : "",
+    expiryDate: d.expiryDate ? d.expiryDate.slice(0, 10) : "",
+    brandPartnerApplicationId: d.brandPartnerApplicationId ?? "",
+  };
+}
 
 type Props = {
   form: DiscountFormValues;

@@ -117,6 +117,10 @@ export default function BrandDiscountsPage() {
                 <th>Category</th>
                 {DISCOUNT_TIERS_ENABLED ? <th>Tier</th> : null}
                 <th>Status</th>
+                <th>Views</th>
+                <th>Saves</th>
+                <th>Redemptions</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -127,6 +131,14 @@ export default function BrandDiscountsPage() {
                   <td>{d.category}</td>
                   {DISCOUNT_TIERS_ENABLED ? <td>{formatDiscountTierLabel(d.tier)}</td> : null}
                   <td>{d.isPublished ? "Live in app" : "Pending review"}</td>
+                  <td>{d.views ?? 0}</td>
+                  <td>{d._count?.saves ?? 0}</td>
+                  <td>{d._count?.redemptions ?? 0}</td>
+                  <td>
+                    <Link href={`/brand/discounts/${d.id}/edit`} className="admin-btn">
+                      Edit
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
