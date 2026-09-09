@@ -11,17 +11,10 @@ import {
   discountToForm,
   type DiscountFormValues,
 } from "@/components/discounts/DiscountForm";
-import type { BrandPartnerOption } from "@/components/discounts/BrandPartnerPicker";
-import {
-  getBrandPartnerApplications,
-  getCategories,
-  getDiscountById,
-  updateDiscount,
-} from "@/lib/api";
-import { toPartnerOwnerOptions } from "@/lib/partner-owner";
+import { getCategories, getDiscountById, updateDiscount } from "@/lib/api";
 import type { CreateDiscountInput } from "@/lib/types";
 
-export default function AdminDiscountEditPage() {
+export default function BrandDiscountEditPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { refreshToken } = usePortalAuth();
@@ -29,8 +22,6 @@ export default function AdminDiscountEditPage() {
   const [categories, setCategories] = useState<
     { value: string; label: string }[]
   >([]);
-  const [partners, setPartners] = useState<BrandPartnerOption[]>([]);
-  const [partnersLoading, setPartnersLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,29 +34,21 @@ export default function AdminDiscountEditPage() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      setPartnersLoading(true);
       setError(null);
       try {
         const token = await refreshToken();
-        const [item, cats, apps] = await Promise.all([
+        const [item, cats] = await Promise.all([
           getDiscountById(id, token ?? undefined),
           getCategories("DISCOUNT"),
-          token
-            ? getBrandPartnerApplications(token, { status: "approved" })
-            : Promise.resolve([]),
         ]);
         if (cancelled) return;
         setForm(discountToForm(item));
         setCategories(cats.map((c) => ({ value: c.name, label: c.name })));
-        setPartners(toPartnerOwnerOptions(apps));
       } catch (e) {
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Failed to load discount");
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-          setPartnersLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => {
@@ -77,18 +60,18 @@ export default function AdminDiscountEditPage() {
     setError(null);
     const token = await refreshToken();
     await updateDiscount(id, body, token ?? undefined);
-    router.push(`/admin/discounts/${id}`);
+    router.push("/brand/discounts");
   }
 
   if (loading) return <p>Loading…</p>;
 
   return (
     <AdminDetailLayout
-      backHref={`/admin/discounts/${id}`}
-      backLabel="Discount details"
-      title="Edit discount"
+      backHref="/brand/discounts"
+      backLabel="Your discounts"
+      title="Edit offer"
       actions={
-        <Link href={`/admin/discounts/${id}`} className="admin-btn">
+        <Link href="/brand/discounts" className="admin-btn">
           Cancel
         </Link>
       }
@@ -97,10 +80,6 @@ export default function AdminDiscountEditPage() {
         form={form}
         onChange={update}
         categoryOptions={categories}
-        showFeatured
-        showPartnerPicker
-        brandPartners={partners}
-        brandPartnersLoading={partnersLoading}
         submitLabel="Save changes"
         onSubmit={handleSubmit}
       />

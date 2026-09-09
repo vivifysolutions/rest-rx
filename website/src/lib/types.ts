@@ -75,6 +75,8 @@ export type Discount = {
     applicationType?: string;
     status?: string;
   } | null;
+  views: number;
+  _count?: { saves: number; redemptions: number };
   createdAt: string;
   updatedAt: string;
 };
