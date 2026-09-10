@@ -60,6 +60,15 @@ export function MultipleImageUpload({
     onChange(values.filter((_, i) => i !== index));
   }
 
+  function moveAt(index: number, delta: number) {
+    const target = index + delta;
+    if (target < 0 || target >= values.length) return;
+    const next = [...values];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item);
+    onChange(next);
+  }
+
   const atLimit = values.length >= maxImages;
 
   return (
@@ -127,8 +136,60 @@ export function MultipleImageUpload({
                   borderRadius: 4,
                 }}
               >
-                {index + 1}
+                {index === 0 ? "Cover" : index + 1}
               </span>
+              {values.length > 1 ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 4,
+                    right: 4,
+                    display: "flex",
+                    gap: 2,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => moveAt(index, -1)}
+                    disabled={uploading || index === 0}
+                    aria-label="Move photo earlier"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 4,
+                      background: "rgba(0,0,0,0.65)",
+                      color: "white",
+                      fontSize: "0.7rem",
+                      lineHeight: 1,
+                      border: "none",
+                      cursor: index === 0 ? "default" : "pointer",
+                      opacity: index === 0 ? 0.4 : 1,
+                    }}
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveAt(index, 1)}
+                    disabled={uploading || index === values.length - 1}
+                    aria-label="Move photo later"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 4,
+                      background: "rgba(0,0,0,0.65)",
+                      color: "white",
+                      fontSize: "0.7rem",
+                      lineHeight: 1,
+                      border: "none",
+                      cursor: index === values.length - 1 ? "default" : "pointer",
+                      opacity: index === values.length - 1 ? 0.4 : 1,
+                    }}
+                  >
+                    →
+                  </button>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
