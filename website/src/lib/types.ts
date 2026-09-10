@@ -49,6 +49,7 @@ export type Discount = {
   redemptionInstructions: string | null;
   terms: string | null;
   category: string;
+  categories?: string[];
   location: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -90,6 +91,7 @@ export type CreateDiscountInput = {
   redemptionInstructions?: string;
   terms?: string;
   category: string;
+  categories?: string[];
   location?: string;
   /** Structured address — preferred for geocoding to lat/lng. */
   address?: {

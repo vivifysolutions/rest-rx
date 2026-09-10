@@ -68,6 +68,7 @@ export type DiscountFormValues = {
   redemptionInstructions: string;
   terms: string;
   category: string;
+  categories: string[];
   location: LocationValue;
   tier: string;
   claimLink: string;
@@ -92,6 +93,7 @@ export const EMPTY_DISCOUNT_FORM: DiscountFormValues = {
   redemptionInstructions: "",
   terms: "",
   category: "",
+  categories: [] as string[],
   location: { ...EMPTY_LOCATION },
 
   tier: "",
@@ -119,6 +121,8 @@ export function discountToForm(d: Discount): DiscountFormValues {
     redemptionInstructions: d.redemptionInstructions ?? "",
     terms: d.terms ?? "",
     category: d.category,
+    categories:
+      d.categories?.length > 0 ? d.categories : d.category ? [d.category] : [],
     location: locationFromListing(d),
     tier: d.tier ?? "",
     claimLink: d.claimLink ?? "",
@@ -203,6 +207,11 @@ export function DiscountForm({
       return;
     }
 
+    if (form.categories.length === 0) {
+      window.alert("Select at least one category.");
+      return;
+    }
+
     const images = form.images.map((url) => url.trim()).filter(Boolean);
     const locationPayload = locationToApiPayload(form.location);
     const body: CreateDiscountInput = {
@@ -213,7 +222,8 @@ export function DiscountForm({
       percentage,
       redemptionInstructions: form.redemptionInstructions.trim() || undefined,
       terms: form.terms.trim() || DEFAULT_DISCOUNT_TERMS,
-      category: form.category.trim(),
+      category: form.categories[0]?.trim() || form.category.trim(),
+      categories: form.categories.map((name) => name.trim()).filter(Boolean),
       ...locationPayload,
       tier: DISCOUNT_TIERS_ENABLED ? form.tier.trim() || undefined : undefined,
       claimLink: form.claimLink.trim() || undefined,
@@ -427,17 +437,42 @@ export function DiscountForm({
           </p>
         ) : null}
 
-        <label>
-          <span className="admin-field-label">Category *</span>
-          <ReferenceSelect
-            name="category"
-            value={form.category}
-            onChange={(v) => onChange("category", v)}
-            options={categoryOptions}
-            placeholder="Select category"
-            required
-          />
-        </label>
+        <fieldset>
+          <span className="admin-field-label">Categories *</span>
+          <span className="admin-field-hint">
+            Pick every section this offer belongs in. One offer can appear in more than one Discover category.
+          </span>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(11rem, 1fr))",
+              gap: "0.4rem 1rem",
+              marginTop: "0.5rem",
+            }}
+          >
+            {categoryOptions.map((opt) => {
+              const checked = form.categories.includes(opt.value);
+              return (
+                <label key={opt.value} style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                  <input
+                    type="checkbox"
+                    name="categories"
+                    value={opt.value}
+                    checked={checked}
+                    onChange={() => {
+                      const next = checked
+                        ? form.categories.filter((name) => name !== opt.value)
+                        : [...form.categories, opt.value];
+                      onChange("categories", next);
+                      onChange("category", next[0] ?? "");
+                    }}
+                  />
+                  <span>{opt.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
 
         <label>
           <span className="admin-field-label">Expiry date</span>
