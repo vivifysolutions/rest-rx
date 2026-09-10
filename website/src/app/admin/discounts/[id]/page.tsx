@@ -10,6 +10,7 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import { deleteDiscount, getDiscountById, updateDiscount } from "@/lib/api";
 import { getDiscountBadgeLabel } from "@/lib/discountOffer";
@@ -135,7 +136,7 @@ export default function AdminDiscountDetailPage() {
       {item.description && (
         <DetailSection title="About this offer">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.description}</div>
+            <AdminMarkdown content={item.description} />
           </DetailRow>
         </DetailSection>
       )}
@@ -143,7 +144,7 @@ export default function AdminDiscountDetailPage() {
       {item.redemptionInstructions && (
         <DetailSection title="How to redeem">
           <DetailRow label="Instructions">
-            <div className="admin-detail-markdown">{item.redemptionInstructions}</div>
+            <AdminMarkdown content={item.redemptionInstructions} />
           </DetailRow>
         </DetailSection>
       )}
@@ -151,7 +152,7 @@ export default function AdminDiscountDetailPage() {
       {item.terms && (
         <DetailSection title="Terms">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.terms}</div>
+            <AdminMarkdown content={item.terms} />
           </DetailRow>
         </DetailSection>
       )}

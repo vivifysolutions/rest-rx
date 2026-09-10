@@ -8,6 +8,7 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import {
   deleteComment,
   deletePost,
@@ -153,7 +154,7 @@ export default function AdminThreadDetailPage() {
 
       <DetailSection title="Thread body">
         <DetailRow label="Content">
-          <div className="admin-detail-markdown">{thread.content}</div>
+          <AdminMarkdown content={thread.content} />
         </DetailRow>
       </DetailSection>
 
@@ -182,7 +183,7 @@ export default function AdminThreadDetailPage() {
                   </button>
                 </div>
                 {post.title && <p className="admin-moderation-title">{post.title}</p>}
-                <div className="admin-moderation-body">{post.content}</div>
+                <AdminMarkdown content={post.content} className="admin-moderation-body" />
 
                 {post.comments.length > 0 && (
                   <div className="admin-moderation-comments">

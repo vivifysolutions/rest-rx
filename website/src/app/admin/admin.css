@@ -313,6 +313,7 @@
 }
 
 .admin-form > label,
+.admin-form > .admin-markdown-field,
 .admin-form-row > label,
 .admin-form-fieldset > label {
   display: flex;
@@ -322,6 +323,36 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--downriver);
+}
+
+.admin-markdown-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.admin-markdown-tabs {
+  display: inline-flex;
+  border: 1px solid #d0dae4;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.admin-markdown-tab {
+  border: 0;
+  background: transparent;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.admin-markdown-tab.is-active {
+  background: var(--downriver);
+  color: white;
 }
 
 .admin-form > label .admin-field-label,
@@ -336,6 +367,7 @@
 }
 
 .admin-form > label .admin-field-hint,
+.admin-form > .admin-markdown-field .admin-field-hint,
 .admin-form-row > label .admin-field-hint,
 .admin-form-fieldset > label .admin-field-hint {
   display: block;
@@ -464,6 +496,10 @@
 .admin-form textarea {
   min-height: 80px;
   resize: vertical;
+}
+
+.admin-form textarea[hidden] {
+  display: none !important;
 }
 
 .admin-article-body {
@@ -1404,7 +1440,6 @@
 }
 
 .admin-detail-markdown {
-  white-space: pre-wrap;
   font-size: 0.95rem;
   line-height: 1.6;
   max-height: 480px;
@@ -1413,6 +1448,74 @@
   background: #f8fafc;
   border-radius: 8px;
   border: 1px solid #e8eef3;
+  color: var(--downriver);
+}
+
+.admin-detail-markdown > :first-child {
+  margin-top: 0;
+}
+
+.admin-detail-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.admin-detail-markdown p {
+  margin: 0 0 0.75rem;
+}
+
+.admin-detail-markdown h1,
+.admin-detail-markdown h2,
+.admin-detail-markdown h3,
+.admin-detail-markdown h4 {
+  margin: 0.85rem 0 0.45rem;
+  line-height: 1.3;
+  color: var(--downriver);
+}
+
+.admin-detail-markdown h1 { font-size: 1.25rem; }
+.admin-detail-markdown h2 { font-size: 1.1rem; }
+.admin-detail-markdown h3,
+.admin-detail-markdown h4 { font-size: 1rem; }
+
+.admin-detail-markdown ul,
+.admin-detail-markdown ol {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+}
+
+.admin-detail-markdown li {
+  margin-bottom: 0.25rem;
+}
+
+.admin-detail-markdown blockquote {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--brand-teal, #2396a4);
+  background: rgba(35, 150, 164, 0.08);
+}
+
+.admin-detail-markdown a {
+  color: var(--brand-teal, #2396a4);
+}
+
+.admin-detail-markdown code {
+  font-size: 0.85em;
+  background: #e8eef3;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.admin-detail-markdown pre {
+  overflow-x: auto;
+  padding: 0.75rem;
+  background: #e8eef3;
+  border-radius: 6px;
+  margin: 0 0 0.75rem;
+}
+
+.admin-detail-markdown pre code {
+  background: transparent;
+  padding: 0;
 }
 
 .admin-upload-field {

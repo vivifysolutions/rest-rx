@@ -10,6 +10,7 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import { deleteRetreat, getRetreatById, updateRetreat } from "@/lib/api";
 import type { Retreat } from "@/lib/types";
@@ -112,7 +113,7 @@ export default function AdminRetreatDetailPage() {
       {item.description && (
         <DetailSection title="Description">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.description}</div>
+            <AdminMarkdown content={item.description} />
           </DetailRow>
         </DetailSection>
       )}
@@ -120,7 +121,7 @@ export default function AdminRetreatDetailPage() {
       {item.joinInstructions && (
         <DetailSection title="How to join">
           <DetailRow label="Instructions">
-            <div className="admin-detail-markdown">{item.joinInstructions}</div>
+            <AdminMarkdown content={item.joinInstructions} />
           </DetailRow>
         </DetailSection>
       )}

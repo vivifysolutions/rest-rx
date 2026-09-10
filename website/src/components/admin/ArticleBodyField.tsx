@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
+
 type Props = {
   value: string;
   onChange: (value: string) => void;
@@ -35,12 +38,36 @@ export function MarkdownBodyField({
   required,
   rows,
 }: Props) {
+  const [mode, setMode] = useState<"edit" | "preview">("edit");
+
   return (
-    <label>
-      <span className="admin-field-label">
-        {label}
-        {required ? " *" : ""}
-      </span>
+    <div className="admin-markdown-field">
+      <div className="admin-markdown-field-header">
+        <span className="admin-field-label">
+          {label}
+          {required ? " *" : ""}
+        </span>
+        <div className="admin-markdown-tabs" role="tablist" aria-label={`${label} editor mode`}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "edit"}
+            className={mode === "edit" ? "admin-markdown-tab is-active" : "admin-markdown-tab"}
+            onClick={() => setMode("edit")}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "preview"}
+            className={mode === "preview" ? "admin-markdown-tab is-active" : "admin-markdown-tab"}
+            onClick={() => setMode("preview")}
+          >
+            Preview
+          </button>
+        </div>
+      </div>
       {hint ? <span className="admin-field-hint">{hint}</span> : null}
       <textarea
         className="admin-article-body"
@@ -49,8 +76,16 @@ export function MarkdownBodyField({
         required={required}
         rows={rows}
         placeholder={placeholder}
+        hidden={mode === "preview"}
       />
-    </label>
+      {mode === "preview" ? (
+        value.trim() ? (
+          <AdminMarkdown content={value} />
+        ) : (
+          <p className="admin-empty-hint">Nothing to preview yet.</p>
+        )
+      ) : null}
+    </div>
   );
 }
 

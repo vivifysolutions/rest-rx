@@ -25,14 +25,13 @@ import type { Resource } from "@/lib/types";
 function resourceToForm(item: Resource): ResourceFormValues {
   const images =
     item.images?.length ? item.images : isQuickRxType(item.type) && item.image ? [item.image] : [];
+  const isVideo = item.type.trim().toLowerCase() === "video";
+  const legacyMediaCaption =
+    !item.caption?.trim() && (isQuickRxType(item.type) || isVideo);
   return {
     title: item.title,
-    description: item.description ?? "",
-    caption:
-      item.caption ??
-      (isQuickRxType(item.type) || item.type.toLowerCase() === "video"
-        ? item.description ?? ""
-        : ""),
+    description: isVideo && legacyMediaCaption ? "" : item.description ?? "",
+    caption: item.caption ?? (legacyMediaCaption ? item.description ?? "" : ""),
     citations: item.citations ?? "",
     type: item.type,
     duration: item.duration ?? "",

@@ -9,6 +9,7 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { deletePost, getForumPosts, getGroupById, updateGroupStatus } from "@/lib/api";
 import { formatGroupStatus } from "@/lib/admin-labels";
 import type { ForumAuthor, ForumPost, Group } from "@/lib/types";
@@ -130,7 +131,7 @@ export default function AdminGroupDetailPage() {
       {group.description && (
         <DetailSection title="Description">
           <DetailRow label="About">
-            <div className="admin-detail-markdown">{group.description}</div>
+            <AdminMarkdown content={group.description} />
           </DetailRow>
         </DetailSection>
       )}
