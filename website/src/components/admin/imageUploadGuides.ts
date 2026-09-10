@@ -3,7 +3,9 @@ export type ImageUploadGuideKey =
   | "event"
   | "retreat"
   | "resource-cover"
-  | "quick-rx-slide";
+  | "quick-rx-slide"
+  | "forum-cover"
+  | "group-cover";
 
 export type ImageUploadGuide = {
   key: ImageUploadGuideKey;
@@ -66,6 +68,26 @@ export const IMAGE_UPLOAD_GUIDES: Record<ImageUploadGuideKey, ImageUploadGuide> 
     maxFileSize: "32 MB",
     whereUsed: "Quick Rx slideshow when members open a resource in the app",
     tips: "Design each slide as a full-screen portrait card; upload slides in display order.",
+  },
+  "forum-cover": {
+    key: "forum-cover",
+    label: "Forum cover",
+    recommendedSize: "1200 × 675 px",
+    aspectRatio: "16∶9 (landscape)",
+    formats: "JPG, PNG, or WebP",
+    maxFileSize: "32 MB",
+    whereUsed: "Community forum thread cards and thread detail gallery",
+    tips: "Use a clear landscape photo. This is the cover members see on the Community tab.",
+  },
+  "group-cover": {
+    key: "group-cover",
+    label: "Group cover",
+    recommendedSize: "800 × 800 px",
+    aspectRatio: "1∶1 (square)",
+    formats: "JPG, PNG, or WebP",
+    maxFileSize: "32 MB",
+    whereUsed: "Community group list thumbnails, trending cards, and group detail header",
+    tips: "Square crop works best; it is shown as a round thumbnail on list cards.",
   },
 };
 

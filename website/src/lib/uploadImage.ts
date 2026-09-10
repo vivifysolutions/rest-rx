@@ -59,7 +59,7 @@ function storageErrorMessage(error: unknown): string {
  * Uploads an image to Firebase Storage and returns the public download URL.
  *
  * @param file Browser File chosen via <input type="file">
- * @param folder Storage folder (e.g. "discounts", "verification/identity", "verification/admin/identity")
+ * @param folder Storage folder (e.g. "discounts", "threads/admin", "groups/covers/admin")
  */
 export async function uploadImage(file: File, folder: string): Promise<string> {
   const user = auth.currentUser;

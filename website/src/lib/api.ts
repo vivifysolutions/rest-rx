@@ -707,6 +707,30 @@ export async function updateGroupStatus(
   });
 }
 
+export async function updateGroupCover(
+  token: string,
+  id: string,
+  coverImageUrl: string | null,
+): Promise<Group> {
+  return request<Group>(`/groups/${id}/cover`, {
+    method: "PATCH",
+    token,
+    body: { coverImageUrl },
+  });
+}
+
+export async function updateThreadImages(
+  token: string,
+  id: string,
+  body: { imageUrl?: string | null; images?: string[] },
+): Promise<Thread> {
+  return request<Thread>(`/threads/${id}/images`, {
+    method: "PATCH",
+    token,
+    body,
+  });
+}
+
 // -- Affirmations ------------------------------------------------------------
 
 export async function getAffirmationTopics(): Promise<AffirmationTopic[]> {
