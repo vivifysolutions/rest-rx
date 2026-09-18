@@ -1,8 +1,31 @@
 import type { ApiUser } from "@/lib/types";
 
-export function displayUserName(u: ApiUser): string {
+export function displayUserName(u: {
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string | null;
+  email?: string | null;
+}): string {
   return (
     [u.firstName, u.lastName].filter(Boolean).join(" ") || u.displayName || u.email || "—"
+  );
+}
+
+export function displaySharedByName(
+  user:
+    | {
+        displayName?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+      }
+    | null
+    | undefined,
+): string {
+  if (!user) return "—";
+  return (
+    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+    user.displayName?.trim() ||
+    "—"
   );
 }
 

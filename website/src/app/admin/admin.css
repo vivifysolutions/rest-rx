@@ -1192,6 +1192,16 @@
   border-bottom: 1px solid rgba(15, 53, 94, 0.08);
 }
 
+.admin-profile-collapse > summary {
+  margin: -0.25rem 0 0;
+}
+
+.admin-profile-collapse[open] > summary {
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(15, 53, 94, 0.08);
+}
+
 .admin-lineup-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
