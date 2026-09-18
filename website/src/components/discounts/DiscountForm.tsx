@@ -122,7 +122,11 @@ export function discountToForm(d: Discount): DiscountFormValues {
     terms: d.terms ?? "",
     category: d.category,
     categories:
-      d.categories?.length > 0 ? d.categories : d.category ? [d.category] : [],
+      d.categories && d.categories.length > 0
+        ? d.categories
+        : d.category
+          ? [d.category]
+          : [],
     location: locationFromListing(d),
     tier: d.tier ?? "",
     claimLink: d.claimLink ?? "",

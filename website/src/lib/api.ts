@@ -114,6 +114,10 @@ export async function getMe(token: string): Promise<ApiUser> {
   return request<ApiUser>("/users/me", { token });
 }
 
+export async function deleteMe(token: string): Promise<void> {
+  await request<void>("/users/me", { method: "DELETE", token });
+}
+
 export async function patchMe(
   token: string,
   body: UpdateUserProfilePayload,
