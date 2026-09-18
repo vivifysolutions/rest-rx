@@ -10,6 +10,7 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import { deleteEvent, getEventById, updateEvent } from "@/lib/api";
 import type { Event } from "@/lib/types";
@@ -129,7 +130,7 @@ export default function AdminEventDetailPage() {
       {item.description && (
         <DetailSection title="Description">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.description}</div>
+            <AdminMarkdown content={item.description} />
           </DetailRow>
         </DetailSection>
       )}

@@ -24,12 +24,13 @@ import {
   updateResource,
 } from "@/lib/api";
 import { compareBoolDesc, compareNullableNumberAsc, compareText, sortBy } from "@/lib/admin-sort";
+import { displaySharedByName, displayUserName } from "@/lib/admin-user-display";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import { FeaturedLineup, featuredPlacementLabel, type FeaturedSurface } from "@/components/admin/FeaturedLineup";
 import type { ExpertOwnerOption } from "@/components/admin/ExpertUserPicker";
 import type { Resource } from "@/lib/types";
 
-type ResourceSort = "title" | "type" | "topic" | "subcategory" | "duration" | "featured" | "homeOrder" | "discoverOrder";
+type ResourceSort = "title" | "type" | "topic" | "subcategory" | "duration" | "author" | "featured" | "homeOrder" | "discoverOrder";
 
 const SORT_OPTIONS: { value: ResourceSort; label: string }[] = [
   { value: "title", label: "Title" },
@@ -37,6 +38,7 @@ const SORT_OPTIONS: { value: ResourceSort; label: string }[] = [
   { value: "topic", label: "Topic" },
   { value: "subcategory", label: "Subcategory" },
   { value: "duration", label: "Duration" },
+  { value: "author", label: "Author" },
   { value: "featured", label: "Featured first" },
   { value: "homeOrder", label: "Home order" },
   { value: "discoverOrder", label: "Discover order" },
@@ -62,6 +64,7 @@ function AdminResourcesContent() {
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<ResourceFormValues>(EMPTY_RESOURCE_FORM);
   const [sortByKey, setSortByKey] = useState<ResourceSort>("title");
+  const [authorFilter, setAuthorFilter] = useState("all");
   const [moving, setMoving] = useState<{ surface: FeaturedSurface; id: string } | null>(null);
 
   const activeTab = typeParam?.trim() || ALL_TAB;
@@ -164,10 +167,16 @@ function AdminResourcesContent() {
   }, [items, types]);
 
   const filteredSorted = useMemo(() => {
-    const filtered =
+    const byType =
       activeTab === ALL_TAB
         ? items
         : items.filter((r) => r.type.toLowerCase() === activeTab.toLowerCase());
+    const filtered =
+      authorFilter === "all"
+        ? byType
+        : authorFilter === "unassigned"
+          ? byType.filter((r) => !r.sharedBy?.id)
+          : byType.filter((r) => r.sharedBy?.id === authorFilter);
     return sortBy(filtered, (a, b) => {
       switch (sortByKey) {
         case "type":
@@ -178,6 +187,11 @@ function AdminResourcesContent() {
           return compareText(a.subTopic, b.subTopic) || compareText(a.title, b.title);
         case "duration":
           return compareText(a.duration, b.duration) || compareText(a.title, b.title);
+        case "author":
+          return (
+            compareText(displaySharedByName(a.sharedBy), displaySharedByName(b.sharedBy)) ||
+            compareText(a.title, b.title)
+          );
         case "featured":
           return (
             compareBoolDesc(Boolean(a.isFeaturedOnHome || a.isFeatured), Boolean(b.isFeaturedOnHome || b.isFeatured)) ||
@@ -200,7 +214,7 @@ function AdminResourcesContent() {
           return compareText(a.title, b.title);
       }
     });
-  }, [items, activeTab, sortByKey]);
+  }, [items, activeTab, sortByKey, authorFilter]);
 
   async function handleCreate(body: Parameters<typeof createResource>[0]) {
     setError(null);
@@ -331,6 +345,18 @@ function AdminResourcesContent() {
           </div>
 
           <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
+            <label>
+              Author
+              <select value={authorFilter} onChange={(e) => setAuthorFilter(e.target.value)}>
+                <option value="all">All experts</option>
+                <option value="unassigned">Unassigned</option>
+                {experts.map((expert) => (
+                  <option key={expert.id} value={expert.id}>
+                    {displayUserName(expert)}
+                  </option>
+                ))}
+              </select>
+            </label>
             <AdminSortSelect
               value={sortByKey}
               onChange={setSortByKey}
@@ -345,13 +371,14 @@ function AdminResourcesContent() {
             {loading ? (
               <p>Loading…</p>
             ) : filteredSorted.length === 0 ? (
-              <p style={{ color: "var(--text-muted)" }}>No resources in this category.</p>
+              <p style={{ color: "var(--text-muted)" }}>No resources match this filter.</p>
             ) : (
               <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Title</th>
                     <th>Type</th>
+                    <th>Author</th>
                     <th>Topic</th>
                     <th>Subcategory</th>
                     <th>Duration</th>
@@ -370,6 +397,7 @@ function AdminResourcesContent() {
                         <AdminTitleLink href={`/admin/resources/${r.id}`}>{r.title}</AdminTitleLink>
                       </td>
                       <td>{r.type}</td>
+                      <td>{displaySharedByName(r.sharedBy)}</td>
                       <td>{r.topic ?? "—"}</td>
                       <td>{r.subTopic ?? "—"}</td>
                       <td>{r.duration ?? "—"}</td>

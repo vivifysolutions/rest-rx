@@ -8,6 +8,7 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { deleteComment, deletePost, getForumPostById } from "@/lib/api";
 import type { ForumAuthor, ForumPostDetail } from "@/lib/types";
 
@@ -105,7 +106,7 @@ export default function AdminFeedPostDetailPage() {
 
       <DetailSection title="Post body">
         <DetailRow label="Content">
-          <div className="admin-detail-markdown">{post.content}</div>
+          <AdminMarkdown content={post.content} />
         </DetailRow>
       </DetailSection>
 

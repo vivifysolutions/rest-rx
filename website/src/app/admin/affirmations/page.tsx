@@ -5,6 +5,7 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
+import { markdownPreview } from "@/lib/markdown";
 import {
   AdminFormActions,
   formHasUnsavedChanges,
@@ -259,7 +260,7 @@ export default function AdminAffirmationsPage() {
               {sorted.map((a) => (
                 <tr key={a.id}>
                   <td>{a.topicTitle}</td>
-                  <td>{a.body.slice(0, 80)}{a.body.length > 80 ? "…" : ""}</td>
+                  <td>{markdownPreview(a.body) || "—"}</td>
                   <td>{a.faithBased ? "Faith-based" : "General"}</td>
                   <td>
                     <div className="admin-row-actions">

@@ -226,6 +226,76 @@ export function AdminUserDetail({ userId, mode }: Props) {
   const approvedDirectoryHref = `${approvedDirectory.href}/${user.id}`;
   const approvedDirectoryLabel = approvedDirectory.label;
 
+  const profileSections = (
+    <>
+      <DetailSection
+        title={
+          mode === "application"
+            ? "Application status"
+            : mode === "partner"
+              ? "Partner account"
+              : mode === "expert"
+                ? "Expert account"
+                : "Membership"
+        }
+      >
+        <DetailRow label="Application" value={formatApplicationStatus(user.applicationStatus)} />
+        {(mode === "partner" || mode === "expert") && (
+          <DetailRow label="Status" value={user.isActive ? "Active" : "Inactive"} />
+        )}
+        {mode === "application" && (
+          <DetailRow
+            label="Submitted"
+            value={
+              user.applicationSubmittedAt
+                ? new Date(user.applicationSubmittedAt).toLocaleString()
+                : "Not submitted"
+            }
+          />
+        )}
+        <DetailRow label="Role" value={USER_TYPE_LABELS[user.userType]} />
+        <DetailRow label="Member since" value={new Date(user.createdAt).toLocaleString()} />
+        {(mode === "member" || mode === "partner" || mode === "expert") && (
+          <DetailRow
+            label="Onboarding"
+            value={
+              user.onboardingCompletedAt
+                ? `Complete (${new Date(user.onboardingCompletedAt).toLocaleDateString()})`
+                : "Incomplete"
+            }
+          />
+        )}
+      </DetailSection>
+
+      <ApplicationProfileForm
+        user={user}
+        saving={savingProfile}
+        saveError={saveError}
+        onSave={handleProfileSave}
+      />
+
+      {onboardingEntries.length > 0 && (
+        <DetailSection title="Onboarding answers">
+          {onboardingEntries.map(([key, value]) => (
+            <DetailRow
+              key={key}
+              label={key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}
+              value={
+                typeof value === "object" ? JSON.stringify(value, null, 2) : String(value ?? "—")
+              }
+            />
+          ))}
+          {user.onboardingCompletedAt && (
+            <DetailRow
+              label="Completed"
+              value={new Date(user.onboardingCompletedAt).toLocaleString()}
+            />
+          )}
+        </DetailSection>
+      )}
+    </>
+  );
+
   return (
     <>
     <AdminDetailLayout
@@ -322,70 +392,18 @@ export function AdminUserDetail({ userId, mode }: Props) {
         </div>
       )}
 
-      <DetailSection
-        title={
-          mode === "application"
-            ? "Application status"
-            : mode === "partner"
-              ? "Partner account"
-              : mode === "expert"
-                ? "Expert account"
-                : "Membership"
-        }
-      >
-        <DetailRow label="Application" value={formatApplicationStatus(user.applicationStatus)} />
-        {(mode === "partner" || mode === "expert") && (
-          <DetailRow label="Status" value={user.isActive ? "Active" : "Inactive"} />
-        )}
-        {mode === "application" && (
-          <DetailRow
-            label="Submitted"
-            value={
-              user.applicationSubmittedAt
-                ? new Date(user.applicationSubmittedAt).toLocaleString()
-                : "Not submitted"
-            }
-          />
-        )}
-        <DetailRow label="Role" value={USER_TYPE_LABELS[user.userType]} />
-        <DetailRow label="Member since" value={new Date(user.createdAt).toLocaleString()} />
-        {(mode === "member" || mode === "partner" || mode === "expert") && (
-          <DetailRow
-            label="Onboarding"
-            value={
-              user.onboardingCompletedAt
-                ? `Complete (${new Date(user.onboardingCompletedAt).toLocaleDateString()})`
-                : "Incomplete"
-            }
-          />
-        )}
-      </DetailSection>
-
-      <ApplicationProfileForm
-        user={user}
-        saving={savingProfile}
-        saveError={saveError}
-        onSave={handleProfileSave}
-      />
-
-      {onboardingEntries.length > 0 && (
-        <DetailSection title="Onboarding answers">
-          {onboardingEntries.map(([key, value]) => (
-            <DetailRow
-              key={key}
-              label={key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase())}
-              value={
-                typeof value === "object" ? JSON.stringify(value, null, 2) : String(value ?? "—")
-              }
-            />
-          ))}
-          {user.onboardingCompletedAt && (
-            <DetailRow
-              label="Completed"
-              value={new Date(user.onboardingCompletedAt).toLocaleString()}
-            />
-          )}
-        </DetailSection>
+      {mode === "expert" ? (
+        <details className="admin-profile-collapse">
+          <summary className="admin-lineup-summary">
+            <span className="admin-lineup-summary-title">Profile details</span>
+            <span className="admin-lineup-summary-counts">
+              Account, application profile, and onboarding
+            </span>
+          </summary>
+          {profileSections}
+        </details>
+      ) : (
+        profileSections
       )}
 
       {mode === "application" && user.applicationStatus === "pending" && (

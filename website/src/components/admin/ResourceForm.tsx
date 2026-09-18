@@ -50,6 +50,21 @@ const CITATIONS_PLACEHOLDER = `Source citations shown under the caption. Markdow
 1. First source
 2. Second source`;
 
+const VIDEO_ABOUT_PLACEHOLDER = `Optional notes under the video. Markdown is supported:
+
+**What members will learn**
+- Key takeaway
+- Who it's for
+
+> Keep it short — the caption sits above this copy.`;
+
+const GENERIC_BODY_PLACEHOLDER = `Body copy shown on the resource screen. Markdown is supported:
+
+## Section heading
+**Bold text** and *italic*
+
+- Bullet lists`;
+
 export type ResourceFormValues = {
   title: string;
   description: string;
@@ -312,6 +327,32 @@ export function ResourceForm({
           value={form.description}
           onChange={(v) => onChange("description", v)}
           required
+        />
+      )}
+
+      {isVideoType(form.type) && (
+        <MarkdownBodyField
+          label="About"
+          value={form.description}
+          onChange={(v) => onChange("description", v)}
+          rows={5}
+          placeholder={VIDEO_ABOUT_PLACEHOLDER}
+          hint="Optional notes under the video — Markdown formatting renders in the app. Separate from the caption above."
+        />
+      )}
+
+      {form.type.trim() !== "" &&
+        !isArticleType(form.type) &&
+        !isAudioType(form.type) &&
+        !isMicroRxType(form.type) &&
+        !isQuickRxType(form.type) &&
+        !isVideoType(form.type) && (
+        <MarkdownBodyField
+          label="Body"
+          value={form.description}
+          onChange={(v) => onChange("description", v)}
+          placeholder={GENERIC_BODY_PLACEHOLDER}
+          hint="Longer copy on the resource screen — Markdown formatting renders in the app."
         />
       )}
 

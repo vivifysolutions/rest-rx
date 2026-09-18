@@ -22,6 +22,7 @@ import {
 import type { BrandPartnerApplication } from "@/lib/brand-partner-application";
 import { parseAdditionalUrls } from "@/lib/brand-partner-application";
 import type { UserType } from "@/lib/types";
+import { formatApplicationStatus } from "@/lib/admin-labels";
 import { USER_TYPE_LABELS } from "@/lib/user-types";
 import {
   getAppDiscountTier,
@@ -177,6 +178,12 @@ export default function AdminBrandApplicationDetailPage() {
       <DetailSection title="Application">
         <DetailRow label="Type" value={labelApplicationType(app.applicationType)} />
         <DetailRow label="Status" value={statusLabel(app.status)} />
+        {app.user?.applicationStatus ? (
+          <DetailRow
+            label="Account status"
+            value={formatApplicationStatus(app.user.applicationStatus)}
+          />
+        ) : null}
         {app.status === "rejected" ? (
           <>
             <DetailRow label="Rejection issue" value={labelRejectionIssue(app.rejectionIssue)} />

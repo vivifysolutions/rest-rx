@@ -243,7 +243,7 @@ export function EventForm({
           label="Event photos"
           maxImages={10}
           guide="event"
-          hint="Upload multiple images. The first photo is the cover on browse cards; members can swipe through all photos on the detail screen."
+          hint="Upload multiple images. The first photo is the cover on browse cards; use the arrows to change order. Members swipe through all photos on the event detail screen."
         />
       </fieldset>
 

@@ -151,19 +151,19 @@ export type BrandPartnerApplication = {
   userId: string | null;
   user?: {
     id: string;
-    email: string | null;
-    displayName: string | null;
+    email?: string | null;
+    displayName?: string | null;
     userType: string;
-    firstName: string | null;
-    lastName: string | null;
-    professionalRole: string | null;
-    specialty: string | null;
-    npiNumber: string | null;
-    phone: string | null;
-    identityPhotoUrl: string | null;
-    workCredentialPhotoUrl: string | null;
-    applicationStatus: string;
-    applicationSubmittedAt: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    professionalRole?: string | null;
+    specialty?: string | null;
+    npiNumber?: string | null;
+    phone?: string | null;
+    identityPhotoUrl?: string | null;
+    workCredentialPhotoUrl?: string | null;
+    applicationStatus?: string;
+    applicationSubmittedAt?: string | null;
   } | null;
   discounts?: Array<{
     id: string;
