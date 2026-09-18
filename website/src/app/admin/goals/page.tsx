@@ -44,6 +44,9 @@ const EMPTY_FORM = {
   unit: "times",
 };
 
+const MONTHLY_FREQUENCY_MAX = 31;
+const MONTHLY_FREQUENCY_ERROR = "Monthly frequency cannot be higher than 31.";
+
 function cadenceLabel(value: GuidedGoal["cadence"]): string {
   return CADENCES.find((c) => c.value === value)?.label ?? value;
 }
@@ -102,10 +105,18 @@ export default function AdminGoalsPage() {
       return;
     }
 
-    const targetValue = Number(form.targetValue);
+    let targetValue = Number(form.targetValue);
     if (!Number.isFinite(targetValue) || targetValue < 0.01) {
       setError("Enter a target of at least 1 (or 0.01).");
       return;
+    }
+    if (form.cadence === "monthly" && targetValue > MONTHLY_FREQUENCY_MAX) {
+      if (editingId) {
+        targetValue = MONTHLY_FREQUENCY_MAX;
+      } else {
+        setError(MONTHLY_FREQUENCY_ERROR);
+        return;
+      }
     }
 
     const token = await refreshToken();
@@ -293,13 +304,19 @@ export default function AdminGoalsPage() {
               Target times per {CADENCE_PERIOD_NOUN[form.cadence]} *
               <input
                 type="number"
-                min={0.01}
+                min={1}
                 step={1}
                 value={form.targetValue}
                 onChange={(e) => setForm((p) => ({ ...p, targetValue: e.target.value }))}
                 required
                 placeholder={form.cadence === "weekly" ? "e.g. 3" : "e.g. 1"}
               />
+              {form.cadence === "monthly" &&
+              Number(form.targetValue) > MONTHLY_FREQUENCY_MAX ? (
+                <span className="admin-error" style={{ display: "block", marginTop: "0.35rem" }}>
+                  {MONTHLY_FREQUENCY_ERROR}
+                </span>
+              ) : null}
             </label>
             <label>
               Unit

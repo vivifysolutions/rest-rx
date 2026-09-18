@@ -11,6 +11,7 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import {
   isArticleType,
@@ -136,7 +137,7 @@ export default function AdminResourceDetailPage() {
       {item.caption && (
         <DetailSection title="Caption">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.caption}</div>
+            <AdminMarkdown content={item.caption} />
           </DetailRow>
         </DetailSection>
       )}
@@ -144,7 +145,7 @@ export default function AdminResourceDetailPage() {
       {microRx && item.description && (
         <DetailSection title="Prompt">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.description}</div>
+            <AdminMarkdown content={item.description} />
           </DetailRow>
         </DetailSection>
       )}
@@ -152,7 +153,7 @@ export default function AdminResourceDetailPage() {
       {isAudioType(item.type) && item.description && (
         <DetailSection title="Transcript">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.description}</div>
+            <AdminMarkdown content={item.description} />
           </DetailRow>
         </DetailSection>
       )}
@@ -160,7 +161,7 @@ export default function AdminResourceDetailPage() {
       {quickRx && item.citations && (
         <DetailSection title="Citations">
           <DetailRow label="Sources">
-            <div className="admin-detail-markdown">{item.citations}</div>
+            <AdminMarkdown content={item.citations} />
           </DetailRow>
         </DetailSection>
       )}
@@ -168,7 +169,28 @@ export default function AdminResourceDetailPage() {
       {isArticleType(item.type) && item.description && (
         <DetailSection title="Article body">
           <DetailRow label="Content">
-            <div className="admin-detail-markdown">{item.description}</div>
+            <AdminMarkdown content={item.description} />
+          </DetailRow>
+        </DetailSection>
+      )}
+
+      {isVideoType(item.type) && item.description && (
+        <DetailSection title="About">
+          <DetailRow label="Content">
+            <AdminMarkdown content={item.description} />
+          </DetailRow>
+        </DetailSection>
+      )}
+
+      {!microRx &&
+        !quickRx &&
+        !isArticleType(item.type) &&
+        !isAudioType(item.type) &&
+        !isVideoType(item.type) &&
+        item.description && (
+        <DetailSection title="Body">
+          <DetailRow label="Content">
+            <AdminMarkdown content={item.description} />
           </DetailRow>
         </DetailSection>
       )}

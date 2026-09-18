@@ -8,12 +8,15 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import {
   deleteComment,
   deletePost,
   deleteThread,
   getThreadById,
   moderateThread,
+  updateThreadImages,
 } from "@/lib/api";
 import type { ForumAuthor, ThreadDetail } from "@/lib/types";
 
@@ -89,6 +92,16 @@ export default function AdminThreadDetailPage() {
     }
   }
 
+  async function handleCoverChange(url: string) {
+    if (!thread) return;
+    await withToken((token) =>
+      updateThreadImages(token, thread.id, {
+        imageUrl: url || null,
+        images: url ? [url] : [],
+      }).then(() => undefined),
+    );
+  }
+
   async function handleDeletePost(postId: string) {
     if (!confirm("Delete this reply and its comments?")) return;
     await withToken((token) => deletePost(token, postId));
@@ -138,6 +151,16 @@ export default function AdminThreadDetailPage() {
         </>
       }
     >
+      <DetailSection title="Cover image">
+        <ImageUpload
+          folder="threads/admin"
+          value={thread.imageUrl ?? thread.images?.[0] ?? ""}
+          onChange={(url) => void handleCoverChange(url)}
+          label="Forum cover"
+          guide="forum-cover"
+        />
+      </DetailSection>
+
       <DetailSection title="Overview">
         <DetailRow label="Topic" value={thread.topic ?? "—"} />
         <DetailRow label="Subtopic" value={thread.subTopic ?? "—"} />
@@ -153,7 +176,7 @@ export default function AdminThreadDetailPage() {
 
       <DetailSection title="Thread body">
         <DetailRow label="Content">
-          <div className="admin-detail-markdown">{thread.content}</div>
+          <AdminMarkdown content={thread.content} />
         </DetailRow>
       </DetailSection>
 
@@ -182,7 +205,7 @@ export default function AdminThreadDetailPage() {
                   </button>
                 </div>
                 {post.title && <p className="admin-moderation-title">{post.title}</p>}
-                <div className="admin-moderation-body">{post.content}</div>
+                <AdminMarkdown content={post.content} className="admin-moderation-body" />
 
                 {post.comments.length > 0 && (
                   <div className="admin-moderation-comments">

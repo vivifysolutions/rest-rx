@@ -85,7 +85,7 @@ export function parseFeaturedOrderInput(raw: string): number | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
   const n = Number(trimmed);
-  return Number.isFinite(n) ? n : undefined;
+  return Number.isInteger(n) && n >= 1 ? n : undefined;
 }
 
 export function FeaturedOrderFields({
@@ -104,11 +104,12 @@ export function FeaturedOrderFields({
       <label>
         <span className="admin-field-label">Home order</span>
         <span className="admin-field-hint">
-          Lowest number shows first. Leave blank to sort last (unranked).
+          Position in the live Home lineup (1 = first). Leave blank to sort last (unranked).
         </span>
         <input
           type="number"
           min={1}
+          step={1}
           value={featuredOnHomeOrder}
           onChange={(e) => onChangeFeaturedOnHomeOrder(e.target.value)}
         />
@@ -116,11 +117,12 @@ export function FeaturedOrderFields({
       <label>
         <span className="admin-field-label">Discover order</span>
         <span className="admin-field-hint">
-          Lowest number shows first. Leave blank to sort last (unranked).
+          Position in the live Discover lineup (1 = first). Leave blank to sort last (unranked).
         </span>
         <input
           type="number"
           min={1}
+          step={1}
           value={featuredOrder}
           onChange={(e) => onChangeFeaturedOrder(e.target.value)}
         />

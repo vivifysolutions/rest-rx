@@ -114,6 +114,10 @@ export async function getMe(token: string): Promise<ApiUser> {
   return request<ApiUser>("/users/me", { token });
 }
 
+export async function deleteMe(token: string): Promise<void> {
+  await request<void>("/users/me", { method: "DELETE", token });
+}
+
 export async function patchMe(
   token: string,
   body: UpdateUserProfilePayload,
@@ -704,6 +708,30 @@ export async function updateGroupStatus(
     method: "PATCH",
     token,
     body: { status },
+  });
+}
+
+export async function updateGroupCover(
+  token: string,
+  id: string,
+  coverImageUrl: string | null,
+): Promise<Group> {
+  return request<Group>(`/groups/${id}/cover`, {
+    method: "PATCH",
+    token,
+    body: { coverImageUrl },
+  });
+}
+
+export async function updateThreadImages(
+  token: string,
+  id: string,
+  body: { imageUrl?: string | null; images?: string[] },
+): Promise<Thread> {
+  return request<Thread>(`/threads/${id}/images`, {
+    method: "PATCH",
+    token,
+    body,
   });
 }
 

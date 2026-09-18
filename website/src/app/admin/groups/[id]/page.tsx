@@ -9,7 +9,9 @@ import {
   DetailRow,
   DetailSection,
 } from "@/components/admin/AdminDetailView";
-import { deletePost, getForumPosts, getGroupById, updateGroupStatus } from "@/lib/api";
+import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
+import { ImageUpload } from "@/components/admin/ImageUpload";
+import { deletePost, getForumPosts, getGroupById, updateGroupCover, updateGroupStatus } from "@/lib/api";
 import { formatGroupStatus } from "@/lib/admin-labels";
 import type { ForumAuthor, ForumPost, Group } from "@/lib/types";
 
@@ -73,6 +75,19 @@ export default function AdminGroupDetailPage() {
     }
   }
 
+  async function handleCoverChange(url: string) {
+    if (!group) return;
+    setBusy(true);
+    try {
+      const token = await refreshToken();
+      if (!token) return;
+      await updateGroupCover(token, group.id, url || null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleDeletePost(postId: string) {
     if (!confirm("Delete this post and its comments?")) return;
     setBusy(true);
@@ -116,6 +131,16 @@ export default function AdminGroupDetailPage() {
         </select>
       }
     >
+      <DetailSection title="Cover image">
+        <ImageUpload
+          folder="groups/covers/admin"
+          value={group.coverImageUrl ?? ""}
+          onChange={(url) => void handleCoverChange(url)}
+          label="Group cover"
+          guide="group-cover"
+        />
+      </DetailSection>
+
       <DetailSection title="Overview">
         <DetailRow label="Topic" value={group.topic ?? "—"} />
         <DetailRow label="Location" value={location} />
@@ -130,7 +155,7 @@ export default function AdminGroupDetailPage() {
       {group.description && (
         <DetailSection title="Description">
           <DetailRow label="About">
-            <div className="admin-detail-markdown">{group.description}</div>
+            <AdminMarkdown content={group.description} />
           </DetailRow>
         </DetailSection>
       )}

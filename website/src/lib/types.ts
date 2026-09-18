@@ -49,6 +49,7 @@ export type Discount = {
   redemptionInstructions: string | null;
   terms: string | null;
   category: string;
+  categories?: string[];
   location: string | null;
   latitude: number | null;
   longitude: number | null;
@@ -75,6 +76,8 @@ export type Discount = {
     applicationType?: string;
     status?: string;
   } | null;
+  views: number;
+  _count?: { saves: number; redemptions: number };
   createdAt: string;
   updatedAt: string;
 };
@@ -88,6 +91,7 @@ export type CreateDiscountInput = {
   redemptionInstructions?: string;
   terms?: string;
   category: string;
+  categories?: string[];
   location?: string;
   /** Structured address — preferred for geocoding to lat/lng. */
   address?: {
@@ -307,6 +311,8 @@ export type Thread = {
   content: string;
   topic?: string | null;
   subTopic?: string | null;
+  imageUrl?: string | null;
+  images?: string[];
   isPinned: boolean;
   isLocked: boolean;
   createdAt: string;

@@ -17,6 +17,8 @@ import {
   updateResource,
 } from "@/lib/api";
 import { compareText, sortBy } from "@/lib/admin-sort";
+import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
+import { markdownPreview } from "@/lib/markdown";
 import type { CreateResourceInput, Resource } from "@/lib/types";
 
 export const MICRO_RX_TYPE = "Micro Rx";
@@ -220,28 +222,27 @@ export function MicroRxPanel() {
               }
             />
           ) : null}
-          <label>
-            Prompt *
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-              required
-              rows={4}
-              placeholder="Say out loud 3 things you are grateful for from today's shift…"
-            />
-          </label>
-          <label>
-            Caption
-            <span className="admin-field-hint">
-              Optional short text shown with this Micro RX in the app.
-            </span>
-            <textarea
-              value={form.caption}
-              onChange={(e) => setForm((p) => ({ ...p, caption: e.target.value }))}
-              rows={2}
-              placeholder="Optional caption members see with this prompt"
-            />
-          </label>
+          <MarkdownBodyField
+            label="Prompt"
+            value={form.description}
+            onChange={(v) => setForm((p) => ({ ...p, description: v }))}
+            required
+            rows={6}
+            placeholder={`Take **three slow breaths**.
+
+1. Notice how you feel
+2. Soften your shoulders
+3. Name one thing you're grateful for`}
+            hint="Full Micro RX prompt — Markdown (**bold**, lists) renders in the app. Cards show a plain-text preview."
+          />
+          <MarkdownBodyField
+            label="Caption"
+            value={form.caption}
+            onChange={(v) => setForm((p) => ({ ...p, caption: v }))}
+            rows={3}
+            placeholder="Optional caption. Markdown is supported: **bold** or *italic*."
+            hint="Optional short text shown with this Micro RX — Markdown formatting renders in the app."
+          />
           <label>
             Carousel headline
             <input
@@ -323,8 +324,7 @@ export function MicroRxPanel() {
                   <td>{item.subTopic ?? "—"}</td>
                   <td>{item.title}</td>
                   <td>
-                    {(item.description ?? "").slice(0, 80)}
-                    {(item.description?.length ?? 0) > 80 ? "…" : ""}
+                    {markdownPreview(item.description ?? "") || "—"}
                   </td>
                   <td>{item.topic ?? "—"}</td>
                   <td>
