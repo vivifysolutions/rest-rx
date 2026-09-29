@@ -134,6 +134,8 @@ export type Event = {
   format: string | null;
   price: number | null;
   registrationUrl: string | null;
+  instagram: string | null;
+  phone: string | null;
   isFeatured: boolean;
   featuredOrder?: number | null;
   isFeaturedOnHome: boolean;
@@ -174,6 +176,8 @@ export type CreateEventInput = {
   format?: string;
   price?: number;
   registrationUrl?: string;
+  instagram?: string;
+  phone?: string;
   isFeatured?: boolean;
   featuredOrder?: number;
   isFeaturedOnHome?: boolean;

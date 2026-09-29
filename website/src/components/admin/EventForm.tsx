@@ -18,6 +18,7 @@ import {
   isVirtualLocation,
   locationToApiPayload,
 } from "@/lib/address";
+import { normalizeInstagramHandle } from "@/lib/social";
 import type { CreateEventInput } from "@/lib/types";
 
 const EVENT_ABOUT_PLACEHOLDER = `What this event is about. Markdown is supported:
@@ -38,6 +39,8 @@ export type EventFormValues = {
   location: LocationValue;
   price: string;
   registrationUrl: string;
+  instagram: string;
+  phone: string;
   images: string[];
   startDate: string;
   endDate: string;
@@ -74,6 +77,8 @@ export function formValuesToEventBody(
     ...locationPayload,
     price: form.price ? Number(form.price) : undefined,
     registrationUrl: form.registrationUrl.trim() || undefined,
+    instagram: normalizeInstagramHandle(form.instagram) ?? "",
+    phone: form.phone.trim(),
     image: images[0],
     images,
     isFeatured: form.isFeatured,
@@ -211,6 +216,29 @@ export function EventForm({
             value={form.registrationUrl}
             onChange={(e) => onChange("registrationUrl", e.target.value)}
             placeholder="https://..."
+          />
+        </label>
+      </div>
+
+      <div className="admin-form-row">
+        <label>
+          Instagram
+          <input
+            value={form.instagram}
+            onChange={(e) => onChange("instagram", e.target.value)}
+            placeholder="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+        </label>
+        <label>
+          Phone
+          <input
+            type="tel"
+            value={form.phone}
+            onChange={(e) => onChange("phone", e.target.value)}
+            placeholder="(555) 123-4567"
           />
         </label>
       </div>

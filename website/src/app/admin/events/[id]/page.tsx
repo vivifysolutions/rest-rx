@@ -13,6 +13,7 @@ import {
 import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import { deleteEvent, getEventById, updateEvent } from "@/lib/api";
+import { formatInstagramLabel, instagramProfileUrl } from "@/lib/social";
 import type { Event } from "@/lib/types";
 
 export default function AdminEventDetailPage() {
@@ -125,6 +126,16 @@ export default function AdminEventDetailPage() {
           label="End"
           value={item.endDate ? new Date(item.endDate).toLocaleString() : "—"}
         />
+        <DetailRow label="Instagram">
+          {instagramProfileUrl(item.instagram) ? (
+            <a href={instagramProfileUrl(item.instagram)!} target="_blank" rel="noreferrer">
+              {formatInstagramLabel(item.instagram)}
+            </a>
+          ) : (
+            "—"
+          )}
+        </DetailRow>
+        <DetailRow label="Phone" value={item.phone?.trim() || "—"} />
       </DetailSection>
 
       {item.description && (
