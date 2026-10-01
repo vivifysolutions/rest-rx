@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
+import { CreateForumForm } from "@/components/admin/CreateForumForm";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
@@ -13,6 +14,7 @@ import {
   moderateThread,
 } from "@/lib/api";
 import { compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
+import { canAccessExpertRoutes } from "@/lib/user-types";
 import type { ForumPost, Thread } from "@/lib/types";
 
 type CommunitySort = "title" | "topic" | "author" | "created";
@@ -42,8 +44,11 @@ function authorLabel(author: {
 }
 
 export default function AdminCommunityPage() {
-  const { refreshToken } = usePortalAuth();
+  const { refreshToken, userType } = usePortalAuth();
+  const canCreateForum = canAccessExpertRoutes(userType);
   const [tab, setTab] = useState<"threads" | "posts">("threads");
+  const [creating, setCreating] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [posts, setPosts] = useState<ForumPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,17 +162,17 @@ export default function AdminCommunityPage() {
     <>
       <ContentPageHeader
         title="Community"
-        description="Moderate forum threads and feed posts. Click a title to review replies and comments."
+        description="Start a forum or review existing discussions. Only experts and admins can create forums."
       />
 
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", alignItems: "center", flexWrap: "wrap" }}>
         <button
           type="button"
           className={`admin-btn ${tab === "threads" ? "admin-btn-primary" : ""}`}
           style={tab !== "threads" ? { background: "#e8eef3", color: "var(--downriver)" } : undefined}
           onClick={() => setTab("threads")}
         >
-          Threads ({threads.length})
+          Forums ({threads.length})
         </button>
         <button
           type="button"
@@ -177,8 +182,33 @@ export default function AdminCommunityPage() {
         >
           Feed posts ({posts.length})
         </button>
+        {canCreateForum && tab === "threads" && !creating ? (
+          <button
+            type="button"
+            className="admin-btn admin-btn-primary"
+            style={{ marginLeft: "auto" }}
+            onClick={() => {
+              setSuccess(null);
+              setCreating(true);
+            }}
+          >
+            Create new forum
+          </button>
+        ) : null}
       </div>
 
+      {creating && canCreateForum && tab === "threads" ? (
+        <CreateForumForm
+          onCancel={() => setCreating(false)}
+          onCreated={() => {
+            setCreating(false);
+            setSuccess("Forum created.");
+            void load();
+          }}
+        />
+      ) : null}
+
+      {success && <p className="admin-success admin-card">{success}</p>}
       {error && <p className="admin-error admin-card">{error}</p>}
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>

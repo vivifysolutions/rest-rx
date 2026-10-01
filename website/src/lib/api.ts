@@ -600,6 +600,19 @@ export async function getThreadById(token: string, id: string): Promise<ThreadDe
   return request<ThreadDetail>(`/threads/${id}`, { token });
 }
 
+export type CreateThreadInput = {
+  title: string;
+  content: string;
+  topic?: string;
+  subTopic?: string;
+  imageUrl?: string;
+  images?: string[];
+};
+
+export async function createThread(token: string, body: CreateThreadInput): Promise<Thread> {
+  return request<Thread>("/threads", { method: "POST", token, body });
+}
+
 export async function getForumPosts(
   token: string,
   params?: {
