@@ -1,4 +1,4 @@
-export const LEGAL_LAST_UPDATED = "September 3, 2026";
+export const LEGAL_LAST_UPDATED = "October 1, 2026";
 
 export const LEGAL_ENTITY = "Rest & Rx, LLC";
 export const SUPPORT_EMAIL = "support@restandrx.com";
@@ -82,7 +82,7 @@ export const PRIVACY_POLICY = {
       heading: "7. Analytics, cookies, and tracking",
       paragraphs: [
         "The website may use cookies or similar technologies to keep you signed in and understand basic usage. You can control cookies in your browser.",
-        "On iOS, we may ask for permission under Apple’s App Tracking Transparency framework so we can measure product usage with Firebase Analytics. If you decline, the app still works and we do not collect that analytics. Crash reports and the features you use still operate. We do not use your information to show third-party ads or to track you across other companies’ apps for advertising.",
+        "The app uses first-party product analytics (Firebase Analytics) to understand how features are used so we can improve Rest & Rx. This analytics stays on while you use the app. It is not used to track you across other companies’ apps or websites, and we do not use it for advertising. We do not request Apple’s App Tracking Transparency permission.",
       ],
     },
     {
