@@ -133,6 +133,12 @@ export default function AdminDiscountDetailPage() {
         />
       </DetailSection>
 
+      <DetailSection title="Performance">
+        <DetailRow label="Views" value={String(item.views ?? 0)} />
+        <DetailRow label="Saves" value={String(item._count?.saves ?? 0)} />
+        <DetailRow label="Redemptions" value={String(item._count?.redemptions ?? 0)} />
+      </DetailSection>
+
       {item.description && (
         <DetailSection title="About this offer">
           <DetailRow label="Content">
