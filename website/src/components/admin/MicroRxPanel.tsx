@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
+import { DurationField } from "@/components/admin/DurationField";
 import {
   AdminFormActions,
   formHasUnsavedChanges,
@@ -91,6 +92,7 @@ export function MicroRxPanel() {
   const [editBaseline, setEditBaseline] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sortByKey, setSortByKey] = useState<MicroRxSort>("order");
+  const formCardRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -185,6 +187,8 @@ export function MicroRxPanel() {
     setEditingId(item.id);
     setForm(next);
     setEditBaseline(serializeFormState(next));
+    // The form sits above the list; bring it into view so the admin sees what they're editing.
+    formCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function cancelEdit() {
@@ -200,7 +204,11 @@ export function MicroRxPanel() {
 
   return (
     <>
-      <div className="admin-card" style={{ marginBottom: "1rem" }}>
+      <div
+        ref={formCardRef}
+        className="admin-card"
+        style={{ marginBottom: "1rem", scrollMarginTop: "1rem" }}
+      >
         <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>
           {editingId ? "Edit Micro RX" : "Add Micro RX"}
         </h2>
@@ -268,14 +276,11 @@ export function MicroRxPanel() {
                 placeholder="0001"
               />
             </label>
-            <label>
-              Duration badge
-              <input
-                value={form.duration}
-                onChange={(e) => setForm((p) => ({ ...p, duration: e.target.value }))}
-                placeholder="1 min"
-              />
-            </label>
+            <DurationField
+              value={form.duration}
+              onChange={(v) => setForm((p) => ({ ...p, duration: v }))}
+              hint="Shown as the badge and sets the in-app timer. Defaults to 1 minute if left blank."
+            />
           </div>
           {!editingId && (
             <button type="submit" className="admin-btn admin-btn-primary">

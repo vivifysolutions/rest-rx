@@ -2,6 +2,7 @@
 
 import { FormEvent } from "react";
 import { ComboInput } from "@/components/admin/ComboInput";
+import { DurationField } from "@/components/admin/DurationField";
 import { ArticleBodyField, MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import {
   ExpertUserPicker,
@@ -263,14 +264,15 @@ export function ResourceForm({
             required
           />
         </label>
-        <label>
-          Duration
-          <input
-            value={form.duration}
-            onChange={(e) => onChange("duration", e.target.value)}
-            placeholder="15 min"
-          />
-        </label>
+        <DurationField
+          value={form.duration}
+          onChange={(v) => onChange("duration", v)}
+          hint={
+            isMicroRxType(form.type)
+              ? "Shown as the badge and sets the in-app timer. Defaults to 1 minute if left blank."
+              : undefined
+          }
+        />
       </div>
 
       <div className="admin-form-row">
