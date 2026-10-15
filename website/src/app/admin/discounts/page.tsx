@@ -29,7 +29,15 @@ import { formatDiscountTierLabel, DISCOUNT_TIERS_ENABLED } from "@/lib/reference
 import type { CreateDiscountInput, Discount } from "@/lib/types";
 import { labelApplicationTypeShort } from "@/lib/partner-application-options";
 
-type DiscountSort = "name" | "category" | "featured" | "homeOrder" | "discoverOrder" | "status";
+type DiscountSort =
+  | "name"
+  | "category"
+  | "featured"
+  | "homeOrder"
+  | "discoverOrder"
+  | "status"
+  | "views"
+  | "redemptions";
 
 const SORT_OPTIONS: { value: DiscountSort; label: string }[] = [
   { value: "name", label: "Brand / business name" },
@@ -38,6 +46,8 @@ const SORT_OPTIONS: { value: DiscountSort; label: string }[] = [
   { value: "homeOrder", label: "Home order" },
   { value: "discoverOrder", label: "Discover order" },
   { value: "status", label: "Status" },
+  { value: "views", label: "Most viewed" },
+  { value: "redemptions", label: "Most redeemed" },
 ];
 
 function partnerName(d: Discount): string {
@@ -94,6 +104,13 @@ export default function AdminDiscountsPage() {
             const bPub = b.isPublished ?? true;
             return Number(bPub) - Number(aPub) || compareText(a.title, b.title);
           }
+          case "views":
+            return (b.views ?? 0) - (a.views ?? 0) || compareText(a.title, b.title);
+          case "redemptions":
+            return (
+              (b._count?.redemptions ?? 0) - (a._count?.redemptions ?? 0) ||
+              compareText(a.title, b.title)
+            );
           case "name":
           default:
             return compareText(a.title, b.title);
@@ -255,6 +272,9 @@ export default function AdminDiscountsPage() {
                 <th>Featured</th>
                 <th>Discover order</th>
                 <th>Home order</th>
+                <th>Views</th>
+                <th>Saves</th>
+                <th>Redemptions</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -274,6 +294,9 @@ export default function AdminDiscountsPage() {
                   <td>{featuredPlacementLabel(d)}</td>
                   <td>{d.featuredOrder ?? "—"}</td>
                   <td>{d.featuredOnHomeOrder ?? "—"}</td>
+                  <td>{d.views ?? 0}</td>
+                  <td>{d._count?.saves ?? 0}</td>
+                  <td>{d._count?.redemptions ?? 0}</td>
                   <td>
                     <ContentRowActions
                       isPublished={d.isPublished ?? true}
