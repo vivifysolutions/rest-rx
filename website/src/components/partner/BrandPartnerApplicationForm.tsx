@@ -9,6 +9,12 @@ import {
 import { auth } from "@/lib/firebase";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
 import {
+  isEmailNotVerifiedError,
+  isEmailVerificationRequired,
+  refreshAndCheckEmailVerified,
+  sendApplicantEmailVerification,
+} from "@/lib/email-verification";
+import {
   ApiError,
   getCategories,
   getMe,
@@ -48,6 +54,16 @@ import {
   validateProfessionalCredentials,
 } from "@/lib/partner-credentials-validation";
 import { PartnerProfessionalCredentialsFields } from "@/components/partner/PartnerProfessionalCredentialsFields";
+
+/** Matches the mobile app's verify-email resend cooldown. */
+const RESEND_SECONDS = 120;
+
+/** 90 → "01:30" */
+function formatCountdown(totalSeconds: number): string {
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+  const seconds = String(totalSeconds % 60).padStart(2, "0");
+  return `${minutes}:${seconds}`;
+}
 
 const STEP_DESCRIPTIONS: Record<string, string> = {
   "Partnership type":
@@ -415,6 +431,12 @@ export default function BrandPartnerApplicationForm({
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [interestedInAppDiscounts, setInterestedInAppDiscounts] = useState(false);
+  const [awaitingEmailVerification, setAwaitingEmailVerification] = useState(false);
+  const [resendSecondsLeft, setResendSecondsLeft] = useState(0);
+  const [resending, setResending] = useState(false);
+  /** Set when the API rejected a submit as unverified, even if this build's flag is off. */
+  const [apiRequiresVerification, setApiRequiresVerification] = useState(false);
+  const verificationRequired = isEmailVerificationRequired() || apiRequiresVerification;
 
   const steps = getSteps(form.applicationType);
   const step = steps[stepIndex] ?? steps[0];
@@ -464,6 +486,12 @@ export default function BrandPartnerApplicationForm({
         });
     }
   }, [step, form.applicationType]);
+
+  useEffect(() => {
+    if (resendSecondsLeft <= 0) return;
+    const id = setTimeout(() => setResendSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendSecondsLeft]);
 
   useEffect(() => {
     if (stepIndex >= steps.length) {
@@ -522,6 +550,63 @@ export default function BrandPartnerApplicationForm({
     const token = await credential.user.getIdToken();
     await getMe(token);
     return token;
+  }
+
+  /**
+   * Production only. Sends the verification link the first time, then holds the applicant
+   * until they click it — the API rejects submits from unverified emails. Returns true
+   * once verified (or when verification is not required). `force` skips the flag check,
+   * for when the API has just demanded verification.
+   */
+  async function ensureEmailVerified(force = false): Promise<boolean> {
+    if (!force && !verificationRequired) return true;
+    const user = auth.currentUser;
+    if (!user) return false;
+
+    if (await refreshAndCheckEmailVerified(user)) {
+      setAwaitingEmailVerification(false);
+      return true;
+    }
+
+    if (awaitingEmailVerification) {
+      setError("Your email isn't verified yet. Open the link we sent, then press Continue.");
+    } else {
+      await sendApplicantEmailVerification(user);
+      setAwaitingEmailVerification(true);
+      setResendSecondsLeft(RESEND_SECONDS);
+    }
+    return false;
+  }
+
+  /** The API refused the submit as unverified: send the link and wait on "Your account". */
+  async function promptEmailVerificationFromApi() {
+    setApiRequiresVerification(true);
+    try {
+      if (await ensureEmailVerified(true)) {
+        // Verified already, but the submit used an old token. ensureEmailVerified refreshed it.
+        setError("Your email is verified. Press Submit application again.");
+        return;
+      }
+      setError(null);
+      setStepIndex(Math.max(0, steps.indexOf("Your account")));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : getFirebaseAuthErrorMessage(err));
+    }
+  }
+
+  async function handleResendVerification() {
+    const user = auth.currentUser;
+    if (!user || resending || resendSecondsLeft > 0) return;
+    setResending(true);
+    setError(null);
+    try {
+      await sendApplicantEmailVerification(user);
+      setResendSecondsLeft(RESEND_SECONDS);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : getFirebaseAuthErrorMessage(err));
+    } finally {
+      setResending(false);
+    }
   }
 
   function updateBusiness(patch: Partial<PartnerApplicationFormData["business"]>) {
@@ -842,17 +927,21 @@ export default function BrandPartnerApplicationForm({
     setLoading(true);
     setError(null);
     try {
-      let token: string;
+      let token = await ensureApplicantSignedIn();
+
+      if (!(await ensureEmailVerified())) {
+        setStepIndex(Math.max(0, steps.indexOf("Your account")));
+        return;
+      }
+      // Verification force-refreshes the token; use the one carrying email_verified: true.
+      token = (await auth.currentUser?.getIdToken()) ?? token;
 
       if (needsProfessionalCredentials(form.applicationType)) {
-        token = await ensureApplicantSignedIn();
         await patchMe(token, {
           ...professionalCredentialsToProfilePayload(form.professional),
           phone: form.applicant.phone.trim() || undefined,
         });
         await markApplicationSubmitted(token);
-      } else {
-        token = await ensureApplicantSignedIn();
       }
 
       if (isResubmitting) {
@@ -862,6 +951,10 @@ export default function BrandPartnerApplicationForm({
       }
       setSubmitted(true);
     } catch (err) {
+      if (isEmailNotVerifiedError(err)) {
+        await promptEmailVerificationFromApi();
+        return;
+      }
       setError(err instanceof ApiError ? err.message : getFirebaseAuthErrorMessage(err));
     } finally {
       setLoading(false);
@@ -876,10 +969,14 @@ export default function BrandPartnerApplicationForm({
     }
     setError(null);
 
-    if (step === "Your account" && needsProfessionalCredentials(form.applicationType)) {
+    if (
+      step === "Your account" &&
+      (needsProfessionalCredentials(form.applicationType) || verificationRequired)
+    ) {
       setStepLoading(true);
       try {
         await ensureApplicantSignedIn();
+        if (!(await ensureEmailVerified())) return;
         setStepIndex((i) => i + 1);
       } catch (err) {
         setError(err instanceof ApiError ? err.message : getFirebaseAuthErrorMessage(err));
@@ -1016,6 +1113,37 @@ export default function BrandPartnerApplicationForm({
               },
             ]}
           />
+        </div>
+      );
+    }
+
+    if (step === "Your account" && awaitingEmailVerification) {
+      return (
+        <div className="partner-application-form admin-form">
+          <p style={{ marginTop: 0 }}>
+            We sent a verification link to{" "}
+            <strong>{auth.currentUser?.email ?? form.applicant.email}</strong>. Open it to confirm
+            this email is yours, then press <strong>Continue</strong>.
+          </p>
+          <p className="partner-form-hint">
+            Can&apos;t find it? Check your spam or junk folder. Work inboxes often filter these.
+          </p>
+          <div>
+            <button
+              type="button"
+              className="admin-btn"
+              disabled={resending || resendSecondsLeft > 0}
+              onClick={() => {
+                void handleResendVerification();
+              }}
+            >
+              {resending
+                ? "Sending…"
+                : resendSecondsLeft > 0
+                  ? `Resend email in ${formatCountdown(resendSecondsLeft)}`
+                  : "Resend email"}
+            </button>
+          </div>
         </div>
       );
     }
