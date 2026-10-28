@@ -129,6 +129,14 @@ export async function patchMe(
   });
 }
 
+/** Emails the signed-in user a verification link (sent by the API through Resend). */
+export async function sendVerificationEmail(token: string): Promise<{ sent: boolean }> {
+  return request<{ sent: boolean }>("/users/me/verification-email", {
+    method: "POST",
+    token,
+  });
+}
+
 export async function markApplicationSubmitted(token: string): Promise<ApiUser> {
   return request<ApiUser>("/users/me/application-submitted", {
     method: "POST",
