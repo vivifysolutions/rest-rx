@@ -26,6 +26,8 @@ import {
 } from "@/lib/admin-sort";
 import { ContentRowActions, PublishedBadge } from "@/components/admin/ContentRowActions";
 import { FeaturedLineup, featuredPlacementLabel, type FeaturedSurface } from "@/components/admin/FeaturedLineup";
+import { RecurrenceBadge } from "@/components/admin/RecurrenceBadge";
+import { deleteEventConfirmMessage } from "@/lib/event-recurrence";
 import { labelApplicationTypeShort } from "@/lib/partner-application-options";
 import { partnerOwnerDisplayName, toPartnerOwnerOptions } from "@/lib/partner-owner";
 import type { Event } from "@/lib/types";
@@ -54,6 +56,12 @@ const EMPTY_FORM: EventFormValues = {
   images: [],
   startDate: "",
   endDate: "",
+  recurrenceFrequency: "",
+  recurrenceEnds: "never",
+  recurrenceEndsAt: "",
+  recurrenceCount: "",
+  recurrenceTimeZone: "",
+  recurrenceEditable: true,
   isFeatured: false,
   isFeaturedOnHome: false,
   featuredOrder: "",
@@ -224,10 +232,10 @@ export default function AdminEventsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this event?")) return;
+  async function handleDelete(ev: Event) {
+    if (!confirm(deleteEventConfirmMessage(ev))) return;
     const token = await refreshToken();
-    await deleteEvent(id, token ?? undefined);
+    await deleteEvent(ev.id, token ?? undefined);
     await load();
   }
 
@@ -284,6 +292,7 @@ export default function AdminEventsPage() {
                 <th>Format</th>
                 <th>Location</th>
                 <th>Start</th>
+                <th>Repeats</th>
                 <th>Price</th>
                 <th>Status</th>
                 <th>Featured</th>
@@ -305,6 +314,9 @@ export default function AdminEventsPage() {
                   <td>
                     {ev.startDate ? new Date(ev.startDate).toLocaleDateString() : "—"}
                   </td>
+                  <td>
+                    <RecurrenceBadge event={ev} />
+                  </td>
                   <td>{ev.price == null ? "—" : `$${ev.price}`}</td>
                   <td>
                     <PublishedBadge isPublished={ev.isPublished ?? true} />
@@ -317,7 +329,7 @@ export default function AdminEventsPage() {
                       isPublished={ev.isPublished ?? true}
                       onTogglePublish={() => handleTogglePublish(ev)}
                       editHref={`/admin/events/${ev.id}/edit`}
-                      onDelete={() => handleDelete(ev.id)}
+                      onDelete={() => handleDelete(ev)}
                     />
                   </td>
                 </tr>

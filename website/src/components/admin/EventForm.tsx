@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useRef } from "react";
 import { MarkdownBodyField } from "@/components/admin/ArticleBodyField";
 import { ComboInput } from "@/components/admin/ComboInput";
 import { FeaturedOrderFields, FeaturedToggle, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
@@ -18,7 +18,8 @@ import {
   isVirtualLocation,
   locationToApiPayload,
 } from "@/lib/address";
-import type { CreateEventInput } from "@/lib/types";
+import { RECURRENCE_OPTIONS, browserTimeZone, eventDateError } from "@/lib/event-recurrence";
+import type { CreateEventInput, EventRecurrenceFrequency } from "@/lib/types";
 
 const EVENT_ABOUT_PLACEHOLDER = `What this event is about. Markdown is supported:
 
@@ -41,6 +42,14 @@ export type EventFormValues = {
   images: string[];
   startDate: string;
   endDate: string;
+  recurrenceFrequency: "" | EventRecurrenceFrequency;
+  recurrenceEnds: "never" | "on" | "after";
+  /** YYYY-MM-DD */
+  recurrenceEndsAt: string;
+  recurrenceCount: string;
+  recurrenceTimeZone: string;
+  /** False on a past occurrence: its rule no longer drives the series, so it isn't sent. */
+  recurrenceEditable: boolean;
   isFeatured: boolean;
   isFeaturedOnHome: boolean;
   featuredOrder: string;
@@ -86,6 +95,20 @@ export function formValuesToEventBody(
   if (options?.includePartner) {
     body.brandPartnerApplicationId = form.brandPartnerApplicationId.trim();
   }
+  if (form.recurrenceEditable) {
+    body.recurrenceFrequency = form.recurrenceFrequency || null;
+    if (form.recurrenceFrequency) {
+      body.recurrenceTimeZone = form.recurrenceTimeZone || browserTimeZone();
+      body.recurrenceEndsAt =
+        form.recurrenceEnds === "on" && form.recurrenceEndsAt
+          ? new Date(`${form.recurrenceEndsAt}T23:59:59`).toISOString()
+          : null;
+      body.recurrenceCount =
+        form.recurrenceEnds === "after" && form.recurrenceCount
+          ? Number(form.recurrenceCount)
+          : null;
+    }
+  }
   return body;
 }
 
@@ -100,6 +123,13 @@ export function EventForm({
   submitLabel = "Save event",
   onSubmit,
 }: Props) {
+  const endInputRef = useRef<HTMLInputElement>(null);
+  const dateError = eventDateError(form.startDate, form.endDate, form.recurrenceFrequency);
+  // Blocks the browser submit and shows the message on the End field.
+  useEffect(() => {
+    endInputRef.current?.setCustomValidity(dateError ?? "");
+  }, [dateError]);
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     await onSubmit(formValuesToEventBody(form, { includePartner: showPartnerPicker }));
@@ -222,17 +252,98 @@ export function EventForm({
             type="datetime-local"
             value={form.startDate}
             onChange={(e) => onChange("startDate", e.target.value)}
+            required={Boolean(form.recurrenceFrequency)}
           />
         </label>
         <label>
           End
           <input
+            ref={endInputRef}
             type="datetime-local"
             value={form.endDate}
             onChange={(e) => onChange("endDate", e.target.value)}
           />
         </label>
       </div>
+      {dateError && <p className="admin-error">{dateError}</p>}
+
+      <fieldset className="admin-form-fieldset">
+        <legend>Repeats</legend>
+        {form.recurrenceEditable ? (
+          <>
+            <div className="admin-form-row">
+              <label>
+                Repeats
+                <select
+                  value={form.recurrenceFrequency}
+                  onChange={(e) =>
+                    onChange("recurrenceFrequency", e.target.value as EventFormValues["recurrenceFrequency"])
+                  }
+                >
+                  <option value="">Does not repeat</option>
+                  {RECURRENCE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {form.recurrenceFrequency && (
+                <label>
+                  Ends
+                  <select
+                    value={form.recurrenceEnds}
+                    onChange={(e) =>
+                      onChange("recurrenceEnds", e.target.value as EventFormValues["recurrenceEnds"])
+                    }
+                  >
+                    <option value="never">Never</option>
+                    <option value="on">On a date</option>
+                    <option value="after">After a number of times</option>
+                  </select>
+                </label>
+              )}
+            </div>
+            {form.recurrenceFrequency && form.recurrenceEnds === "on" && (
+              <label>
+                Last date
+                <input
+                  type="date"
+                  value={form.recurrenceEndsAt}
+                  onChange={(e) => onChange("recurrenceEndsAt", e.target.value)}
+                  required
+                />
+              </label>
+            )}
+            {form.recurrenceFrequency && form.recurrenceEnds === "after" && (
+              <label>
+                Number of times (including this one)
+                <input
+                  type="number"
+                  min={2}
+                  max={520}
+                  value={form.recurrenceCount}
+                  onChange={(e) => onChange("recurrenceCount", e.target.value)}
+                  required
+                />
+              </label>
+            )}
+            {form.recurrenceFrequency && (
+              <span className="admin-field-hint">
+                The app lists one occurrence at a time. The day after it ends, the next one appears
+                with the same details, so members never see a run of copies. Changes saved here apply
+                to this and future occurrences. Times repeat in{" "}
+                {form.recurrenceTimeZone || browserTimeZone()}.
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="admin-field-hint">
+            This is a past occurrence of a repeating event. Edit the latest occurrence to change how
+            the series repeats.
+          </span>
+        )}
+      </fieldset>
 
       <fieldset className="admin-form-fieldset">
         <legend>Photos</legend>
