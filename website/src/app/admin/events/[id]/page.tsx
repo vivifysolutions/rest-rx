@@ -13,6 +13,7 @@ import {
 import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { PublishedBadge } from "@/components/admin/ContentRowActions";
 import { deleteEvent, getEventById, updateEvent } from "@/lib/api";
+import { deleteEventConfirmMessage, recurrenceSummary } from "@/lib/event-recurrence";
 import type { Event } from "@/lib/types";
 
 export default function AdminEventDetailPage() {
@@ -48,7 +49,7 @@ export default function AdminEventDetailPage() {
   }
 
   async function handleDelete() {
-    if (!item || !confirm("Delete this event?")) return;
+    if (!item || !confirm(deleteEventConfirmMessage(item))) return;
     const token = await refreshToken();
     await deleteEvent(item.id, token ?? undefined);
     router.push("/admin/events");
@@ -125,6 +126,7 @@ export default function AdminEventDetailPage() {
           label="End"
           value={item.endDate ? new Date(item.endDate).toLocaleString() : "—"}
         />
+        <DetailRow label="Repeats" value={recurrenceSummary(item) ?? "Does not repeat"} />
       </DetailSection>
 
       {item.description && (

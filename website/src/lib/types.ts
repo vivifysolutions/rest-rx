@@ -141,6 +141,15 @@ export type Event = {
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
+  recurrenceFrequency?: EventRecurrenceFrequency | null;
+  recurrenceTimeZone?: string | null;
+  recurrenceEndsAt?: string | null;
+  recurrenceCount?: number | null;
+  /** 1-based position in its series. */
+  recurrenceIndex?: number;
+  seriesId?: string | null;
+  /** Set once the next occurrence was created from this one; it is then a past occurrence. */
+  nextOccurrenceCreatedAt?: string | null;
   ownerId?: string | null;
   brandPartnerApplicationId?: string | null;
   brandPartnerApplication?: {
@@ -154,6 +163,8 @@ export type Event = {
   createdAt: string;
   updatedAt?: string;
 };
+
+export type EventRecurrenceFrequency = "weekly" | "biweekly" | "monthly";
 
 export type CreateEventInput = {
   title: string;
@@ -181,6 +192,11 @@ export type CreateEventInput = {
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
+  /** Null stops repeating. */
+  recurrenceFrequency?: EventRecurrenceFrequency | null;
+  recurrenceTimeZone?: string | null;
+  recurrenceEndsAt?: string | null;
+  recurrenceCount?: number | null;
   /** Admin: link to approved brand / expert / foundation application. Empty string clears. */
   brandPartnerApplicationId?: string;
 };
