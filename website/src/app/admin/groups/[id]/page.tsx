@@ -11,7 +11,15 @@ import {
 } from "@/components/admin/AdminDetailView";
 import { AdminMarkdown } from "@/components/admin/AdminMarkdown";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { deletePost, getForumPosts, getGroupById, updateGroupCover, updateGroupStatus } from "@/lib/api";
+import { ToggleRow, parseFeaturedOrderInput } from "@/components/admin/FeaturedToggle";
+import {
+  deletePost,
+  getForumPosts,
+  getGroupById,
+  updateGroupCover,
+  updateGroupFeatured,
+  updateGroupStatus,
+} from "@/lib/api";
 import { formatGroupStatus } from "@/lib/admin-labels";
 import type { ForumAuthor, ForumPost, Group } from "@/lib/types";
 
@@ -38,6 +46,12 @@ export default function AdminGroupDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [homeOrder, setHomeOrder] = useState("");
+  const [featureError, setFeatureError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setHomeOrder(group?.featuredOnHomeOrder != null ? String(group.featuredOnHomeOrder) : "");
+  }, [group?.featuredOnHomeOrder]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +97,25 @@ export default function AdminGroupDetailPage() {
       if (!token) return;
       await updateGroupCover(token, group.id, url || null);
       await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleFeaturedChange(body: {
+    isFeaturedOnHome: boolean;
+    featuredOnHomeOrder?: number;
+  }) {
+    if (!group) return;
+    setBusy(true);
+    setFeatureError(null);
+    try {
+      const token = await refreshToken();
+      if (!token) return;
+      await updateGroupFeatured(token, group.id, body);
+      await load();
+    } catch (e) {
+      setFeatureError(e instanceof Error ? e.message : "Failed to update Home placement");
     } finally {
       setBusy(false);
     }
@@ -139,6 +172,62 @@ export default function AdminGroupDetailPage() {
           label="Group cover"
           guide="group-cover"
         />
+      </DetailSection>
+
+      <DetailSection title="Home placement">
+        <div className="admin-featured-placement">
+          <ToggleRow
+            checked={Boolean(group.isFeaturedOnHome)}
+            onChange={(next) =>
+              void handleFeaturedChange({
+                isFeaturedOnHome: next,
+                featuredOnHomeOrder: next ? parseFeaturedOrderInput(homeOrder) : undefined,
+              })
+            }
+            disabled={busy}
+            title="Feature on Home"
+            descriptionOn="Showing in Featured Groups on the app Home tab, for members everywhere"
+            descriptionOff="Turn on to promote this group (e.g. a travel or retreat group) on the app Home tab"
+          />
+          {group.isFeaturedOnHome && group.status !== "active" ? (
+            <p className="admin-error">
+              This group is {formatGroupStatus(group.status).toLowerCase()}, so it won&apos;t show on
+              Home until it&apos;s active again.
+            </p>
+          ) : null}
+          {group.isFeaturedOnHome ? (
+            <label>
+              <span className="admin-field-label">Home order</span>
+              <span className="admin-field-hint">
+                Position in the Featured Groups row (1 = first). Leave blank to sort last.
+              </span>
+              <span style={{ display: "flex", gap: "0.5rem" }}>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={homeOrder}
+                  disabled={busy}
+                  onChange={(e) => setHomeOrder(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="admin-btn admin-btn-sm"
+                  disabled={busy || parseFeaturedOrderInput(homeOrder) == null}
+                  onClick={() =>
+                    void handleFeaturedChange({
+                      isFeaturedOnHome: true,
+                      featuredOnHomeOrder: parseFeaturedOrderInput(homeOrder),
+                    })
+                  }
+                >
+                  Save position
+                </button>
+              </span>
+            </label>
+          ) : null}
+          {featureError ? <p className="admin-error">{featureError}</p> : null}
+        </div>
       </DetailSection>
 
       <DetailSection title="Overview">

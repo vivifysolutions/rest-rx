@@ -5,18 +5,20 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
-import { getGroups, updateGroupStatus } from "@/lib/api";
+import { FeaturedLineup, type FeaturedSurface } from "@/components/admin/FeaturedLineup";
+import { getGroups, updateGroupFeatured, updateGroupStatus } from "@/lib/api";
 import type { Group } from "@/lib/types";
 import { formatGroupStatus } from "@/lib/admin-labels";
-import { compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
+import { compareBoolDesc, compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
 
-type GroupSort = "name" | "topic" | "location" | "members" | "status" | "created";
+type GroupSort = "name" | "topic" | "location" | "members" | "status" | "featured" | "created";
 
 const SORT_OPTIONS: { value: GroupSort; label: string }[] = [
   { value: "name", label: "Name" },
   { value: "topic", label: "Topic" },
   { value: "location", label: "Location" },
   { value: "members", label: "Members (most first)" },
+  { value: "featured", label: "Featured on Home first" },
   { value: "status", label: "Status" },
   { value: "created", label: "Created (newest)" },
 ];
@@ -31,9 +33,10 @@ export default function AdminGroupsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortByKey, setSortByKey] = useState<GroupSort>("name");
+  const [moving, setMoving] = useState<{ surface: FeaturedSurface; id: string } | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (opts?: { quiet?: boolean }) => {
+    if (!opts?.quiet) setLoading(true);
     setError(null);
     try {
       const data = await getGroups({ limit: 100, status: "all" });
@@ -44,6 +47,20 @@ export default function AdminGroupsPage() {
       setLoading(false);
     }
   }, []);
+
+  const lineupItems = useMemo(
+    () =>
+      items.map((g) => ({
+        ...g,
+        title: g.name,
+        image: g.coverImageUrl,
+        isFeatured: false,
+        isFeaturedOnHome: Boolean(g.isFeaturedOnHome),
+        // Hidden and archived groups aren't shown in the app, like unpublished content.
+        isPublished: g.status === "active",
+      })),
+    [items],
+  );
 
   useEffect(() => {
     load();
@@ -61,6 +78,11 @@ export default function AdminGroupsPage() {
             return (b.memberCount ?? 0) - (a.memberCount ?? 0) || compareText(a.name, b.name);
           case "status":
             return compareText(formatGroupStatus(a.status), formatGroupStatus(b.status)) || compareText(a.name, b.name);
+          case "featured":
+            return (
+              compareBoolDesc(Boolean(a.isFeaturedOnHome), Boolean(b.isFeaturedOnHome)) ||
+              compareText(a.name, b.name)
+            );
           case "created":
             return compareDateDesc(a.createdAt, b.createdAt) || compareText(a.name, b.name);
           case "name":
@@ -81,11 +103,50 @@ export default function AdminGroupsPage() {
     await load();
   }
 
+  async function handleMoveLineup(
+    surface: FeaturedSurface,
+    orderedLiveIds: string[],
+    fromIndex: number,
+    direction: -1 | 1,
+  ) {
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= orderedLiveIds.length) return;
+    const next = [...orderedLiveIds];
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    setMoving({ surface, id: moved });
+    setError(null);
+    try {
+      const token = await refreshToken();
+      if (!token) return;
+      await Promise.all(
+        next.map((id, index) => updateGroupFeatured(token, id, { featuredOnHomeOrder: index + 1 })),
+      );
+      await load({ quiet: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update featured order");
+    } finally {
+      setMoving(null);
+    }
+  }
+
   return (
     <>
       <ContentPageHeader
         title="Groups"
-        description="Community groups created by members. Click a name to review posts and comments."
+        description="Community groups created by members. Click a name to review posts and comments, or to feature the group on the app Home tab."
+      />
+
+      <FeaturedLineup
+        items={lineupItems}
+        loading={loading}
+        moving={moving}
+        onMove={handleMoveLineup}
+        sectionLabel="Groups"
+        surfaces={["home"]}
+        detailHref={(g) => `/admin/groups/${g.id}`}
+        editHref={(g) => `/admin/groups/${g.id}`}
+        getMeta={(g) => [g.topic, groupLocation(g)].filter(Boolean).join(" · ") || null}
       />
 
       {error && <p className="admin-error admin-card">{error}</p>}
@@ -106,6 +167,7 @@ export default function AdminGroupsPage() {
                 <th>Location</th>
                 <th>Members</th>
                 <th>Status</th>
+                <th>Home</th>
                 <th>Created</th>
                 <th>Actions</th>
               </tr>
@@ -126,6 +188,7 @@ export default function AdminGroupsPage() {
                   <td>
                     <span className="admin-badge">{formatGroupStatus(g.status)}</span>
                   </td>
+                  <td>{g.isFeaturedOnHome ? `Featured #${g.featuredOnHomeOrder ?? "—"}` : "—"}</td>
                   <td>{new Date(g.createdAt).toLocaleDateString()}</td>
                   <td>
                     <select

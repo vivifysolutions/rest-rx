@@ -723,6 +723,19 @@ export async function updateGroupCover(
   });
 }
 
+/** Features a group on the app Home tab. Sending isFeaturedOnHome with an order slots it in at that position. */
+export async function updateGroupFeatured(
+  token: string,
+  id: string,
+  body: { isFeaturedOnHome?: boolean; featuredOnHomeOrder?: number | null },
+): Promise<Group> {
+  return request<Group>(`/groups/${id}/featured`, {
+    method: "PATCH",
+    token,
+    body,
+  });
+}
+
 export async function updateThreadImages(
   token: string,
   id: string,

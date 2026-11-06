@@ -89,6 +89,8 @@ type Props<T extends FeaturedLineupItem> = {
   detailHref: (item: T) => string;
   editHref: (item: T) => string;
   getMeta?: (item: T) => string | null;
+  /** Lineups to show. Defaults to both; groups are only featured on Home. */
+  surfaces?: FeaturedSurface[];
 };
 
 export function FeaturedLineup<T extends FeaturedLineupItem>({
@@ -100,8 +102,11 @@ export function FeaturedLineup<T extends FeaturedLineupItem>({
   detailHref,
   editHref,
   getMeta,
+  surfaces = ["home", "discover"],
 }: Props<T>) {
-  const columns = columnsFor<T>(sectionLabel);
+  const columns = columnsFor<T>(sectionLabel).filter((column) =>
+    surfaces.includes(column.surface),
+  );
   const liveCounts = columns.map((column) => ({
     surface: column.surface,
     title: column.surface === "home" ? "Home" : "Discover",
