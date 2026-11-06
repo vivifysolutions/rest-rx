@@ -6,7 +6,7 @@ import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { FeaturedLineup, type FeaturedSurface } from "@/components/admin/FeaturedLineup";
-import { getGroups, updateGroupFeatured, updateGroupStatus } from "@/lib/api";
+import { getGroups, reorderFeaturedGroups, updateGroupStatus } from "@/lib/api";
 import type { Group } from "@/lib/types";
 import { formatGroupStatus } from "@/lib/admin-labels";
 import { compareBoolDesc, compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
@@ -30,6 +30,7 @@ function groupLocation(g: Group) {
 export default function AdminGroupsPage() {
   const { refreshToken } = usePortalAuth();
   const [items, setItems] = useState<Group[]>([]);
+  const [featuredItems, setFeaturedItems] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortByKey, setSortByKey] = useState<GroupSort>("name");
@@ -39,8 +40,15 @@ export default function AdminGroupsPage() {
     if (!opts?.quiet) setLoading(true);
     setError(null);
     try {
-      const data = await getGroups({ limit: 100, status: "all" });
-      setItems(data);
+      // The featured lineup is fetched on its own so it's complete even when a featured
+      // group isn't among the 100 most recently active.
+      const [data, featured] = await Promise.all([
+        getGroups({ limit: 100, status: "all" }),
+        getGroups({ limit: 100, status: "all", featuredOnHome: true }),
+      ]);
+      const listed = new Set(data.map((g) => g.id));
+      setItems([...data, ...featured.filter((g) => !listed.has(g.id))]);
+      setFeaturedItems(featured);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load groups");
     } finally {
@@ -50,7 +58,7 @@ export default function AdminGroupsPage() {
 
   const lineupItems = useMemo(
     () =>
-      items.map((g) => ({
+      featuredItems.map((g) => ({
         ...g,
         title: g.name,
         image: g.coverImageUrl,
@@ -59,7 +67,7 @@ export default function AdminGroupsPage() {
         // Hidden and archived groups aren't shown in the app, like unpublished content.
         isPublished: g.status === "active",
       })),
-    [items],
+    [featuredItems],
   );
 
   useEffect(() => {
@@ -119,9 +127,7 @@ export default function AdminGroupsPage() {
     try {
       const token = await refreshToken();
       if (!token) return;
-      await Promise.all(
-        next.map((id, index) => updateGroupFeatured(token, id, { featuredOnHomeOrder: index + 1 })),
-      );
+      await reorderFeaturedGroups(token, next);
       await load({ quiet: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update featured order");
@@ -145,7 +151,7 @@ export default function AdminGroupsPage() {
         sectionLabel="Groups"
         surfaces={["home"]}
         detailHref={(g) => `/admin/groups/${g.id}`}
-        editHref={(g) => `/admin/groups/${g.id}`}
+        notLiveNote="Hidden or archived — not shown in the app until it's active again."
         getMeta={(g) => [g.topic, groupLocation(g)].filter(Boolean).join(" · ") || null}
       />
 

@@ -690,6 +690,8 @@ export async function getGroups(params?: {
   page?: number;
   limit?: number;
   status?: "active" | "inactive" | "archived" | "all";
+  /** Only groups featured on the Home tab. */
+  featuredOnHome?: boolean;
 }): Promise<Group[]> {
   const res = await request<{ groups: Group[] }>(`/groups${buildQuery(params)}`);
   return res.groups;
@@ -723,7 +725,16 @@ export async function updateGroupCover(
   });
 }
 
-/** Features a group on the app Home tab. Sending isFeaturedOnHome with an order slots it in at that position. */
+/** Sets the Home featured groups order. Featured groups left out keep their relative order after these. */
+export async function reorderFeaturedGroups(token: string, ids: string[]): Promise<void> {
+  await request<void>("/groups/featured/reorder", {
+    method: "PATCH",
+    token,
+    body: { ids },
+  });
+}
+
+/** Features a group on the app Home tab, at the given position or last. */
 export async function updateGroupFeatured(
   token: string,
   id: string,
