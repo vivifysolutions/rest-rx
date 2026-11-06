@@ -392,6 +392,9 @@ export type Group = {
   description: string | null;
   coverImageUrl?: string | null;
   status: "active" | "inactive" | "archived";
+  /** Shown in the app Home tab featured groups strip. */
+  isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number | null;
   topic?: string | null;
   country?: string | null;
   state?: string | null;
