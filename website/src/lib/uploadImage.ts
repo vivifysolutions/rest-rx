@@ -3,6 +3,10 @@ import { auth, storage } from "./firebase";
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_BYTES = 32 * 1024 * 1024; // 32 MB
+/** Longest edge for photos shown in the app. Verification photos stay original size. */
+const LISTING_LONG_EDGE = 1600;
+const JPEG_QUALITY = 0.75;
+const CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 function sanitizeStorageFolder(folder: string): string {
   return folder
@@ -36,6 +40,45 @@ function buildStoragePath(folder: string, uid: string, ext: string): string {
     return `${safeFolder}/${uid}/${filePart}`;
   }
   return `${safeFolder}/${filePart}`;
+}
+
+function shouldResize(folder: string): boolean {
+  return !isAdminVerificationFolder(folder) && !isUserVerificationFolder(folder);
+}
+
+/**
+ * Fit a listing photo inside 1600px and encode JPEG. GIFs and already-small
+ * JPEGs are uploaded as chosen. Verification folders skip this entirely.
+ */
+async function prepareListingFile(file: File): Promise<File> {
+  if (file.type === "image/gif") return file;
+
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  try {
+    const longEdge = Math.max(bitmap.width, bitmap.height);
+    const alreadySmallJpeg = file.type === "image/jpeg" && longEdge > 0 && longEdge <= LISTING_LONG_EDGE;
+    if (alreadySmallJpeg) return file;
+
+    const scale = longEdge > LISTING_LONG_EDGE ? LISTING_LONG_EDGE / longEdge : 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Could not prepare the photo for upload.");
+    }
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, "image/jpeg", JPEG_QUALITY);
+    });
+    if (!blob) {
+      throw new Error("Could not prepare the photo for upload.");
+    }
+    const name = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+    return new File([blob], name, { type: "image/jpeg" });
+  } finally {
+    bitmap.close();
+  }
 }
 
 function storageErrorMessage(error: unknown): string {
@@ -79,12 +122,17 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
 
   await user.getIdToken(true);
 
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-  const path = buildStoragePath(folder, user.uid, ext);
+  const resize = shouldResize(folder);
 
   try {
+    const prepared = resize ? await prepareListingFile(file) : file;
+    const ext = prepared.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const path = buildStoragePath(folder, user.uid, ext);
     const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file, { contentType: file.type });
+    await uploadBytes(storageRef, prepared, {
+      contentType: prepared.type,
+      cacheControl: resize ? CACHE_CONTROL : undefined,
+    });
     return getDownloadURL(storageRef);
   } catch (error) {
     throw new Error(storageErrorMessage(error));
