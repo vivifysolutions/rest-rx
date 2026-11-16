@@ -262,7 +262,7 @@ export default function AdminMembersPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") setSearch(searchInput.trim());
             }}
-            placeholder="Name, email or location"
+            placeholder="Name or email"
           />
         </label>
         <label>

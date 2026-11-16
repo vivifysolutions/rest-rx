@@ -202,7 +202,7 @@ export default function AdminPartnersPage() {
         </div>
       ) : null}
 
-      <MemberLocationCounts filter={search} />
+      <MemberLocationCounts />
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
         <label>
@@ -214,7 +214,7 @@ export default function AdminPartnersPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") setSearch(searchInput.trim());
             }}
-            placeholder="Name, email or location"
+            placeholder="Name or email"
           />
         </label>
         <label>
