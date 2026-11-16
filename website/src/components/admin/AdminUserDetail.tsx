@@ -33,6 +33,7 @@ import {
 } from "@/lib/user-types";
 import { ExpertAttachedContent } from "@/components/admin/ExpertAttachedContent";
 import { PartnerAttachedContent } from "@/components/admin/PartnerAttachedContent";
+import { formatMemberLocation } from "@/lib/member-location";
 
 const USER_TYPES: UserType[] = ["member", "admin", "brand_partner", "expert", "ambassador", "foundation"];
 
@@ -255,6 +256,7 @@ export function AdminUserDetail({ userId, mode }: Props) {
         )}
         <DetailRow label="Role" value={USER_TYPE_LABELS[user.userType]} />
         <DetailRow label="Member since" value={new Date(user.createdAt).toLocaleString()} />
+        <DetailRow label="Location" value={formatMemberLocation(user) || "Not set"} />
         {(mode === "member" || mode === "partner" || mode === "expert") && (
           <DetailRow
             label="Onboarding"
