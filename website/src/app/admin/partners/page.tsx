@@ -5,6 +5,7 @@ import { usePortalAuth } from "@/contexts/PortalAuthProvider";
 import { AdminTitleLink } from "@/components/admin/AdminDetailView";
 import { ActiveBadge, ActiveToggleButton } from "@/components/admin/ActiveBadge";
 import { ContentPageHeader } from "@/components/admin/ContentPageHeader";
+import { MemberLocationCounts } from "@/components/admin/MemberLocationCounts";
 import { AdminSortSelect } from "@/components/admin/AdminSortSelect";
 import { getCommunityMetrics, listUsers, updateUserType, updateUserActive, type CommunityMetrics } from "@/lib/api";
 import { subscribeAdminMetricsChanged } from "@/lib/admin-metrics-events";
@@ -200,6 +201,8 @@ export default function AdminPartnersPage() {
           </Link>
         </div>
       ) : null}
+
+      <MemberLocationCounts />
 
       <div className="admin-card admin-filter-bar" style={{ marginBottom: "1rem" }}>
         <label>
