@@ -37,12 +37,14 @@ function rowsFor(metrics: MemberLocationMetrics, level: Level): Row[] {
  * Approved members (members + ambassadors) per city, state and country, from the location they
  * entered in the app, so the team can answer brand partners' audience questions.
  */
-export function MemberLocationCounts() {
+export function MemberLocationCounts({ filter = "" }: {
+  /** The page's search term; narrows the table to matching locations (e.g. "Atlanta"). */
+  filter?: string;
+}) {
   const { refreshToken } = usePortalAuth();
   const [metrics, setMetrics] = useState<MemberLocationMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [level, setLevel] = useState<Level>("city");
-  const [query, setQuery] = useState("");
 
   const load = useCallback(async () => {
     setError(null);
@@ -59,13 +61,13 @@ export function MemberLocationCounts() {
     void load();
   }, [load]);
 
+  const term = filter.trim();
   const rows = useMemo(() => {
     if (!metrics) return [];
-    const term = query.trim().toLowerCase();
     const all = rowsFor(metrics, level);
-    return term ? all.filter((row) => row.location.toLowerCase().includes(term)) : all;
-  }, [metrics, level, query]);
-
+    const lower = term.toLowerCase();
+    return lower ? all.filter((row) => row.location.toLowerCase().includes(lower)) : all;
+  }, [metrics, level, term]);
   const matchedTotal = rows.reduce((sum, row) => sum + row.count, 0);
 
   return (
@@ -109,25 +111,16 @@ export function MemberLocationCounts() {
                 {label}
               </button>
             ))}
-            <label>
-              Search
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g. Atlanta"
-              />
-            </label>
-            {query.trim() ? (
+            {term ? (
               <span style={{ alignSelf: "center", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                Matching total: <strong>{matchedTotal}</strong>
+                Members matching &ldquo;{term}&rdquo;: <strong>{matchedTotal}</strong>
               </span>
             ) : null}
           </div>
 
           {rows.length === 0 ? (
             <p className="admin-empty-hint">
-              {query.trim() ? `No members in "${query.trim()}".` : "No member locations yet."}
+              {term ? `No members in locations matching "${term}".` : "No member locations yet."}
             </p>
           ) : (
             <div className="admin-table-wrap">
