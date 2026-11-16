@@ -14,7 +14,6 @@ import {
 } from "@/lib/admin-user-display";
 import { compareDateDesc, compareText, sortBy } from "@/lib/admin-sort";
 import type { ApiUser } from "@/lib/types";
-import { formatMemberLocation } from "@/lib/member-location";
 import {
   MEMBER_DIRECTORY_TYPES,
   USER_TYPE_LABELS,
@@ -317,7 +316,6 @@ export default function AdminMembersPage() {
                   <th>Email</th>
                   <th>Account type</th>
                   <th>Professional info</th>
-                  <th>Location</th>
                   <th>Onboarding</th>
                   <th>Joined</th>
                 </tr>
@@ -355,7 +353,6 @@ export default function AdminMembersPage() {
                     <td>
                       {[u.professionalRole, u.specialty].filter(Boolean).join(" · ") || "—"}
                     </td>
-                    <td>{formatMemberLocation(u) || "—"}</td>
                     <td>{onboardingSummary(u)}</td>
                     <td>{new Date(u.createdAt).toLocaleDateString()}</td>
                   </tr>
