@@ -595,7 +595,7 @@ export default function BrandPartnerApplicationForm({
     }
   }
 
-  async function useDifferentEmail() {
+  async function chooseDifferentEmail() {
     setError(null);
     setAwaitingEmailVerification(false);
     setResendSecondsLeft(0);
@@ -1155,7 +1155,7 @@ export default function BrandPartnerApplicationForm({
                   ? `Resend email in ${formatCountdown(resendSecondsLeft)}`
                   : "Resend email"}
             </button>
-            <button type="button" className="admin-btn" onClick={() => void useDifferentEmail()}>
+            <button type="button" className="admin-btn" onClick={() => void chooseDifferentEmail()}>
               Use a different email
             </button>
           </div>
