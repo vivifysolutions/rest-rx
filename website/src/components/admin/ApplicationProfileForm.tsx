@@ -127,6 +127,7 @@ export function ApplicationProfileForm({ user, saving, saveError, onSave }: Prop
           <DetailRow label="Specialty" value={user.specialty ?? "—"} />
           <DetailRow label="NPI number" value={user.npiNumber ?? "—"} />
           <DetailRow label="Phone" value={user.phone ?? "—"} />
+          <DetailRow label="Bio" value={user.bio?.trim() || "—"} />
           <DetailRow label="Verification photos">
             <div className="admin-verification-grid">
               <DetailVerificationPhoto src={user.identityPhotoUrl} label="Identity photo" />

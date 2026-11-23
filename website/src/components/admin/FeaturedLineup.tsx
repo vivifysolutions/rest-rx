@@ -87,8 +87,13 @@ type Props<T extends FeaturedLineupItem> = {
   /** e.g. "Discounts", "Events", "Resources", "Retreats" */
   sectionLabel: string;
   detailHref: (item: T) => string;
-  editHref: (item: T) => string;
+  /** Omit when the detail page is where the item is edited. */
+  editHref?: (item: T) => string;
   getMeta?: (item: T) => string | null;
+  /** Lineups to show. Defaults to both; groups are only featured on Home. */
+  surfaces?: FeaturedSurface[];
+  /** Note on featured items that aren't live. Defaults to the unpublished note and badge. */
+  notLiveNote?: string;
 };
 
 export function FeaturedLineup<T extends FeaturedLineupItem>({
@@ -100,8 +105,12 @@ export function FeaturedLineup<T extends FeaturedLineupItem>({
   detailHref,
   editHref,
   getMeta,
+  surfaces = ["home", "discover"],
+  notLiveNote,
 }: Props<T>) {
-  const columns = columnsFor<T>(sectionLabel);
+  const columns = columnsFor<T>(sectionLabel).filter((column) =>
+    surfaces.includes(column.surface),
+  );
   const liveCounts = columns.map((column) => ({
     surface: column.surface,
     title: column.surface === "home" ? "Home" : "Discover",
@@ -162,7 +171,7 @@ export function FeaturedLineup<T extends FeaturedLineupItem>({
                       busy={moving?.surface === column.surface}
                       movingThis={moving?.surface === column.surface && moving.id === item.id}
                       detailHref={detailHref(item)}
-                      editHref={editHref(item)}
+                      editHref={editHref?.(item) ?? null}
                       meta={getMeta?.(item) ?? null}
                       onMoveUp={() => onMove(column.surface, liveIds, index, -1)}
                       onMoveDown={() => onMove(column.surface, liveIds, index, 1)}
@@ -180,8 +189,9 @@ export function FeaturedLineup<T extends FeaturedLineupItem>({
                       busy={false}
                       movingThis={false}
                       detailHref={detailHref(item)}
-                      editHref={editHref(item)}
+                      editHref={editHref?.(item) ?? null}
                       meta={getMeta?.(item) ?? null}
+                      notLiveNote={notLiveNote}
                       onMoveUp={() => undefined}
                       onMoveDown={() => undefined}
                     />
@@ -208,6 +218,7 @@ function LineupRow({
   detailHref,
   editHref,
   meta,
+  notLiveNote,
   onMoveUp,
   onMoveDown,
 }: {
@@ -220,8 +231,9 @@ function LineupRow({
   busy: boolean;
   movingThis: boolean;
   detailHref: string;
-  editHref: string;
+  editHref: string | null;
   meta: string | null;
+  notLiveNote?: string;
   onMoveUp: () => void;
   onMoveDown: () => void;
 }) {
@@ -242,7 +254,11 @@ function LineupRow({
         {meta ? <span className="admin-lineup-meta">{meta}</span> : null}
         {unpublished ? (
           <span className="admin-lineup-note">
-            Unpublished — not shown in the app. <PublishedBadge isPublished={false} />
+            {notLiveNote ?? (
+              <>
+                Unpublished — not shown in the app. <PublishedBadge isPublished={false} />
+              </>
+            )}
           </span>
         ) : null}
       </div>
@@ -269,9 +285,13 @@ function LineupRow({
             </button>
           </>
         ) : null}
-        <Link href={editHref} className="admin-btn admin-btn-sm">
-          {movingThis ? "Saving…" : "Edit"}
-        </Link>
+        {editHref ? (
+          <Link href={editHref} className="admin-btn admin-btn-sm">
+            {movingThis ? "Saving…" : "Edit"}
+          </Link>
+        ) : movingThis ? (
+          <span className="admin-lineup-meta">Saving…</span>
+        ) : null}
       </div>
     </li>
   );

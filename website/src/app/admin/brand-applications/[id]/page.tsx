@@ -23,6 +23,7 @@ import type { BrandPartnerApplication } from "@/lib/brand-partner-application";
 import { parseAdditionalUrls } from "@/lib/brand-partner-application";
 import type { UserType } from "@/lib/types";
 import { formatApplicationStatus } from "@/lib/admin-labels";
+import { formatInstagramLabel, instagramProfileUrl } from "@/lib/social";
 import { USER_TYPE_LABELS } from "@/lib/user-types";
 import {
   getAppDiscountTier,
@@ -231,8 +232,28 @@ export default function AdminBrandApplicationDetailPage() {
       </DetailSection>
 
       <DetailSection title="Business">
-        <DetailRow label="Website" value={app.website ?? "—"} />
-        <DetailRow label="Instagram" value={app.instagram} />
+        <DetailRow label="Website">
+          {app.website ? (
+            <a href={app.website} target="_blank" rel="noreferrer">
+              {app.website}
+            </a>
+          ) : (
+            "—"
+          )}
+        </DetailRow>
+        <DetailRow label="Instagram">
+          {instagramProfileUrl(app.instagram) ? (
+            <a
+              href={instagramProfileUrl(app.instagram)!}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {formatInstagramLabel(app.instagram)}
+            </a>
+          ) : (
+            "—"
+          )}
+        </DetailRow>
         <DetailRow label="TikTok" value={app.tiktok ?? "—"} />
         <DetailRow label="LinkedIn" value={app.linkedin ?? "—"} />
         <DetailRow label="Address" value={app.address ?? "—"} />

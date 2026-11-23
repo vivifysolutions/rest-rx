@@ -21,6 +21,8 @@ export type ApiUser = {
   specialty: string | null;
   npiNumber?: string | null;
   phone?: string | null;
+  /** Member-written bio (max 100 chars), edited from the mobile app. */
+  bio?: string | null;
   /** Member-entered location from the app (sign-up / Edit Profile). Admin-only. */
   city?: string | null;
   state?: string | null;
@@ -145,6 +147,15 @@ export type Event = {
   isPublished: boolean;
   startDate: string | null;
   endDate: string | null;
+  recurrenceFrequency?: EventRecurrenceFrequency | null;
+  recurrenceTimeZone?: string | null;
+  recurrenceEndsAt?: string | null;
+  recurrenceCount?: number | null;
+  /** 1-based position in its series. */
+  recurrenceIndex?: number;
+  seriesId?: string | null;
+  /** Set once the next occurrence was created from this one; it is then a past occurrence. */
+  nextOccurrenceCreatedAt?: string | null;
   ownerId?: string | null;
   brandPartnerApplicationId?: string | null;
   brandPartnerApplication?: {
@@ -158,6 +169,8 @@ export type Event = {
   createdAt: string;
   updatedAt?: string;
 };
+
+export type EventRecurrenceFrequency = "weekly" | "biweekly" | "monthly";
 
 export type CreateEventInput = {
   title: string;
@@ -185,6 +198,11 @@ export type CreateEventInput = {
   isPublished?: boolean;
   startDate?: string;
   endDate?: string;
+  /** Null stops repeating. */
+  recurrenceFrequency?: EventRecurrenceFrequency | null;
+  recurrenceTimeZone?: string | null;
+  recurrenceEndsAt?: string | null;
+  recurrenceCount?: number | null;
   /** Admin: link to approved brand / expert / foundation application. Empty string clears. */
   brandPartnerApplicationId?: string;
 };
@@ -396,6 +414,9 @@ export type Group = {
   description: string | null;
   coverImageUrl?: string | null;
   status: "active" | "inactive" | "archived";
+  /** Shown in the app Home tab featured groups strip. */
+  isFeaturedOnHome?: boolean;
+  featuredOnHomeOrder?: number | null;
   topic?: string | null;
   country?: string | null;
   state?: string | null;
