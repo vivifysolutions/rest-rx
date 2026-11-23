@@ -26,6 +26,10 @@ function toDatetimeLocal(iso: string | null | undefined): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function toDateInput(iso: string | null | undefined): string {
+  return toDatetimeLocal(iso).slice(0, 10);
+}
+
 function eventToForm(item: Event): EventFormValues {
   return {
     title: item.title,
@@ -38,6 +42,12 @@ function eventToForm(item: Event): EventFormValues {
     images: item.images?.length ? item.images : item.image ? [item.image] : [],
     startDate: toDatetimeLocal(item.startDate),
     endDate: toDatetimeLocal(item.endDate),
+    recurrenceFrequency: item.recurrenceFrequency ?? "",
+    recurrenceEnds: item.recurrenceCount ? "after" : item.recurrenceEndsAt ? "on" : "never",
+    recurrenceEndsAt: toDateInput(item.recurrenceEndsAt),
+    recurrenceCount: item.recurrenceCount != null ? String(item.recurrenceCount) : "",
+    recurrenceTimeZone: item.recurrenceTimeZone ?? "",
+    recurrenceEditable: !item.nextOccurrenceCreatedAt,
     isFeatured: item.isFeatured,
     isFeaturedOnHome: item.isFeaturedOnHome ?? false,
     featuredOrder: item.featuredOrder != null ? String(item.featuredOrder) : "",
@@ -99,9 +109,13 @@ export default function AdminEventEditPage() {
 
   async function handleSubmit(body: CreateEventInput) {
     setError(null);
-    const token = await refreshToken();
-    await updateEvent(id, body, token ?? undefined);
-    router.push(`/admin/events/${id}`);
+    try {
+      const token = await refreshToken();
+      await updateEvent(id, body, token ?? undefined);
+      router.push(`/admin/events/${id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save event");
+    }
   }
 
   if (loading || !form) return <p>Loading…</p>;

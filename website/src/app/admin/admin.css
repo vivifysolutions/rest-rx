@@ -919,6 +919,20 @@
   color: #5a6c7d;
 }
 
+/* Repeating events. Same sage palette as .admin-upload-guide. */
+.admin-badge-repeat {
+  background: linear-gradient(180deg, #f4faf8 0%, #eef6f3 100%);
+  color: var(--downriver);
+  border: 1px solid #d4e4de;
+  white-space: nowrap;
+}
+
+.admin-badge-repeat.admin-badge-muted {
+  background: #e8eef3;
+  color: #5a6c7d;
+  border-color: transparent;
+}
+
 .admin-badge-type-member {
   background: #eef4fb;
   color: #2871a3;
