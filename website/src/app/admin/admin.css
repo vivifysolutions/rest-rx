@@ -1404,9 +1404,28 @@
 
 .admin-detail-grid dd {
   margin: 0;
+  min-width: 0;
   font-size: 0.95rem;
   color: var(--downriver);
   line-height: 1.5;
+}
+
+/* Content placed in a section without a DetailRow (uploads, post lists) spans the full
+   width instead of landing in the narrow label column. */
+.admin-detail-grid > :not(dt):not(dd) {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .admin-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .admin-detail-grid dd + dt {
+    margin-top: 0.5rem;
+  }
 }
 
 .admin-detail-image {

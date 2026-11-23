@@ -10,7 +10,7 @@ type Props = {
   disabled?: boolean;
 };
 
-function ToggleRow({
+export function ToggleRow({
   checked,
   onChange,
   title,
