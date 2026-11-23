@@ -27,6 +27,7 @@ export default function BrandDiscountsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState<DiscountFormValues>(EMPTY_DISCOUNT_FORM);
+  const [formOpen, setFormOpen] = useState(false);
 
   const update = <K extends keyof DiscountFormValues>(k: K, v: DiscountFormValues[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -65,6 +66,7 @@ export default function BrandDiscountsPage() {
       await createDiscount(body, token ?? undefined);
       setSuccess("Discount submitted for review. Our team will publish it in the app once approved.");
       setForm(EMPTY_DISCOUNT_FORM);
+      setFormOpen(false);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to submit discount");
@@ -80,24 +82,60 @@ export default function BrandDiscountsPage() {
       />
 
       <div className="admin-card" style={{ marginBottom: "1rem" }}>
-        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>Submit a discount</h2>
-        <p className="admin-callout" style={{ marginBottom: "0.75rem" }}>
-          Use the fields below after your discovery call. New discounts stay pending until the Rest
-          &amp; Rx team publishes them.
-        </p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "1rem",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h2 style={{ fontSize: "1rem", margin: 0 }}>Submit a discount</h2>
+            <p className="admin-callout" style={{ margin: "0.35rem 0 0" }}>
+              New discounts stay pending until the Rest &amp; Rx team publishes them.
+            </p>
+          </div>
+          {formOpen ? (
+            <button
+              type="button"
+              className="admin-btn"
+              style={{ background: "#f0f4f8", color: "var(--downriver)" }}
+              onClick={() => {
+                setForm(EMPTY_DISCOUNT_FORM);
+                setFormOpen(false);
+              }}
+            >
+              Cancel
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="admin-btn admin-btn-primary"
+              onClick={() => setFormOpen(true)}
+              disabled={categories.length === 0 && !loading}
+            >
+              Add a discount
+            </button>
+          )}
+        </div>
         {categories.length === 0 && !loading ? (
-          <p className="admin-error">
+          <p className="admin-error" style={{ marginTop: "0.75rem" }}>
             Discount categories could not be loaded. Check the API connection and try again.
           </p>
-        ) : (
-          <DiscountForm
-            form={form}
-            onChange={update}
-            categoryOptions={categoryOptions}
-            submitLabel="Submit for review"
-            onSubmit={handleCreate}
-          />
-        )}
+        ) : null}
+        {formOpen ? (
+          <div style={{ marginTop: "1rem" }}>
+            <DiscountForm
+              form={form}
+              onChange={update}
+              categoryOptions={categoryOptions}
+              submitLabel="Submit for review"
+              onSubmit={handleCreate}
+            />
+          </div>
+        ) : null}
         {success && <p className="admin-success">{success}</p>}
         {error && <p className="admin-error">{error}</p>}
       </div>
