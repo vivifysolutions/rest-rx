@@ -109,9 +109,13 @@ export default function AdminEventEditPage() {
 
   async function handleSubmit(body: CreateEventInput) {
     setError(null);
-    const token = await refreshToken();
-    await updateEvent(id, body, token ?? undefined);
-    router.push(`/admin/events/${id}`);
+    try {
+      const token = await refreshToken();
+      await updateEvent(id, body, token ?? undefined);
+      router.push(`/admin/events/${id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save event");
+    }
   }
 
   if (loading || !form) return <p>Loading…</p>;

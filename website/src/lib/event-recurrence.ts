@@ -55,6 +55,9 @@ export function eventDateError(
   endDate: string,
   frequency: EventRecurrenceFrequency | "",
 ): string | null {
+  if (frequency && (!startDate || !endDate)) {
+    return "A repeating event needs a start and an end, so the next occurrence can be scheduled after this one ends.";
+  }
   if (!startDate || !endDate) return null;
   const start = new Date(startDate).getTime();
   const end = new Date(endDate).getTime();

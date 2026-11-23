@@ -262,6 +262,7 @@ export function EventForm({
             type="datetime-local"
             value={form.endDate}
             onChange={(e) => onChange("endDate", e.target.value)}
+            required={Boolean(form.recurrenceFrequency)}
           />
         </label>
       </div>
