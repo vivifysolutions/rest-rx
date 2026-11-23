@@ -23,6 +23,10 @@ export type ApiUser = {
   phone?: string | null;
   /** Member-written bio (max 100 chars), edited from the mobile app. */
   bio?: string | null;
+  /** Member-entered location from the app (sign-up / Edit Profile). Admin-only. */
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
   userType: UserType;
   applicationStatus: ApplicationStatus;
   rejectionIssue?: ApplicationRejectionIssue | null;

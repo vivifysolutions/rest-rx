@@ -207,6 +207,20 @@ export async function getCommunityMetrics(token: string): Promise<CommunityMetri
   return request<CommunityMetrics>("/users/metrics", { token });
 }
 
+/** Approved members + ambassadors counted by the location they entered in the app. */
+export type MemberLocationMetrics = {
+  totalMembers: number;
+  withLocation: number;
+  withoutLocation: number;
+  byCountry: Array<{ country: string; count: number }>;
+  byState: Array<{ country: string; state: string; count: number }>;
+  byCity: Array<{ country: string; state: string | null; city: string; count: number }>;
+};
+
+export async function getMemberLocationMetrics(token: string): Promise<MemberLocationMetrics> {
+  return request<MemberLocationMetrics>("/users/metrics/member-locations", { token });
+}
+
 export async function getUser(token: string, userId: string): Promise<ApiUser> {
   return request<ApiUser>(`/users/${userId}`, { token });
 }
