@@ -21,6 +21,8 @@ export type ApiUser = {
   specialty: string | null;
   npiNumber?: string | null;
   phone?: string | null;
+  /** Member-written bio (max 100 chars), edited from the mobile app. */
+  bio?: string | null;
   userType: UserType;
   applicationStatus: ApplicationStatus;
   rejectionIssue?: ApplicationRejectionIssue | null;
