@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getFirebaseAuthErrorMessage } from "@/lib/firebase-auth-errors";
@@ -594,6 +595,17 @@ export default function BrandPartnerApplicationForm({
     }
   }
 
+  async function useDifferentEmail() {
+    setError(null);
+    setAwaitingEmailVerification(false);
+    setResendSecondsLeft(0);
+    try {
+      await signOut(auth);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : getFirebaseAuthErrorMessage(err));
+    }
+  }
+
   async function handleResendVerification() {
     const user = auth.currentUser;
     if (!user || resending || resendSecondsLeft > 0) return;
@@ -1142,6 +1154,9 @@ export default function BrandPartnerApplicationForm({
                 : resendSecondsLeft > 0
                   ? `Resend email in ${formatCountdown(resendSecondsLeft)}`
                   : "Resend email"}
+            </button>
+            <button type="button" className="admin-btn" onClick={() => void useDifferentEmail()}>
+              Use a different email
             </button>
           </div>
         </div>
