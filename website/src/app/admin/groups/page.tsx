@@ -119,9 +119,25 @@ export default function AdminGroupsPage() {
   ) {
     const toIndex = fromIndex + direction;
     if (toIndex < 0 || toIndex >= orderedLiveIds.length) return;
-    const next = [...orderedLiveIds];
-    const [moved] = next.splice(fromIndex, 1);
-    next.splice(toIndex, 0, moved);
+    const liveOrder = [...orderedLiveIds];
+    const [moved] = liveOrder.splice(fromIndex, 1);
+    liveOrder.splice(toIndex, 0, moved);
+    // Hidden and archived groups stay in their current slots. The API appends any
+    // featured id left out of this list, which would move them to the end.
+    const hiddenIds = new Set(
+      featuredItems.filter((group) => group.status !== "active").map((group) => group.id),
+    );
+    const fullOrder = [...featuredItems].sort(
+      (a, b) =>
+        (a.featuredOnHomeOrder ?? Number.MAX_SAFE_INTEGER) -
+          (b.featuredOnHomeOrder ?? Number.MAX_SAFE_INTEGER) ||
+        a.name.localeCompare(b.name),
+    );
+    const liveQueue = [...liveOrder];
+    const next = fullOrder.map((group) =>
+      hiddenIds.has(group.id) ? group.id : (liveQueue.shift() ?? group.id),
+    );
+    next.push(...liveQueue);
     setMoving({ surface, id: moved });
     setError(null);
     try {
