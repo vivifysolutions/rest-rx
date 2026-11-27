@@ -445,11 +445,30 @@ export type Affirmation = {
   sortOrder: number;
 };
 
+export type AffirmationSectionSummary = {
+  id: string;
+  title: string;
+  /** Lowest shows first; null = default order (after numbered ones, A–Z). */
+  sortOrder: number | null;
+};
+
 export type AffirmationTopic = {
   id: string;
   slug: string;
   title: string;
   description: string;
+  /** Order within its section; null = default order. */
+  sortOrder: number | null;
+  section: AffirmationSectionSummary | null;
+};
+
+export type AffirmationSection = AffirmationSectionSummary & {
+  topics: AffirmationTopic[];
+};
+
+export type AffirmationSectionsResponse = {
+  sections: AffirmationSection[];
+  unsectionedTopics: AffirmationTopic[];
 };
 
 /** Rest & Rx curated goal shown in "Guided for you". */

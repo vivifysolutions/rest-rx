@@ -5,6 +5,8 @@ import { normalizeBrandPartnerApplication } from "@/lib/brand-partner-applicatio
 import type {
   ApiUser,
   Affirmation,
+  AffirmationSectionsResponse,
+  AffirmationSectionSummary,
   AffirmationTopic,
   ContentReport,
   CreateDiscountInput,
@@ -785,6 +787,49 @@ export async function updateThreadImages(
 
 export async function getAffirmationTopics(): Promise<AffirmationTopic[]> {
   return request<AffirmationTopic[]>("/affirmations/topics");
+}
+
+export async function getAffirmationSections(): Promise<AffirmationSectionsResponse> {
+  return request<AffirmationSectionsResponse>("/affirmations/sections");
+}
+
+export async function createAffirmationSection(
+  token: string,
+  body: { title: string; sortOrder?: number | null },
+): Promise<AffirmationSectionSummary> {
+  return request<AffirmationSectionSummary>("/affirmations/sections", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+export async function updateAffirmationSection(
+  token: string,
+  id: string,
+  body: Partial<{ title: string; sortOrder: number | null }>,
+): Promise<AffirmationSectionSummary> {
+  return request<AffirmationSectionSummary>(`/affirmations/sections/${id}`, {
+    method: "PATCH",
+    token,
+    body,
+  });
+}
+
+export async function deleteAffirmationSection(token: string, id: string): Promise<void> {
+  await request<void>(`/affirmations/sections/${id}`, { method: "DELETE", token });
+}
+
+export async function updateAffirmationTopic(
+  token: string,
+  id: string,
+  body: Partial<{ sectionId: string | null; sortOrder: number | null }>,
+): Promise<AffirmationTopic> {
+  return request<AffirmationTopic>(`/affirmations/topics/${id}`, {
+    method: "PATCH",
+    token,
+    body,
+  });
 }
 
 export async function getAffirmations(params?: {
